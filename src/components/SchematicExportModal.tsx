@@ -141,7 +141,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
       worldName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '_')
-        .replace(/^_|_$/g, '') || 'skyblock_build';
+        .replace(/^_|_$/g, '') || 'voxel_studio_build';
 
     if (activeFormat === 'schem') {
       triggerDownloadFile(
@@ -362,7 +362,8 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                   [
                     {
                       id: 'schem',
-                      label: 'Minecraft Sponge Schematic (.schem.json)',
+                      label:
+                        'Sponge Schematic JSON (.schem.json — Intermediate JSON Format)',
                     },
                     {
                       id: 'mcfunction',
@@ -448,6 +449,18 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                   ? '\n... [Preview truncated — Click Download Schematic File for full file]'
                   : ''}
               </pre>
+            </div>
+
+            <div
+              data-testid="export-trademark-disclaimer"
+              className="px-3 py-2 rounded-lg bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between gap-2"
+            >
+              <span>
+                Not an official Minecraft, LEGO, or Godot product. Not approved by or associated with Mojang, Microsoft, or The LEGO Group.
+              </span>
+              <span className="font-mono text-[10px] text-slate-500 shrink-0">
+                glTF 2.0 / .schem.json / .ldr / .tscn
+              </span>
             </div>
           </div>
         </div>

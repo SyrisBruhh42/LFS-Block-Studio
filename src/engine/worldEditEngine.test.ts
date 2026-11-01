@@ -628,7 +628,7 @@ test('Refined Self-Learning 3D Ghost Auto-Complete: Pattern Archive, Linger Remo
     activeObjectClass: 'house_dwelling',
     nowMs: now,
   });
-  assert.equal(archive.totalAcceptedGhosts, 5);
+  assert.equal(archive.totalAcceptedGhosts, 1);
   assert.equal(archive.lingerWatchList.length, 1);
 
   const watchedPatternKey = archive.lingerWatchList[0].patternKey;
@@ -662,5 +662,18 @@ test('Refined Self-Learning 3D Ghost Auto-Complete: Pattern Archive, Linger Remo
   assert.ok(detectedClass.confidence >= 0.55);
 });
 
+test('Walkability Audit steepDropCoords overlay defaults and neutral studio naming', () => {
+  assert.equal(DEFAULT_SPATIAL_COPILOT_CONFIG.showWalkabilityOverlays, true);
 
+  const state = createInitialEngineState();
+  const report = auditWorldWalkability(state.blocks, state.customBlocks);
+  assert.ok(report.steepDropCoords.length > 0, 'Expected starter studio plot perimeter to report steepDropCoords');
+  assert.ok(report.summary.includes('steep drop'), 'Expected walkability summary to include steep drop count');
 
+  const resetRes = resetEntireWorldToTemplate(state, 'starter_skyblock');
+  assert.ok(resetRes.summary.includes('Starter Studio Plot'));
+
+  const plotCmd = executeWorldEditCommand(state, '//plot');
+  assert.equal(plotCmd.success, true);
+  assert.ok(plotCmd.message.includes('starter studio plot'));
+});

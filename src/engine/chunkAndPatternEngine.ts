@@ -183,10 +183,13 @@ export function expandWorldIntoChunk(
   cx: number,
   cz: number,
   style: ChunkExpansionStyle,
-  chunkSize = 16
+  chunkSize = 16,
+  options?: { skipUndoSnapshot?: boolean }
 ): { nextState: WorldEditEngineState; addedCount: number } {
-  const withUndo = pushUndoSnapshot(state, `Expand Chunk (${cx}, ${cz})`);
-  const nextBlocks = { ...withUndo.blocks };
+  const baseState = options?.skipUndoSnapshot
+    ? state
+    : pushUndoSnapshot(state, `Expand Chunk (${cx}, ${cz})`);
+  const nextBlocks = { ...baseState.blocks };
   const bounds = getChunkWorldBounds(cx, cz, chunkSize);
   const midX = Math.floor((bounds.minX + bounds.maxX) / 2);
   const midZ = Math.floor((bounds.minZ + bounds.maxZ) / 2);
@@ -229,7 +232,7 @@ export function expandWorldIntoChunk(
       for (let z = midZ - 5; z <= midZ + 6; z++) {
         const isBorder =
           x === midX - 5 || x === midX + 6 || z === midZ - 5 || z === midZ + 6;
-        setBlk(x, 0, z, isBorder ? 'obsidian_tile' : 'cobble_brick');
+        setBlk(x, 0, z, isBorder ? 'titanium_panel' : 'cobble_brick');
       }
     }
   } else if (style === 'timber_deck') {
@@ -244,17 +247,38 @@ export function expandWorldIntoChunk(
         }
       }
     }
+  } else if (style === 'sandstone_plaza') {
+    for (let x = midX - 5; x <= midX + 6; x++) {
+      for (let z = midZ - 5; z <= midZ + 6; z++) {
+        const isCorner =
+          (x === midX - 5 || x === midX + 6) &&
+          (z === midZ - 5 || z === midZ + 6);
+        const isBorder =
+          x === midX - 5 || x === midX + 6 || z === midZ - 5 || z === midZ + 6;
+        setBlk(
+          x,
+          0,
+          z,
+          isBorder ? 'lego_red_2x2' : 'lego_amber_2x4'
+        );
+        if (isCorner) {
+          setBlk(x, 1, z, 'voxel_lantern');
+        }
+      }
+    }
   } else {
-    for (let x = midX; x <= midX + 1; x++) {
-      for (let z = midZ; z <= midZ + 1; z++) {
-        setBlk(x, 0, z, 'cobble_brick');
+    // empty_grid: 10x10 calibration deck (100 blocks) with axis lines
+    for (let x = midX - 4; x <= midX + 5; x++) {
+      for (let z = midZ - 4; z <= midZ + 5; z++) {
+        const isAxis = x === midX || z === midZ;
+        setBlk(x, 0, z, isAxis ? 'titanium_panel' : 'cobble_brick');
       }
     }
   }
 
   return {
     nextState: {
-      ...withUndo,
+      ...baseState,
       blocks: nextBlocks,
     },
     addedCount,

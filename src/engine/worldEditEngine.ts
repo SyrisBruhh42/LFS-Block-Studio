@@ -432,7 +432,7 @@ export const WORLDEDIT_COMMANDS_HELP: { cmd: string; desc: string; example: stri
   { cmd: '//undo', desc: 'Undo the previous WorldEdit or build operation', example: '//undo' },
   { cmd: '//redo', desc: 'Redo the last undone operation', example: '//redo' },
   { cmd: '//clear', desc: 'Clear all blocks inside selection', example: '//clear' },
-  { cmd: '//island', desc: 'Reset world to the starter Skyblock island', example: '//island' },
+  { cmd: '//island', desc: 'Reset world to the starter studio plot', example: '//island' },
 ];
 
 function parseDirectionVector(dirStr?: string): GridCoord {
@@ -465,6 +465,27 @@ function parseDirectionVector(dirStr?: string): GridCoord {
     default:
       return { x: 0, y: 1, z: 0 };
   }
+}
+
+export const MAX_SAFE_REGION_CELL_BUDGET = 65536;
+export const MAX_SAFE_WORLD_COORD = 2048;
+
+export function isFiniteWorldCoord(n: unknown): n is number {
+  return (
+    typeof n === 'number' &&
+    Number.isFinite(n) &&
+    Math.abs(n) <= MAX_SAFE_WORLD_COORD
+  );
+}
+
+export function isValidGridCoord(c: unknown): c is GridCoord {
+  if (!c || typeof c !== 'object') return false;
+  const g = c as Record<string, unknown>;
+  return (
+    isFiniteWorldCoord(g.x) &&
+    isFiniteWorldCoord(g.y) &&
+    isFiniteWorldCoord(g.z)
+  );
 }
 
 export function executeWorldEditCommand(
@@ -514,32 +535,96 @@ export function executeWorldEditCommand(
 
   if (cmd === 'pos1' || cmd === '1') {
     let target = cursorFallback || state.pos1 || { x: 0, y: 1, z: 0 };
-    if (args.length >= 3) {
-      const [nx, ny, nz] = args.map(Number);
-      if (!Number.isNaN(nx) && !Number.isNaN(ny) && !Number.isNaN(nz)) {
-        target = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
+    if (args.length > 0) {
+      if (args.length < 3) {
+        return {
+          nextState: state,
+          success: false,
+          message: 'Usage: //pos1 <x> <y> <z> (requires 3 finite coordinates).',
+          affectedCount: 0,
+        };
       }
+      const [nx, ny, nz] = args.map(Number);
+      if (
+        !isFiniteWorldCoord(nx) ||
+        !isFiniteWorldCoord(ny) ||
+        !isFiniteWorldCoord(nz)
+      ) {
+        return {
+          nextState: state,
+          success: false,
+          message: `Invalid Pos1 coordinates. Coordinates must be finite numbers within ±${MAX_SAFE_WORLD_COORD}.`,
+          affectedCount: 0,
+        };
+      }
+      target = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
+    } else if (!isValidGridCoord(target)) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Invalid fallback cursor coordinates for Pos1.',
+        affectedCount: 0,
+      };
     }
     return {
-      nextState: { ...state, pos1: target },
+      nextState: {
+        ...state,
+        pos1: {
+          x: Math.round(target.x),
+          y: Math.round(target.y),
+          z: Math.round(target.z),
+        },
+      },
       success: true,
-      message: `Pos1 set to (${target.x}, ${target.y}, ${target.z}).`,
+      message: `Pos1 set to (${Math.round(target.x)}, ${Math.round(target.y)}, ${Math.round(target.z)}).`,
       affectedCount: 0,
     };
   }
 
   if (cmd === 'pos2' || cmd === '2') {
     let target = cursorFallback || state.pos2 || { x: 0, y: 1, z: 0 };
-    if (args.length >= 3) {
-      const [nx, ny, nz] = args.map(Number);
-      if (!Number.isNaN(nx) && !Number.isNaN(ny) && !Number.isNaN(nz)) {
-        target = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
+    if (args.length > 0) {
+      if (args.length < 3) {
+        return {
+          nextState: state,
+          success: false,
+          message: 'Usage: //pos2 <x> <y> <z> (requires 3 finite coordinates).',
+          affectedCount: 0,
+        };
       }
+      const [nx, ny, nz] = args.map(Number);
+      if (
+        !isFiniteWorldCoord(nx) ||
+        !isFiniteWorldCoord(ny) ||
+        !isFiniteWorldCoord(nz)
+      ) {
+        return {
+          nextState: state,
+          success: false,
+          message: `Invalid Pos2 coordinates. Coordinates must be finite numbers within ±${MAX_SAFE_WORLD_COORD}.`,
+          affectedCount: 0,
+        };
+      }
+      target = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
+    } else if (!isValidGridCoord(target)) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Invalid fallback cursor coordinates for Pos2.',
+        affectedCount: 0,
+      };
     }
     return {
-      nextState: { ...state, pos2: target },
+      nextState: {
+        ...state,
+        pos2: {
+          x: Math.round(target.x),
+          y: Math.round(target.y),
+          z: Math.round(target.z),
+        },
+      },
       success: true,
-      message: `Pos2 set to (${target.x}, ${target.y}, ${target.z}).`,
+      message: `Pos2 set to (${Math.round(target.x)}, ${Math.round(target.y)}, ${Math.round(target.z)}).`,
       affectedCount: 0,
     };
   }
@@ -602,13 +687,13 @@ export function executeWorldEditCommand(
     };
   }
 
-  if (cmd === 'island') {
+  if (cmd === 'island' || cmd === 'plot') {
     const withUndo = pushUndoSnapshot(state, '//island reset');
     const fresh = createStarterSkyblockWorld();
     return {
       nextState: { ...withUndo, blocks: fresh },
       success: true,
-      message: `Restored starter Skyblock island (${Object.keys(fresh).length} blocks).`,
+      message: `Restored starter studio plot (${Object.keys(fresh).length} blocks).`,
       affectedCount: Object.keys(fresh).length,
     };
   }
@@ -623,11 +708,36 @@ export function executeWorldEditCommand(
       };
     }
     let origin = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
-    if (args.length >= 3) {
-      const [nx, ny, nz] = args.map(Number);
-      if (!Number.isNaN(nx) && !Number.isNaN(ny) && !Number.isNaN(nz)) {
-        origin = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
+    if (args.length > 0) {
+      if (args.length < 3) {
+        return {
+          nextState: state,
+          success: false,
+          message: 'Usage: //paste [x y z] (requires 3 finite coordinates).',
+          affectedCount: 0,
+        };
       }
+      const [nx, ny, nz] = args.map(Number);
+      if (
+        !isFiniteWorldCoord(nx) ||
+        !isFiniteWorldCoord(ny) ||
+        !isFiniteWorldCoord(nz)
+      ) {
+        return {
+          nextState: state,
+          success: false,
+          message: `Invalid paste coordinates. Must be finite numbers within ±${MAX_SAFE_WORLD_COORD}.`,
+          affectedCount: 0,
+        };
+      }
+      origin = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
+    } else if (!isValidGridCoord(origin)) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Invalid paste origin coordinates.',
+        affectedCount: 0,
+      };
     }
     const withUndo = pushUndoSnapshot(state, '//paste');
     const nextBlocks = { ...withUndo.blocks };
@@ -637,9 +747,9 @@ export function executeWorldEditCommand(
     }
     let count = 0;
     for (const b of state.clipboard) {
-      const tx = origin.x + b.position.x;
-      const ty = origin.y + b.position.y;
-      const tz = origin.z + b.position.z;
+      const tx = Math.round(origin.x + b.position.x);
+      const ty = Math.round(origin.y + b.position.y);
+      const tz = Math.round(origin.z + b.position.z);
       const k = coordKey(tx, ty, tz);
       nextBlocks[k] = {
         ...b,
@@ -658,9 +768,31 @@ export function executeWorldEditCommand(
 
   // Commands that operate around Pos1 (sphere, cyl)
   if (cmd === 'sphere' || cmd === 'hsphere') {
-    const center = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
+    const rawCenter = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
+    if (!isValidGridCoord(rawCenter)) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Invalid sphere center coordinates.',
+        affectedCount: 0,
+      };
+    }
+    const center = {
+      x: Math.round(rawCenter.x),
+      y: Math.round(rawCenter.y),
+      z: Math.round(rawCenter.z),
+    };
     const blockArg = args[0] || 'cobble_brick';
-    const radius = Math.min(12, Math.max(1, parseInt(args[1] || '3', 10) || 3));
+    const parsedRadius = args[1] !== undefined ? Number(args[1]) : 3;
+    if (!Number.isFinite(parsedRadius) || parsedRadius < 1 || parsedRadius > 12) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Sphere radius must be a finite number between 1 and 12.',
+        affectedCount: 0,
+      };
+    }
+    const radius = Math.min(12, Math.max(1, Math.round(parsedRadius)));
     const isHollow =
       cmd === 'hsphere' || (args[2] || '').toLowerCase() === 'hollow';
     const isAir = blockArg === 'air' || blockArg === '0' || blockArg === 'none';
@@ -712,10 +844,41 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'cyl' || cmd === 'hcyl') {
-    const center = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
+    const rawCenter = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
+    if (!isValidGridCoord(rawCenter)) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Invalid cylinder center coordinates.',
+        affectedCount: 0,
+      };
+    }
+    const center = {
+      x: Math.round(rawCenter.x),
+      y: Math.round(rawCenter.y),
+      z: Math.round(rawCenter.z),
+    };
     const blockArg = args[0] || 'cobble_brick';
-    const radius = Math.min(12, Math.max(1, parseInt(args[1] || '3', 10) || 3));
-    const height = Math.min(20, Math.max(1, parseInt(args[2] || '1', 10) || 1));
+    const parsedRadius = args[1] !== undefined ? Number(args[1]) : 3;
+    const parsedHeight = args[2] !== undefined ? Number(args[2]) : 1;
+    if (
+      !Number.isFinite(parsedRadius) ||
+      parsedRadius < 1 ||
+      parsedRadius > 12 ||
+      !Number.isFinite(parsedHeight) ||
+      parsedHeight < 1 ||
+      parsedHeight > 20
+    ) {
+      return {
+        nextState: state,
+        success: false,
+        message:
+          'Cylinder radius (1..12) and height (1..20) must be finite numbers.',
+        affectedCount: 0,
+      };
+    }
+    const radius = Math.min(12, Math.max(1, Math.round(parsedRadius)));
+    const height = Math.min(20, Math.max(1, Math.round(parsedHeight)));
     const isHollow =
       cmd === 'hcyl' || (args[3] || '').toLowerCase() === 'hollow';
     const def = resolveBlockAlias(blockArg, state.customBlocks);
@@ -768,8 +931,41 @@ export function executeWorldEditCommand(
     };
   }
 
-  const bounds = getSelectionBounds(state.pos1, state.pos2);
-  const dims = getSelectionDimensions(state.pos1, state.pos2);
+  if (!isValidGridCoord(state.pos1) || !isValidGridCoord(state.pos2)) {
+    return {
+      nextState: state,
+      success: false,
+      message: `Selection bounds contain non-finite or out-of-range coordinates (must be within ±${MAX_SAFE_WORLD_COORD}).`,
+      affectedCount: 0,
+    };
+  }
+
+  const p1Rounded: GridCoord = {
+    x: Math.round(state.pos1.x),
+    y: Math.round(state.pos1.y),
+    z: Math.round(state.pos1.z),
+  };
+  const p2Rounded: GridCoord = {
+    x: Math.round(state.pos2.x),
+    y: Math.round(state.pos2.y),
+    z: Math.round(state.pos2.z),
+  };
+
+  const bounds = getSelectionBounds(p1Rounded, p2Rounded);
+  const dims = getSelectionDimensions(p1Rounded, p2Rounded);
+
+  if (
+    !Number.isFinite(dims.volume) ||
+    dims.volume <= 0 ||
+    dims.volume > MAX_SAFE_REGION_CELL_BUDGET
+  ) {
+    return {
+      nextState: state,
+      success: false,
+      message: `Selection volume (${dims.volume} cells) exceeds maximum safe cell budget (${MAX_SAFE_REGION_CELL_BUDGET} cells). Narrow your Pos1/Pos2 selection.`,
+      affectedCount: 0,
+    };
+  }
 
   if (cmd === 'size' || cmd === 'count') {
     let occupied = 0;
@@ -789,10 +985,19 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'expand') {
-    const amount = parseInt(args[0] || '1', 10) || 1;
+    const rawAmt = args[0] !== undefined ? Number(args[0]) : 1;
+    if (!Number.isFinite(rawAmt) || rawAmt < 1 || rawAmt > 64) {
+      return {
+        nextState: state,
+        success: false,
+        message: 'Expand amount must be a finite integer between 1 and 64.',
+        affectedCount: 0,
+      };
+    }
+    const amount = Math.round(rawAmt);
     const dir = (args[1] || 'all').toLowerCase();
-    const p1 = { ...state.pos1 };
-    const p2 = { ...state.pos2 };
+    const p1 = { ...p1Rounded };
+    const p2 = { ...p2Rounded };
     if (dir === 'all') {
       p1.x = bounds.minX - amount;
       p1.y = bounds.minY - amount;
@@ -810,6 +1015,18 @@ export function executeWorldEditCommand(
       p2.z = bounds.maxZ + (vec.z > 0 ? vec.z * amount : 0);
     }
     const newDims = getSelectionDimensions(p1, p2);
+    if (
+      !isValidGridCoord(p1) ||
+      !isValidGridCoord(p2) ||
+      newDims.volume > MAX_SAFE_REGION_CELL_BUDGET
+    ) {
+      return {
+        nextState: state,
+        success: false,
+        message: `Expanded selection (${newDims.volume} cells) would exceed maximum safe cell budget (${MAX_SAFE_REGION_CELL_BUDGET} cells).`,
+        affectedCount: 0,
+      };
+    }
     return {
       nextState: { ...state, pos1: p1, pos2: p2 },
       success: true,
@@ -1298,7 +1515,7 @@ export function createBlueprintFromSelection(
 
 export function createBlueprintFromCustomBlock(
   blockDef: CustomBlockDefinition,
-  description = 'Custom designed Lego block',
+  description = 'Custom designed interlocking stud block',
   authorId = 'local_builder',
   authorName = 'Local Builder',
   isPublic = false
@@ -1510,7 +1727,7 @@ export const STARTER_STRUCTURE_BLUEPRINTS: BlueprintPrefab[] = [
   },
   {
     id: 'bp_starter_cottage',
-    name: 'Lego Homestead Cabin',
+    name: 'Timber Homestead Cabin',
     description: 'Cozy oak and masonry starter shelter with sloped blue roof tiles and glass windows.',
     authorId: 'system',
     authorName: 'BrickForge Studio',

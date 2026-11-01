@@ -21,3 +21,37 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Sleek dark studio scrollbars — eliminates clunky bright OS scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #090d16;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #334155;
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #f59e0b;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+

@@ -39,7 +39,7 @@ export const DEFAULT_SPATIAL_COPILOT_CONFIG: SpatialCopilotConfig = {
   autoPersonaAdapting: false,
   workspacePersona: 'auto',
   pixel8ProGpuGovernor: true,
-  showWalkabilityOverlays: false,
+  showWalkabilityOverlays: true,
   adaptiveLearningEnabled: true,
   lingerTrackingWindowSec: 45,
   targetObjectClass: 'auto_detect',
@@ -156,16 +156,24 @@ export function computeTextureCohesionAffinity(
   const patA = defA.texturePattern;
   const patB = defB.texturePattern;
 
+  const isCobble = (p?: string) => p === 'cobble' || p === 'cobblestone';
+  const isWood = (p?: string) =>
+    p === 'wood_plank' || p === 'oak_planks' || p === 'wood_grain';
+  const isBrick = (p?: string) =>
+    p === 'brick' || p === 'brick_masonry' || p === 'brick_mortar';
+  const isRoof = (p?: string) => p === 'roof_tiles' || p === 'brick_masonry';
+
   if (patA === patB) {
     patternPairBonus = 0.9;
   } else if (
-    (patA === 'cobble' && patB === 'wood_plank') ||
-    (patA === 'wood_plank' && patB === 'cobble') ||
-    (patA === 'brick' && patB === 'roof_tiles') ||
-    (patA === 'roof_tiles' && patB === 'brick') ||
-    (patA === 'wood_plank' && patB === 'roof_tiles') ||
-    (patA === 'roof_tiles' && patB === 'wood_plank') ||
-    (defA.materialFinish === 'glass' || defB.materialFinish === 'glass')
+    (isCobble(patA) && isWood(patB)) ||
+    (isWood(patA) && isCobble(patB)) ||
+    (isBrick(patA) && isRoof(patB)) ||
+    (isRoof(patA) && isBrick(patB)) ||
+    (isWood(patA) && isRoof(patB)) ||
+    (isRoof(patA) && isWood(patB)) ||
+    defA.materialFinish === 'glass' ||
+    defB.materialFinish === 'glass'
   ) {
     patternPairBonus = 0.85;
   }
@@ -176,6 +184,7 @@ export function computeTextureCohesionAffinity(
 /**
  * Creates the initial Self-Learning Spatial Pattern Archive pre-seeded with
  * core architectural motifs so predictions are immediately smart and evolve with user habits.
+ * User-earned counters (totalAcceptedGhosts, totalLingerSurvivals) start at 0 so telemetry is 100% authentic.
  */
 export function createInitialAdaptivePatternArchive(): AdaptivePatternArchiveState {
   const now = Date.now();
@@ -189,8 +198,8 @@ export function createInitialAdaptivePatternArchive(): AdaptivePatternArchiveSta
       elevationBand: 'wall_story',
       objectClassAffinity: 'house_dwelling',
       occurrences: 4,
-      acceptedCount: 2,
-      lingerSurvivedCount: 2,
+      acceptedCount: 0,
+      lingerSurvivedCount: 0,
       lingerRemovedPenaltyCount: 0,
       textureCohesionScore: 0.96,
       confidenceWeight: 1.1,
@@ -206,8 +215,8 @@ export function createInitialAdaptivePatternArchive(): AdaptivePatternArchiveSta
       elevationBand: 'wall_story',
       objectClassAffinity: 'watchtower_spire',
       occurrences: 3,
-      acceptedCount: 1,
-      lingerSurvivedCount: 1,
+      acceptedCount: 0,
+      lingerSurvivedCount: 0,
       lingerRemovedPenaltyCount: 0,
       textureCohesionScore: 0.96,
       confidenceWeight: 1.05,
@@ -223,8 +232,8 @@ export function createInitialAdaptivePatternArchive(): AdaptivePatternArchiveSta
       elevationBand: 'roof_canopy',
       objectClassAffinity: 'house_dwelling',
       occurrences: 3,
-      acceptedCount: 1,
-      lingerSurvivedCount: 1,
+      acceptedCount: 0,
+      lingerSurvivedCount: 0,
       lingerRemovedPenaltyCount: 0,
       textureCohesionScore: 0.85,
       confidenceWeight: 1.08,
@@ -243,8 +252,8 @@ export function createInitialAdaptivePatternArchive(): AdaptivePatternArchiveSta
     patterns: patternsMap,
     lingerWatchList: [],
     totalLearnedTransitions: seedPatterns.length,
-    totalAcceptedGhosts: 4,
-    totalLingerSurvivals: 4,
+    totalAcceptedGhosts: 0,
+    totalLingerSurvivals: 0,
     totalLingerRemovals: 0,
     objectClassScores: {
       house_dwelling: 4,
@@ -647,11 +656,29 @@ export function detectArchitecturalObjectClass(params: {
 
       const def = customBlocks[b.blockDefId];
       if (def?.shape === 'slope') slopeCount++;
-      if (def?.texturePattern === 'wood_plank') timberCount++;
+      if (
+        def?.texturePattern === 'wood_plank' ||
+        def?.texturePattern === 'oak_planks' ||
+        def?.texturePattern === 'wood_grain' ||
+        b.blockDefId.includes('oak') ||
+        b.blockDefId.includes('plank') ||
+        b.blockDefId.includes('birch') ||
+        b.blockDefId.includes('spruce') ||
+        b.blockDefId.includes('tudor')
+      ) {
+        timberCount++;
+      }
       if (def?.materialFinish === 'glass' || def?.materialFinish === 'neon')
         glassOrLightCount++;
-      if (def?.texturePattern === 'cobble' || def?.texturePattern === 'brick')
+      if (
+        def?.texturePattern === 'cobble' ||
+        def?.texturePattern === 'cobblestone' ||
+        def?.texturePattern === 'brick' ||
+        def?.texturePattern === 'brick_masonry' ||
+        def?.texturePattern === 'brick_mortar'
+      ) {
         stoneCount++;
+      }
     }
   }
 
@@ -1518,6 +1545,13 @@ export function auditWorldWalkability(
   const darkInteriorCoords: GridCoord[] = [];
   const steepDropCoords: GridCoord[] = [];
 
+  const cardinalDirs = [
+    { dx: 1, dz: 0 },
+    { dx: -1, dz: 0 },
+    { dx: 0, dz: 1 },
+    { dx: 0, dz: -1 },
+  ];
+
   const step = Math.max(1, Math.floor(blockList.length / 600));
   for (let i = 0; i < blockList.length; i += step) {
     const blk = blockList[i];
@@ -1527,6 +1561,27 @@ export function auditWorldWalkability(
 
     if (!above1 && !above2) {
       walkableCount++;
+
+      // Check for unguarded steep drops (>= 3 blocks down on any cardinal neighbor)
+      if (steepDropCoords.length < 48) {
+        let hasSteepDrop = false;
+        for (const d of cardinalDirs) {
+          const nx = x + d.dx;
+          const nz = z + d.dz;
+          const hasSupportNear =
+            Boolean(blocks[coordKey(nx, y + 1, nz)]) ||
+            Boolean(blocks[coordKey(nx, y, nz)]) ||
+            Boolean(blocks[coordKey(nx, y - 1, nz)]) ||
+            Boolean(blocks[coordKey(nx, y - 2, nz)]);
+          if (!hasSupportNear) {
+            hasSteepDrop = true;
+            break;
+          }
+        }
+        if (hasSteepDrop) {
+          steepDropCoords.push({ x, y, z });
+        }
+      }
 
       let hasCeiling = false;
       for (let cy = y + 3; cy <= y + 6; cy++) {
@@ -1571,15 +1626,17 @@ export function auditWorldWalkability(
   const penalty =
     headroomConflictCoords.length * 6 + darkInteriorCoords.length * 3;
   const accessibilityScore =
-    walkableCount === 0 ? 50 : Math.max(25, Math.min(100, 100 - penalty));
+    walkableCount === 0 ? 0 : Math.max(25, Math.min(100, 100 - penalty));
 
   const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const executionMs = Number(Math.max(0.05, t1 - t0).toFixed(2));
 
   const summary =
-    headroomConflictCoords.length === 0 && darkInteriorCoords.length === 0
-      ? `100% Playtest Ready (${walkableCount} walkable nodes, 0 headroom blocks)`
-      : `${walkableCount} walkable nodes • ${headroomConflictCoords.length} headroom pinch${headroomConflictCoords.length === 1 ? '' : 'es'} • ${darkInteriorCoords.length} dark interior spot${darkInteriorCoords.length === 1 ? '' : 's'}`;
+    walkableCount === 0
+      ? '0% Playtest Ready (Empty World — 0 walkable nodes)'
+      : headroomConflictCoords.length === 0 && darkInteriorCoords.length === 0
+        ? `100% Playtest Ready (${walkableCount} walkable nodes, ${steepDropCoords.length} steep drop${steepDropCoords.length === 1 ? '' : 's'}, 0 headroom blocks)`
+        : `${walkableCount} walkable nodes • ${steepDropCoords.length} steep drop${steepDropCoords.length === 1 ? '' : 's'} • ${headroomConflictCoords.length} headroom pinch${headroomConflictCoords.length === 1 ? '' : 'es'} • ${darkInteriorCoords.length} dark interior spot${darkInteriorCoords.length === 1 ? '' : 's'}`;
 
   return {
     walkableCount,

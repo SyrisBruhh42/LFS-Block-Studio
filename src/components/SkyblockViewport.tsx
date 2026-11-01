@@ -32,7 +32,10 @@ import {
   formatKeyCode,
   matchesKeyBinding,
 } from '../engine/hotkeys';
-import { buildBlockMeshGroup } from '../engine/legoGeometry';
+import {
+  buildBlockMeshGroup,
+  disposeUnsharedGroupGeometries,
+} from '../engine/legoGeometry';
 import { getSelectionBounds, rotateRelativeCoord } from '../engine/worldEditEngine';
 import {
   DEFAULT_VOLUME_BRUSH_CONFIG,
@@ -50,6 +53,174 @@ import { DraggableHudOverlay } from './DraggableWindow';
 import { STUDIO_DRAG_MIME, parseStudioDragPayload } from '../engine/windowLayoutEngine';
 
 export type CameraViewPreset = 'isometric' | 'top' | 'front' | 'free';
+
+export interface ViewportRenderTelemetry {
+  geometries: number;
+  textures: number;
+  calls: number;
+  triangles: number;
+  points: number;
+  lines: number;
+  isMounted: boolean;
+  steepDropOverlayCount: number;
+  steepDropPulseOpacity: number;
+}
+
+let activeViewportBridge: {
+  getRenderer: () => THREE.WebGLRenderer | null;
+  getScene: () => THREE.Scene | null;
+  getCamera: () => THREE.PerspectiveCamera | null;
+  rebuildPlacedBlocks: () => void;
+  renderNow: () => void;
+  getSteepDropTelemetry: () => { count: number; pulseOpacity: number };
+} | null = null;
+
+export function getViewportRenderTelemetry(): ViewportRenderTelemetry {
+  const renderer = activeViewportBridge?.getRenderer();
+  const steepDrop = activeViewportBridge?.getSteepDropTelemetry() ?? {
+    count: 0,
+    pulseOpacity: 0,
+  };
+  if (!renderer) {
+    return {
+      geometries: 0,
+      textures: 0,
+      calls: 0,
+      triangles: 0,
+      points: 0,
+      lines: 0,
+      isMounted: false,
+      steepDropOverlayCount: steepDrop.count,
+      steepDropPulseOpacity: steepDrop.pulseOpacity,
+    };
+  }
+  return {
+    geometries: renderer.info.memory.geometries,
+    textures: renderer.info.memory.textures,
+    calls: renderer.info.render.calls,
+    triangles: renderer.info.render.triangles,
+    points: renderer.info.render.points,
+    lines: renderer.info.render.lines,
+    isMounted: true,
+    steepDropOverlayCount: steepDrop.count,
+    steepDropPulseOpacity: steepDrop.pulseOpacity,
+  };
+}
+
+export function runLiveViewportGpuRebuildStressTest(iterations = 50): {
+  iterations: number;
+  geometriesBefore: number;
+  geometriesAfter: number;
+  deltaGeometries: number;
+  passed: boolean;
+  durationMs: number;
+} {
+  const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const bridge = activeViewportBridge;
+  const renderer = bridge?.getRenderer();
+  if (!bridge || !renderer) {
+    return {
+      iterations,
+      geometriesBefore: 0,
+      geometriesAfter: 0,
+      deltaGeometries: 0,
+      passed: true,
+      durationMs: 0,
+    };
+  }
+  bridge.rebuildPlacedBlocks();
+  const geometriesBefore = renderer.info.memory.geometries;
+  for (let i = 0; i < iterations; i++) {
+    bridge.rebuildPlacedBlocks();
+  }
+  bridge.renderNow();
+  const geometriesAfter = renderer.info.memory.geometries;
+  const deltaGeometries = geometriesAfter - geometriesBefore;
+  const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  return {
+    iterations,
+    geometriesBefore,
+    geometriesAfter,
+    deltaGeometries,
+    passed: Math.abs(deltaGeometries) <= 4,
+    durationMs: Number((t1 - t0).toFixed(2)),
+  };
+}
+
+/**
+ * Captures the live 3D WebGL viewport canvas (forcing an immediate synchronous render first so
+ * the drawing buffer is populated) and overlays visible HUD/window bounding boxes for Gemini Vision diagnostics.
+ */
+export function captureViewportDiagnosticFrame(): string | null {
+  if (typeof document === 'undefined') return null;
+  const bridge = activeViewportBridge;
+  const renderer = bridge?.getRenderer();
+  if (bridge && renderer) {
+    bridge.renderNow();
+  }
+
+  const webglCanvas =
+    renderer?.domElement ||
+    (document.querySelector('canvas') as HTMLCanvasElement | null);
+  const w = Math.max(640, Math.min(1440, window.innerWidth || 1280));
+  const h = Math.max(400, Math.min(900, window.innerHeight || 720));
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = w;
+  outCanvas.height = h;
+  const ctx = outCanvas.getContext('2d');
+  if (!ctx) return null;
+
+  ctx.fillStyle = '#0B0F19';
+  ctx.fillRect(0, 0, w, h);
+
+  if (webglCanvas) {
+    try {
+      const rect = webglCanvas.getBoundingClientRect();
+      ctx.drawImage(
+        webglCanvas,
+        rect.left || 0,
+        rect.top || 0,
+        rect.width || w,
+        rect.height || h
+      );
+    } catch {
+      // Fallback if WebGL canvas taint or context lost
+    }
+  }
+
+  // Draw lightweight wireframe HUD diagnostic outlines of visible studio panels/bars so Gemini Vision sees exact layout geometry
+  const uiNodes = document.querySelectorAll(
+    'header, aside, [data-window-id], [data-hud-bar-id]'
+  );
+  uiNodes.forEach((node) => {
+    const el = node as HTMLElement;
+    const r = el.getBoundingClientRect();
+    if (r.width < 10 || r.height < 10) return;
+    // Skip the auditor modal itself if open
+    if (el.getAttribute('data-window-id') === 'self_testing_auditor_window') {
+      return;
+    }
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(r.left, r.top, r.width, r.height);
+    ctx.strokeRect(r.left, r.top, r.width, r.height);
+
+    const label =
+      el.getAttribute('aria-label') ||
+      el.getAttribute('data-window-id') ||
+      el.getAttribute('data-hud-bar-id') ||
+      el.tagName.toLowerCase();
+    ctx.fillStyle = '#E2E8F0';
+    ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+    ctx.fillText(label.slice(0, 42), r.left + 8, r.top + 16);
+    ctx.restore();
+  });
+
+  return outCanvas.toDataURL('image/png');
+}
 
 interface SkyblockViewportProps {
   blocks: Record<string, PlacedBlock>;
@@ -105,6 +276,7 @@ interface SkyblockViewportProps {
   onChangeSymmetryConfig?: (next: SymmetryConfig) => void;
   detectedSymmetry?: DetectedSymmetryCandidate | null;
   copilotConfig?: SpatialCopilotConfig;
+  onChangeCopilotConfig?: (next: SpatialCopilotConfig) => void;
   copilotPredictions?: CopilotPredictedBlock[];
   onAcceptCopilotPredictions?: () => void;
   selectionRecommendations?: SelectionCommandRecommendation[];
@@ -132,6 +304,11 @@ interface SkyblockViewportProps {
   worldName?: string;
   onSelectBlockId?: (id: string) => void;
   onSelectToolMode?: (mode: ToolMode) => void;
+  onClearSelection?: () => void;
+  isLeftToolboxOpen?: boolean;
+  onOpenLeftToolbox?: () => void;
+  isRightInspectorOpen?: boolean;
+  onOpenRightInspector?: () => void;
 }
 
 export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
@@ -181,6 +358,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
   onChangeSymmetryConfig,
   detectedSymmetry,
   copilotConfig,
+  onChangeCopilotConfig,
   copilotPredictions = [],
   onAcceptCopilotPredictions,
   selectionRecommendations = [],
@@ -203,9 +381,14 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
   onCameraPresetHandled,
   turntableEnabled = false,
   snapshotTriggerCount = 0,
-  worldName = 'lfs_skyblock_studio',
+  worldName = 'lfs_block_studio',
   onSelectBlockId,
   onSelectToolMode,
+  onClearSelection,
+  isLeftToolboxOpen = true,
+  onOpenLeftToolbox,
+  isRightInspectorOpen = true,
+  onOpenRightInspector,
 }) => {
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
   const requestRenderRef = useRef<() => void>(() => {});
@@ -350,11 +533,11 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.blocksGroup);
     while (ctx.blocksGroup.children.length > 0) {
       ctx.blocksGroup.remove(ctx.blocksGroup.children[0]);
     }
     ctx.interactables.length = 0;
-    ctx.interactables.push(ctx.groundPlane);
 
     const {
       blocks: curBlocks,
@@ -418,15 +601,23 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const w = Math.max(0.2, def.width * sx);
       const d = Math.max(0.2, def.depth * sz);
       const h = Math.max(0.15, (def.heightPlates / 3) * sy);
+      const blockUserData = {
+        isPlacedBlock: true,
+        gridCoord: { ...blk.position },
+        blockId: blk.id,
+        blockHeight: Math.max(1, Math.round(h)),
+      };
+      meshGroup.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.userData = { ...blockUserData };
+          ctx.interactables.push(child);
+        }
+      });
       const hitGeo = new THREE.BoxGeometry(w, h, d);
       const hitMat = new THREE.MeshBasicMaterial({ visible: false });
       const hitMesh = new THREE.Mesh(hitGeo, hitMat);
       hitMesh.position.set((w - 1) * 0.5, h * 0.5, (d - 1) * 0.5);
-      hitMesh.userData = {
-        isPlacedBlock: true,
-        gridCoord: { ...blk.position },
-        blockHeight: Math.max(1, Math.round(h)),
-      };
+      hitMesh.userData = { ...blockUserData, isDisposableMaterial: true };
       meshGroup.add(hitMesh);
       ctx.interactables.push(hitMesh);
 
@@ -476,6 +667,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.chunkGridsGroup);
     while (ctx.chunkGridsGroup.children.length > 0) {
       ctx.chunkGridsGroup.remove(ctx.chunkGridsGroup.children[0]);
     }
@@ -532,6 +724,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.ghostGroup);
     while (ctx.ghostGroup.children.length > 0) {
       ctx.ghostGroup.remove(ctx.ghostGroup.children[0]);
     }
@@ -662,6 +855,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.selectionGroup);
     while (ctx.selectionGroup.children.length > 0) {
       ctx.selectionGroup.remove(ctx.selectionGroup.children[0]);
     }
@@ -670,26 +864,41 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const {
       pos1: p1,
       pos2: p2,
+      toolMode: curToolMode,
       isSelectionGizmoActive: gizmoUnlocked,
+      activeCommandPreviewMode: cmdPreviewMode,
     } = propsRef.current;
 
-    if (p1) {
+    const showFullWandGizmos =
+      curToolMode === 'wand_select' ||
+      gizmoUnlocked ||
+      Boolean(cmdPreviewMode);
+
+    if (p1 && showFullWandGizmos) {
       const p1Geo = new THREE.BoxGeometry(1.06, 1.06, 1.06);
       const p1Edges = new THREE.EdgesGeometry(p1Geo);
       const p1Marker = new THREE.LineSegments(
         p1Edges,
-        new THREE.LineBasicMaterial({ color: 0x06b6d4 })
+        new THREE.LineBasicMaterial({
+          color: 0x06b6d4,
+          transparent: true,
+          opacity: 0.85,
+        })
       );
       p1Marker.position.set(p1.x, p1.y + 0.5, p1.z);
       ctx.selectionGroup.add(p1Marker);
     }
 
-    if (p2) {
+    if (p2 && showFullWandGizmos) {
       const p2Geo = new THREE.BoxGeometry(1.06, 1.06, 1.06);
       const p2Edges = new THREE.EdgesGeometry(p2Geo);
       const p2Marker = new THREE.LineSegments(
         p2Edges,
-        new THREE.LineBasicMaterial({ color: 0xf43f5e })
+        new THREE.LineBasicMaterial({
+          color: 0xf43f5e,
+          transparent: true,
+          opacity: 0.85,
+        })
       );
       p2Marker.position.set(p2.x, p2.y + 0.5, p2.z);
       ctx.selectionGroup.add(p2Marker);
@@ -704,65 +913,68 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const cy = (b.minY + b.maxY) * 0.5 + 0.5;
       const cz = (b.minZ + b.maxZ) * 0.5;
 
-      // Bounding box wireframe
+      // Bounding box wireframe — subtle & unobtrusive when in normal Place/Erase mode
       const boxGeo = new THREE.BoxGeometry(lx + 0.08, ly + 0.08, lz + 0.08);
       const edges = new THREE.EdgesGeometry(boxGeo);
       const wireframe = new THREE.LineSegments(
         edges,
         new THREE.LineBasicMaterial({
           color: gizmoUnlocked ? 0xf59e0b : 0x38bdf8,
+          transparent: true,
+          opacity: showFullWandGizmos ? 0.85 : 0.28,
         })
       );
       wireframe.position.set(cx, cy, cz);
       ctx.selectionGroup.add(wireframe);
 
-      // Translucent tint volume
-      const fillMat = new THREE.MeshBasicMaterial({
-        color: gizmoUnlocked ? 0xf59e0b : 0x06b6d4,
-        transparent: true,
-        opacity: gizmoUnlocked ? 0.11 : 0.06,
-        depthWrite: false,
-      });
-      const fillMesh = new THREE.Mesh(boxGeo, fillMat);
-      fillMesh.position.set(cx, cy, cz);
-      ctx.selectionGroup.add(fillMesh);
-
-      // 6 3D face handle gizmos (+X, -X, +Y, -Y, +Z, -Z)
-      // Only active/bright when holding Selection Gizmo modifier key so they never get in the way!
-      const handleDefs: {
-        face: '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
-        pos: [number, number, number];
-        color: number;
-      }[] = [
-        { face: '+x', pos: [b.maxX + 0.85, cy, cz], color: 0xf43f5e },
-        { face: '-x', pos: [b.minX - 0.85, cy, cz], color: 0xf43f5e },
-        { face: '+y', pos: [cx, b.maxY + 1.35, cz], color: 0x22c55e },
-        { face: '-y', pos: [cx, b.minY - 0.35, cz], color: 0x22c55e },
-        { face: '+z', pos: [cx, cy, b.maxZ + 0.85], color: 0x3b82f6 },
-        { face: '-z', pos: [cx, cy, b.minZ - 0.85], color: 0x3b82f6 },
-      ];
-
-      const handleGeo = new THREE.OctahedronGeometry(
-        gizmoUnlocked ? 0.32 : 0.16,
-        0
-      );
-      for (const h of handleDefs) {
-        const hMat = new THREE.MeshStandardMaterial({
-          color: h.color,
-          emissive: h.color,
-          emissiveIntensity: gizmoUnlocked ? 0.65 : 0.1,
-          roughness: 0.2,
+      if (showFullWandGizmos) {
+        // Translucent tint volume only when in Wand mode or holding Gizmo modifier
+        const fillMat = new THREE.MeshBasicMaterial({
+          color: gizmoUnlocked ? 0xf59e0b : 0x06b6d4,
           transparent: true,
-          opacity: gizmoUnlocked ? 0.96 : 0.22,
+          opacity: gizmoUnlocked ? 0.1 : 0.05,
+          depthWrite: false,
         });
-        const hMesh = new THREE.Mesh(handleGeo, hMat);
-        hMesh.position.set(h.pos[0], h.pos[1], h.pos[2]);
-        hMesh.userData = {
-          isGizmoHandle: true,
-          face: h.face,
-        };
-        ctx.selectionGroup.add(hMesh);
-        ctx.gizmoHandles.push(hMesh);
+        const fillMesh = new THREE.Mesh(boxGeo, fillMat);
+        fillMesh.position.set(cx, cy, cz);
+        ctx.selectionGroup.add(fillMesh);
+
+        // 6 3D face handle gizmos (+X, -X, +Y, -Y, +Z, -Z)
+        const handleDefs: {
+          face: '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
+          pos: [number, number, number];
+          color: number;
+        }[] = [
+          { face: '+x', pos: [b.maxX + 0.85, cy, cz], color: 0xf43f5e },
+          { face: '-x', pos: [b.minX - 0.85, cy, cz], color: 0xf43f5e },
+          { face: '+y', pos: [cx, b.maxY + 1.35, cz], color: 0x22c55e },
+          { face: '-y', pos: [cx, b.minY - 0.35, cz], color: 0x22c55e },
+          { face: '+z', pos: [cx, cy, b.maxZ + 0.85], color: 0x3b82f6 },
+          { face: '-z', pos: [cx, cy, b.minZ - 0.85], color: 0x3b82f6 },
+        ];
+
+        const handleGeo = new THREE.OctahedronGeometry(
+          gizmoUnlocked ? 0.3 : 0.18,
+          0
+        );
+        for (const h of handleDefs) {
+          const hMat = new THREE.MeshStandardMaterial({
+            color: h.color,
+            emissive: h.color,
+            emissiveIntensity: gizmoUnlocked ? 0.65 : 0.2,
+            roughness: 0.2,
+            transparent: true,
+            opacity: gizmoUnlocked ? 0.95 : 0.45,
+          });
+          const hMesh = new THREE.Mesh(handleGeo, hMat);
+          hMesh.position.set(h.pos[0], h.pos[1], h.pos[2]);
+          hMesh.userData = {
+            isGizmoHandle: true,
+            face: h.face,
+          };
+          ctx.selectionGroup.add(hMesh);
+          ctx.gizmoHandles.push(hMesh);
+        }
       }
     }
 
@@ -774,6 +986,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.collaboratorsGroup);
     while (ctx.collaboratorsGroup.children.length > 0) {
       ctx.collaboratorsGroup.remove(ctx.collaboratorsGroup.children[0]);
     }
@@ -792,14 +1005,45 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     requestRenderRef.current();
   };
 
-  // Shared zero-GC geometries for Spatial Copilot ghosts & symmetry planes (Pixel 8 Pro GPU optimization)
+  // Shared zero-GC geometries & materials for Spatial Copilot ghosts, symmetry planes, and steep-drop safety grids
   const sharedCopilotGeoRef = useRef<{
     boxGeo: THREE.BoxGeometry;
     boxEdges: THREE.EdgesGeometry;
     planeGeo: THREE.PlaneGeometry;
     planeEdges: THREE.EdgesGeometry;
     markerGeo: THREE.OctahedronGeometry;
+    steepDropTileGeo: THREE.PlaneGeometry;
+    steepDropGridGeo: THREE.BufferGeometry;
   } | null>(null);
+
+  const steepDropPulseMatsRef = useRef<{
+    fillMat: THREE.MeshBasicMaterial;
+    gridMat: THREE.LineBasicMaterial;
+  } | null>(null);
+  const activeSteepDropCountRef = useRef<number>(0);
+
+  const getSteepDropPulseMaterials = () => {
+    if (!steepDropPulseMatsRef.current) {
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: 0xef4444,
+        transparent: true,
+        opacity: 0.14,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      });
+      const gridMat = new THREE.LineBasicMaterial({
+        color: 0xf87171,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+      });
+      steepDropPulseMatsRef.current = { fillMat, gridMat };
+    }
+    return steepDropPulseMatsRef.current;
+  };
 
   const getSharedCopilotGeometries = () => {
     if (!sharedCopilotGeoRef.current) {
@@ -808,12 +1052,36 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const planeGeo = new THREE.PlaneGeometry(36, 18);
       const planeEdges = new THREE.EdgesGeometry(planeGeo);
       const markerGeo = new THREE.OctahedronGeometry(0.28, 0);
+
+      // 0.92x0.92 horizontal safety tile + 2x2 internal grid cross for steepDropCoords
+      const steepDropTileGeo = new THREE.PlaneGeometry(0.92, 0.92);
+      steepDropTileGeo.rotateX(-Math.PI / 2);
+
+      const h = 0.46;
+      const gridVertices = new Float32Array([
+        // Outer square perimeter
+        -h, 0, -h,  h, 0, -h,
+         h, 0, -h,  h, 0,  h,
+         h, 0,  h, -h, 0,  h,
+        -h, 0,  h, -h, 0, -h,
+        // Inner 2x2 sub-grid cross lines
+        -h, 0,  0,  h, 0,  0,
+         0, 0, -h,  0, 0,  h,
+      ]);
+      const steepDropGridGeo = new THREE.BufferGeometry();
+      steepDropGridGeo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(gridVertices, 3)
+      );
+
       sharedCopilotGeoRef.current = {
         boxGeo,
         boxEdges,
         planeGeo,
         planeEdges,
         markerGeo,
+        steepDropTileGeo,
+        steepDropGridGeo,
       };
     }
     return sharedCopilotGeoRef.current;
@@ -824,6 +1092,17 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    const shared = getSharedCopilotGeometries();
+    const sharedSet = new Set<THREE.BufferGeometry>([
+      shared.boxGeo,
+      shared.boxEdges,
+      shared.planeGeo,
+      shared.planeEdges,
+      shared.markerGeo,
+      shared.steepDropTileGeo,
+      shared.steepDropGridGeo,
+    ]);
+    disposeUnsharedGroupGeometries(ctx.copilotGroup, sharedSet);
     while (ctx.copilotGroup.children.length > 0) {
       ctx.copilotGroup.remove(ctx.copilotGroup.children[0]);
     }
@@ -836,8 +1115,6 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       activeCommandPreviewMode: cmdMode,
       walkabilityReport: walkRep,
     } = propsRef.current;
-
-    const shared = getSharedCopilotGeometries();
 
     // 1. Render Active 3D Symmetry Mirror Laser Plane(s)
     if (sym && sym.mode !== 'off' && sym.showPlaneGizmo) {
@@ -958,8 +1235,8 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       }
     }
 
-    // 4. Render Walkability Audit Markers (Headroom Pinch Points & Unlit Interior Spots)
-    if (copCfg?.showWalkabilityOverlays && walkRep) {
+    // 4. Render Walkability Audit Overlays (Steep Drop Red Grid Pulse, Headroom Pinch Points & Unlit Interior Spots)
+    if ((!copCfg || copCfg.showWalkabilityOverlays !== false) && walkRep) {
       const pinchMat = new THREE.MeshBasicMaterial({
         color: 0xf43f5e,
         transparent: true,
@@ -981,6 +1258,44 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         m.position.set(c.x, c.y + 0.5, c.z);
         ctx.copilotGroup.add(m);
       }
+
+      // Faint red pulsing grid overlay on steepDropCoords (>= 3 block ledge drop)
+      if (walkRep.steepDropCoords && walkRep.steepDropCoords.length > 0) {
+        const { fillMat, gridMat } = getSteepDropPulseMaterials();
+        const currentBlocks = propsRef.current.blocks;
+        const currentCustom = propsRef.current.customBlocks;
+
+        for (const c of walkRep.steepDropCoords) {
+          const blk = currentBlocks[`${c.x},${c.y},${c.z}`];
+          let blockHeight = 1.0;
+          if (blk) {
+            const def = currentCustom[blk.blockDefId];
+            if (def) {
+              const sy = blk.customScale?.y ?? def.defaultScale?.y ?? 1;
+              blockHeight = Math.max(0.15, (def.heightPlates / 3) * sy);
+            }
+          }
+          const topY = c.y + blockHeight + 0.018;
+
+          const tileMesh = new THREE.Mesh(shared.steepDropTileGeo, fillMat);
+          tileMesh.position.set(c.x, topY, c.z);
+          tileMesh.userData = { isSteepDropOverlay: true, coord: c };
+          ctx.copilotGroup.add(tileMesh);
+
+          const gridLines = new THREE.LineSegments(
+            shared.steepDropGridGeo,
+            gridMat
+          );
+          gridLines.position.set(c.x, topY + 0.002, c.z);
+          gridLines.userData = { isSteepDropOverlay: true, coord: c };
+          ctx.copilotGroup.add(gridLines);
+        }
+        activeSteepDropCountRef.current = walkRep.steepDropCoords.length;
+      } else {
+        activeSteepDropCountRef.current = 0;
+      }
+    } else {
+      activeSteepDropCountRef.current = 0;
     }
 
     requestRenderRef.current();
@@ -1220,7 +1535,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       gridHelper,
       groundPlane,
       gizmoHandles: [],
-      interactables: [groundPlane],
+      interactables: [],
       hoveredCoord: { x: 0, y: 1, z: 0 },
       wandNextCorner: 1,
       maxAnisotropy,
@@ -1325,37 +1640,42 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         }
       }
 
-      const hits = raycaster.intersectObjects(ctx.interactables, false);
-      if (hits.length === 0) return { coord: null };
-
-      const hit = hits[0];
-      const obj = hit.object;
-
-      if (obj.userData.isPlacedBlock && obj.userData.gridCoord) {
-        const baseCoord: GridCoord = obj.userData.gridCoord;
-        if (forModifyExisting) {
-          return { coord: { ...baseCoord } };
+      // 1. Always raycast against placed blocks FIRST so groundPlane at y=0 never blocks blocks at y < 0 or y = 0!
+      const blockHits = raycaster.intersectObjects(ctx.interactables, false);
+      if (blockHits.length > 0) {
+        const hit = blockHits[0];
+        const obj = hit.object;
+        if (obj.userData.isPlacedBlock && obj.userData.gridCoord) {
+          const baseCoord: GridCoord = obj.userData.gridCoord;
+          if (forModifyExisting) {
+            return { coord: { ...baseCoord } };
+          }
+          const normal = hit.face?.normal
+            ? hit.face.normal.clone().transformDirection(obj.matrixWorld)
+            : new THREE.Vector3(0, 1, 0);
+          const stepX = Math.round(normal.x);
+          const stepY = Math.round(normal.y);
+          const stepZ = Math.round(normal.z);
+          const blockH = obj.userData.blockHeight || 1;
+          return {
+            coord: {
+              x: baseCoord.x + stepX,
+              y: baseCoord.y + (stepY > 0 ? blockH : stepY),
+              z: baseCoord.z + stepZ,
+            },
+          };
         }
-        const normal = hit.face?.normal
-          ? hit.face.normal.clone().transformDirection(obj.matrixWorld)
-          : new THREE.Vector3(0, 1, 0);
-        const stepX = Math.round(normal.x);
-        const stepY = Math.round(normal.y);
-        const stepZ = Math.round(normal.z);
-        const blockH = obj.userData.blockHeight || 1;
-        return {
-          coord: {
-            x: baseCoord.x + stepX,
-            y: baseCoord.y + (stepY > 0 ? blockH : stepY),
-            z: baseCoord.z + stepZ,
-          },
-        };
       }
 
-      if (obj.userData.isGroundPlane) {
-        const gx = Math.round(hit.point.x);
-        const gz = Math.round(hit.point.z);
-        return { coord: { x: gx, y: 0, z: gz } };
+      // 2. Fallback to groundPlane ONLY when placing/hovering in open air (never when erasing/painting/picking existing blocks)
+      if (!forModifyExisting) {
+        const groundHits = raycaster.intersectObject(ctx.groundPlane, false);
+        if (groundHits.length > 0) {
+          const gHit = groundHits[0];
+          const gx = Math.round(gHit.point.x);
+          const gz = Math.round(gHit.point.z);
+          return { coord: { x: gx, y: 0, z: gz } };
+        }
       }
 
       return { coord: null };
@@ -1840,9 +2160,9 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const dtClick = performance.now() - downTimestamp;
       const isFreeLook = propsRef.current.freeLookActive;
 
-      // In Studio Pan mode, ignore camera orbit drags (> 6px travel).
+      // In Studio Pan mode, ignore camera orbit drags (> 14px travel).
       // In Free-Look mode, allow clicks even with slight mouse look movement (< 24px or < 260ms).
-      if (!isFreeLook && Math.hypot(dx, dy) > 6) return;
+      if (!isFreeLook && Math.hypot(dx, dy) > 14) return;
       if (isFreeLook && Math.hypot(dx, dy) > 24 && dtClick > 260) return;
 
       const ctx = sceneRefs.current;
@@ -2210,7 +2530,32 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     canvasEl.addEventListener('webglcontextlost', onWebglContextLost);
     canvasEl.addEventListener('webglcontextrestored', onWebglContextRestored);
 
+    activeViewportBridge = {
+      getRenderer: () => rendererRef.current,
+      getScene: () => scene,
+      getCamera: () => camera,
+      rebuildPlacedBlocks: () => {
+        rebuildPlacedBlocks();
+        rebuildChunkGrids();
+        rebuildGhostMesh();
+        rebuildSelectionGizmos();
+        rebuildCopilotOverlays();
+        rebuildCollaborators();
+      },
+      renderNow: () => {
+        if (controls.enabled) controls.update();
+        renderer.render(scene, camera);
+      },
+      getSteepDropTelemetry: () => ({
+        count: activeSteepDropCountRef.current,
+        pulseOpacity: Number(
+          (steepDropPulseMatsRef.current?.gridMat.opacity ?? 0).toFixed(3)
+        ),
+      }),
+    };
+
     return () => {
+      activeViewportBridge = null;
       cancelAnimationFrame(frameId);
       clearTimeout(frameId);
       clearTimeout(flightTickId);
@@ -2309,17 +2654,46 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
 
   useEffect(() => {
     rebuildSelectionGizmos();
-  }, [pos1, pos2, isSelectionGizmoActive]);
+  }, [pos1, pos2, toolMode, isSelectionGizmoActive, activeCommandPreviewMode]);
 
   useEffect(() => {
     rebuildCopilotOverlays();
   }, [
+    blocks,
     symmetryConfig,
     copilotConfig,
     copilotPredictions,
     commandPreviewCoords,
     activeCommandPreviewMode,
     walkabilityReport,
+  ]);
+
+  // Faint Red Grid Pulse Animation for Walkability Steep-Drop Hazard Overlays
+  useEffect(() => {
+    const steepCount = walkabilityReport?.steepDropCoords?.length ?? 0;
+    const overlaysActive =
+      (!copilotConfig ||
+        (copilotConfig.enabled !== false &&
+          copilotConfig.showWalkabilityOverlays !== false)) &&
+      steepCount > 0;
+
+    if (!overlaysActive) return;
+
+    const mats = getSteepDropPulseMaterials();
+    const intervalMs = isSoftwareGlRef.current ? 180 : 60;
+    const timerId = window.setInterval(() => {
+      const t = performance.now() * 0.004;
+      const wave = 0.5 + 0.5 * Math.sin(t);
+      mats.fillMat.opacity = 0.08 + wave * 0.11; // Faint red fill pulse (0.08 .. 0.19)
+      mats.gridMat.opacity = 0.28 + wave * 0.36; // Crisp red grid pulse (0.28 .. 0.64)
+      requestRenderRef.current();
+    }, intervalMs);
+
+    return () => window.clearInterval(timerId);
+  }, [
+    copilotConfig?.enabled,
+    copilotConfig?.showWalkabilityOverlays,
+    walkabilityReport?.steepDropCoords?.length,
   ]);
 
   useEffect(() => {
@@ -2480,451 +2854,440 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         </div>
       )}
 
-      {/* Top-Center Mouse Mode, Stylus Mode, 3D Volume Brush & Shift+Scroll HUD (Draggable!) */}
+      {/* Unified Top-Center Studio Viewport Bar (No overlapping corner pills!) */}
       <DraggableHudOverlay
         hudId="viewport_top_center_hud"
-        label="Viewport Mode & Brush Bar"
-        anchorClassName="top-3 left-1/2 -translate-x-1/2"
+        label="Viewport Studio Bar"
+        anchorClassName="top-2.5 left-1/2 -translate-x-1/2"
         zIndex={21}
       >
         <div
-          className={`flex flex-wrap items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/95 ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-r-xl bg-slate-950/95 ${
             uiConfig?.highContrastAccessible
               ? 'border-2 border-amber-400'
               : 'border border-slate-800'
-          } shadow-lg text-xs max-w-[92vw] transition-opacity duration-200 ${
+          } shadow-lg text-xs max-w-[92vw] overflow-x-auto no-scrollbar transition-opacity duration-200 ${
             uiConfig?.autoFadeHudOnPan && isViewportPanningOrDrawing
               ? 'opacity-30 pointer-events-none'
               : 'opacity-100'
           }`}
         >
-        <button
-          type="button"
-          data-testid="viewport-mouse-mode-toggle"
-          onClick={onToggleMouseLookMode}
-          className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-            freeLookActive
-              ? 'bg-emerald-500 text-slate-950'
-              : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-          }`}
-          title="Switch between Large-Scale Studio Pan/Zoom and Minecraft Free-Look Fly Builder"
-        >
-          <span>
-            {freeLookActive
-              ? isHoldingFreeLook
-                ? 'Mouse: Free-Look Fly (Held)'
-                : 'Mouse: Free-Look Fly Builder'
-              : 'Mouse: Studio Pan & Zoom'}
-          </span>
-        </button>
+          {/* Re-open Left Paint & Blocks Toolbox inline button when closed */}
+          {!isLeftToolboxOpen && onOpenLeftToolbox && (
+            <button
+              type="button"
+              data-testid="viewport-reopen-left-toolbox-btn"
+              onClick={onOpenLeftToolbox}
+              className="px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-semibold text-[11px] whitespace-nowrap shrink-0"
+              title="Open Left Paint & Block Library Dock"
+            >
+              Blocks
+            </button>
+          )}
 
-        {/* Stylus Mode Quick Toggle Button in Top-Center HUD */}
-        {onToggleStylusMode && (
           <button
             type="button"
-            data-testid="viewport-stylus-mode-toggle"
-            onClick={onToggleStylusMode}
-            className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-              stylusConfig?.enabled
-                ? 'bg-emerald-500 text-slate-950 font-bold'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            data-testid="viewport-mouse-mode-toggle"
+            onClick={onToggleMouseLookMode}
+            className={`px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 text-[11px] ${
+              freeLookActive
+                ? 'bg-emerald-500 text-slate-950'
+                : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
             }`}
-            title="Toggle Stylus Mode for PC (Wacom/Surface) & Android (S-Pen/USI): Continuous Pen Stroke + Palm Rejection"
+            title={`Switch between Studio Pan/Zoom and Free-Look Fly Builder (Toggle: ${toggleKeyLabel} · Hold: ${holdKeyLabel})`}
           >
             <span>
-              {stylusConfig?.enabled
-                ? 'Stylus: Stroke & Palm Reject ON'
-                : 'Stylus: Off'}
+              {freeLookActive
+                ? isHoldingFreeLook
+                  ? 'Cam: Fly (Held)'
+                  : 'Cam: Fly'
+                : 'Cam: Orbit'}
             </span>
           </button>
-        )}
 
-        <span className="hidden xl:inline text-[11px] font-mono text-slate-400 whitespace-nowrap">
-          Toggle: <strong className="text-amber-400">{toggleKeyLabel}</strong> ·
-          Hold: <strong className="text-cyan-400">{holdKeyLabel}</strong>
-        </span>
-
-        {/* 3D Volume Brush Controls when brush_place or brush_erase is equipped */}
-        {isVolumeBrushMode && onChangeVolumeBrush ? (
-          <div
-            data-testid="volume-brush-hud"
-            className="flex items-center gap-1.5 pl-2 border-l border-slate-800"
-          >
-            <span
-              className={`text-[11px] font-mono font-bold whitespace-nowrap ${
-                toolMode === 'brush_erase' ? 'text-rose-400' : 'text-cyan-300'
-              }`}
-              title="Hold Shift + Scroll Mouse Wheel to resize 3D Brush Radius"
+          {/* 3D Volume Brush Controls when brush_place or brush_erase is equipped */}
+          {isVolumeBrushMode && onChangeVolumeBrush ? (
+            <div
+              data-testid="volume-brush-hud"
+              className="flex items-center gap-1 pl-1.5 border-l border-slate-800 shrink-0"
             >
-              3D {toolMode === 'brush_erase' ? 'Erase' : 'Place'} Brush R=
-              {volumeBrush.radius} ({volumeBrush.radius * 2 + 1}³)
-            </span>
+              <span
+                className={`text-[11px] font-mono font-bold whitespace-nowrap ${
+                  toolMode === 'brush_erase' ? 'text-rose-400' : 'text-cyan-300'
+                }`}
+                title="Hold Shift + Scroll Mouse Wheel to resize 3D Brush Radius"
+              >
+                R={volumeBrush.radius}
+              </span>
 
-            <button
-              type="button"
-              onClick={() =>
-                onChangeVolumeBrush({
-                  ...volumeBrush,
-                  radius: Math.max(1, volumeBrush.radius - 1),
-                })
-              }
-              className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
-              title="Shrink 3D Brush Radius (Shift+Scroll Down)"
-            >
-              -
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                onChangeVolumeBrush({
-                  ...volumeBrush,
-                  radius: Math.min(8, volumeBrush.radius + 1),
-                })
-              }
-              className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
-              title="Grow 3D Brush Radius (Shift+Scroll Up)"
-            >
-              +
-            </button>
-
-            <select
-              aria-label="3D Volume Brush Shape"
-              value={volumeBrush.shape}
-              onChange={(e) =>
-                onChangeVolumeBrush({
-                  ...volumeBrush,
-                  shape: e.target.value as VolumeBrushShape,
-                })
-              }
-              className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-200"
-            >
-              <option value="sphere">Sphere</option>
-              <option value="cube">Cube</option>
-              <option value="cylinder">Cylinder</option>
-              <option value="diamond">Diamond</option>
-            </select>
-
-            <button
-              type="button"
-              onClick={() =>
-                onChangeVolumeBrush({
-                  ...volumeBrush,
-                  hollow: !volumeBrush.hollow,
-                })
-              }
-              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
-                volumeBrush.hollow
-                  ? 'bg-amber-500/20 border border-amber-400 text-amber-300'
-                  : 'bg-slate-800 text-slate-400'
-              }`}
-              title="Toggle Solid vs Hollow Shell 3D Brush"
-            >
-              {volumeBrush.hollow ? 'Hollow' : 'Solid'}
-            </button>
-          </div>
-        ) : (
-          /* Shift + Scroll Block Resizer Controls (Snap vs Free Scroll) */
-          <div className="flex items-center gap-1 pl-2 border-l border-slate-800">
-            <span
-              className="text-[11px] font-mono text-amber-300 font-semibold whitespace-nowrap"
-              title="Hold Shift + Scroll Mouse Wheel in 3D Viewport to resize block before placing"
-            >
-              Shift+Scroll:{' '}
-              {activeBlockScale.x.toFixed(
-                scrollResizeMode === 'free' ? 1 : activeBlockScale.x % 1 ? 2 : 0
-              )}
-              ×
-              {activeBlockScale.y.toFixed(
-                scrollResizeMode === 'free' ? 1 : activeBlockScale.y % 1 ? 2 : 0
-              )}
-              ×
-              {activeBlockScale.z.toFixed(
-                scrollResizeMode === 'free' ? 1 : activeBlockScale.z % 1 ? 2 : 0
-              )}
-            </span>
-
-            {onScrollResizeBlock && (
-              <div className="flex items-center gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => onScrollResizeBlock(-1)}
-                  title="Shrink Active Block Scale (or Hold Shift + Scroll Down)"
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
-                >
-                  -
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onScrollResizeBlock(1)}
-                  title="Grow Active Block Scale (or Hold Shift + Scroll Up)"
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
-                >
-                  +
-                </button>
-              </div>
-            )}
-
-            {onChangeScrollResizeMode && (
               <button
                 type="button"
-                data-testid="scroll-resize-mode-toggle"
                 onClick={() =>
-                  onChangeScrollResizeMode(
-                    scrollResizeMode === 'snap' ? 'free' : 'snap'
-                  )
+                  onChangeVolumeBrush({
+                    ...volumeBrush,
+                    radius: Math.max(1, volumeBrush.radius - 1),
+                  })
                 }
-                title="Toggle Shift+Scroll between Modular Snap Grid (0.25x..8x) and Fine Free Scroll (0.1x steps)"
-                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-colors ${
-                  scrollResizeMode === 'snap'
-                    ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-300'
-                    : 'bg-amber-500/20 border border-amber-500/50 text-amber-300'
-                }`}
+                className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
+                title="Shrink 3D Brush Radius (Shift+Scroll Down)"
               >
-                {scrollResizeMode === 'snap' ? 'Snap' : 'Free'}
+                -
               </button>
-            )}
-
-            {onChangeScrollResizeAxis && (
-              <select
-                aria-label="Shift+Scroll Resize Axis"
-                value={scrollResizeAxis}
-                onChange={(e) =>
-                  onChangeScrollResizeAxis(e.target.value as ScrollResizeAxis)
+              <button
+                type="button"
+                onClick={() =>
+                  onChangeVolumeBrush({
+                    ...volumeBrush,
+                    radius: Math.min(8, volumeBrush.radius + 1),
+                  })
                 }
-                className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-amber-400"
+                className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
+                title="Grow 3D Brush Radius (Shift+Scroll Up)"
               >
-                <option value="uniform">XYZ All</option>
-                <option value="footprint">W×D Flat</option>
-                <option value="height">Height Y</option>
-                <option value="width">Width X</option>
-                <option value="depth">Depth Z</option>
-              </select>
-            )}
+                +
+              </button>
 
-            {onResetBlockScale &&
-              (activeBlockScale.x !== 1 ||
-                activeBlockScale.y !== 1 ||
-                activeBlockScale.z !== 1) && (
+              <select
+                aria-label="3D Volume Brush Shape"
+                value={volumeBrush.shape}
+                onChange={(e) =>
+                  onChangeVolumeBrush({
+                    ...volumeBrush,
+                    shape: e.target.value as VolumeBrushShape,
+                  })
+                }
+                className="px-1 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-200"
+              >
+                <option value="sphere">Sphere</option>
+                <option value="cube">Cube</option>
+                <option value="cylinder">Cylinder</option>
+                <option value="diamond">Diamond</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() =>
+                  onChangeVolumeBrush({
+                    ...volumeBrush,
+                    hollow: !volumeBrush.hollow,
+                  })
+                }
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                  volumeBrush.hollow
+                    ? 'bg-amber-500/20 border border-amber-400 text-amber-300'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+                title="Toggle Solid vs Hollow Shell 3D Brush"
+              >
+                {volumeBrush.hollow ? 'Hollow' : 'Solid'}
+              </button>
+            </div>
+          ) : (
+            /* Shift + Scroll Block Resizer Controls (Snap vs Free Scroll) */
+            <div className="flex items-center gap-1 pl-1.5 border-l border-slate-800 shrink-0">
+              <span
+                className="text-[11px] font-mono text-amber-300 font-semibold whitespace-nowrap"
+                title="Hold Shift + Scroll Mouse Wheel in 3D Viewport to resize block before placing"
+              >
+                {activeBlockScale.x.toFixed(
+                  scrollResizeMode === 'free' ? 1 : activeBlockScale.x % 1 ? 2 : 0
+                )}
+                ×
+                {activeBlockScale.y.toFixed(
+                  scrollResizeMode === 'free' ? 1 : activeBlockScale.y % 1 ? 2 : 0
+                )}
+                ×
+                {activeBlockScale.z.toFixed(
+                  scrollResizeMode === 'free' ? 1 : activeBlockScale.z % 1 ? 2 : 0
+                )}
+              </span>
+
+              {onScrollResizeBlock && (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => onScrollResizeBlock(-1)}
+                    title="Shrink Active Block Scale (Shift+Scroll Down)"
+                    className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
+                  >
+                    -
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onScrollResizeBlock(1)}
+                    title="Grow Active Block Scale (Shift+Scroll Up)"
+                    className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+
+              {onChangeScrollResizeMode && (
                 <button
                   type="button"
-                  onClick={onResetBlockScale}
-                  title="Reset Block Scale to 1×1×1"
-                  className="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-mono font-bold"
+                  data-testid="scroll-resize-mode-toggle"
+                  onClick={() =>
+                    onChangeScrollResizeMode(
+                      scrollResizeMode === 'snap' ? 'free' : 'snap'
+                    )
+                  }
+                  title="Toggle Shift+Scroll between Modular Snap Grid (0.25x..8x) and Fine Free Scroll (0.1x steps)"
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-colors ${
+                    scrollResizeMode === 'snap'
+                      ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-300'
+                      : 'bg-amber-500/20 border border-amber-500/50 text-amber-300'
+                  }`}
                 >
-                  1×
+                  {scrollResizeMode === 'snap' ? 'Snap' : 'Free'}
                 </button>
               )}
-          </div>
-        )}
 
-        {/* Selection Nodes Hold-to-Drag / Unlock Indicator when Pos1 & Pos2 exist */}
-        {pos1 && pos2 && onToggleSelectionGizmoLock && (
-          <button
-            type="button"
-            data-testid="selection-gizmo-lock-toggle"
-            onClick={onToggleSelectionGizmoLock}
-            title={`Hold ${gizmoHoldKeyLabel} (or Ctrl) to drag 3D Selection Nodes & Scroll-Resize Selection, or click to toggle unlock`}
-            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors ${
-              isSelectionGizmoActive
-                ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
-                : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-slate-200'
-            }`}
-          >
-            {isSelectionGizmoActive
-              ? 'Nodes: Drag & Scroll Active'
-              : `Hold ${gizmoHoldKeyLabel}: Drag Nodes`}
-          </button>
-        )}
+              {onChangeScrollResizeAxis && (
+                <select
+                  aria-label="Shift+Scroll Resize Axis"
+                  value={scrollResizeAxis}
+                  onChange={(e) =>
+                    onChangeScrollResizeAxis(e.target.value as ScrollResizeAxis)
+                  }
+                  className="hidden sm:inline-block px-1 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-amber-400"
+                >
+                  <option value="uniform">XYZ All</option>
+                  <option value="footprint">W×D Flat</option>
+                  <option value="height">Height Y</option>
+                  <option value="width">Width X</option>
+                  <option value="depth">Depth Z</option>
+                </select>
+              )}
 
-        {/* Live Symmetry Mirror Toggle Button (V) */}
-        {symmetryConfig && onChangeSymmetryConfig && (
-          <button
-            type="button"
-            data-testid="viewport-symmetry-toggle"
-            onClick={() => {
-              const order: ('off' | 'mirror_x' | 'mirror_z' | 'quad_xz')[] = [
-                'off',
-                'mirror_x',
-                'mirror_z',
-                'quad_xz',
-              ];
-              const idx = order.indexOf(symmetryConfig.mode);
-              const nextMode = order[(idx + 1) % order.length];
-              onChangeSymmetryConfig({ ...symmetryConfig, mode: nextMode });
-            }}
-            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors ${
-              symmetryConfig.mode !== 'off'
-                ? 'bg-sky-500 text-slate-950 border-sky-300 font-bold'
-                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-sky-400'
-            }`}
-            title="Cycle Real-Time Symmetry Mirror Plane (Hotkey: V)"
-          >
-            {symmetryConfig.mode === 'off'
-              ? 'Symmetry: Off (V)'
-              : symmetryConfig.mode === 'mirror_x'
-                ? `Mirror X=${symmetryConfig.pivotX}`
-                : symmetryConfig.mode === 'mirror_z'
-                  ? `Mirror Z=${symmetryConfig.pivotZ}`
-                  : `Quad 4× (${symmetryConfig.pivotX},${symmetryConfig.pivotZ})`}
-          </button>
-        )}
+              {onResetBlockScale &&
+                (activeBlockScale.x !== 1 ||
+                  activeBlockScale.y !== 1 ||
+                  activeBlockScale.z !== 1) && (
+                  <button
+                    type="button"
+                    onClick={onResetBlockScale}
+                    title="Reset Block Scale to 1×1×1"
+                    className="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-mono font-bold"
+                  >
+                    1×
+                  </button>
+                )}
+            </div>
+          )}
 
-        {/* Quick UI Rescale & Stylus Settings Button */}
-        {onOpenAdaptiveSettings && (
-          <button
-            type="button"
-            data-testid="viewport-adaptive-ui-settings-btn"
-            onClick={onOpenAdaptiveSettings}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-semibold whitespace-nowrap border border-slate-700"
-            title="Open Adaptive UI Rescaling, Accessibility & Stylus Settings"
-          >
-            UI & Stylus
-          </button>
-        )}
+          {/* Live Symmetry Mirror Toggle Button (V) */}
+          {symmetryConfig && onChangeSymmetryConfig && (
+            <button
+              type="button"
+              data-testid="viewport-symmetry-toggle"
+              onClick={() => {
+                const order: ('off' | 'mirror_x' | 'mirror_z' | 'quad_xz')[] = [
+                  'off',
+                  'mirror_x',
+                  'mirror_z',
+                  'quad_xz',
+                ];
+                const idx = order.indexOf(symmetryConfig.mode);
+                const nextMode = order[(idx + 1) % order.length];
+                onChangeSymmetryConfig({ ...symmetryConfig, mode: nextMode });
+              }}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors shrink-0 ${
+                symmetryConfig.mode !== 'off'
+                  ? 'bg-sky-500 text-slate-950 border-sky-300 font-bold'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-sky-400'
+              }`}
+              title="Cycle Real-Time Symmetry Mirror Plane (Hotkey: V)"
+            >
+              {symmetryConfig.mode === 'off'
+                ? 'Sym: Off'
+                : symmetryConfig.mode === 'mirror_x'
+                  ? `Sym X=${symmetryConfig.pivotX}`
+                  : symmetryConfig.mode === 'mirror_z'
+                    ? `Sym Z=${symmetryConfig.pivotZ}`
+                    : 'Sym 4×'}
+            </button>
+          )}
+
+          {/* Steep Drop Spatial Safety Grid Pulse Toggle */}
+          {walkabilityReport && walkabilityReport.steepDropCoords.length > 0 && (
+            <button
+              type="button"
+              data-testid="viewport-steep-drop-toggle"
+              onClick={() => {
+                if (copilotConfig && onChangeCopilotConfig) {
+                  onChangeCopilotConfig({
+                    ...copilotConfig,
+                    enabled: true,
+                    showWalkabilityOverlays:
+                      !copilotConfig.showWalkabilityOverlays,
+                  });
+                }
+              }}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors shrink-0 flex items-center gap-1 ${
+                !copilotConfig || copilotConfig.showWalkabilityOverlays !== false
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                  : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-rose-400/50'
+              }`}
+              title="Toggle 3D Steep-Drop Red Grid Pulse Overlay (Highlights >=3 block ledges identified by Walkability Audit)"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  !copilotConfig ||
+                  copilotConfig.showWalkabilityOverlays !== false
+                    ? 'bg-rose-400'
+                    : 'bg-slate-600'
+                }`}
+              />
+              <span>Drops: {walkabilityReport.steepDropCoords.length}</span>
+            </button>
+          )}
+
+          {/* Selection Nodes & Clear Selection Controls when Pos1 or Pos2 is active */}
+          {(pos1 || pos2) && (
+            <div className="flex items-center gap-1 pl-1.5 border-l border-slate-800 shrink-0">
+              {pos1 && pos2 && onToggleSelectionGizmoLock && (
+                <button
+                  type="button"
+                  data-testid="selection-gizmo-lock-toggle"
+                  onClick={onToggleSelectionGizmoLock}
+                  title={`Hold ${gizmoHoldKeyLabel} (or Ctrl) to drag 3D Selection Nodes, or click to toggle`}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors ${
+                    isSelectionGizmoActive
+                      ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
+                      : 'bg-slate-900 text-slate-300 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  {isSelectionGizmoActive ? 'Nodes: ON' : 'Nodes'}
+                </button>
+              )}
+              {onClearSelection && (
+                <button
+                  type="button"
+                  data-testid="clear-selection-btn"
+                  onClick={onClearSelection}
+                  title="Clear Pos1 & Pos2 Wand Selection Box (Shortcut: Esc)"
+                  className="px-1.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-[10px] font-mono font-bold whitespace-nowrap"
+                >
+                  Clear Sel
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Re-open Right Inspector inline button when closed */}
+          {!isRightInspectorOpen && onOpenRightInspector && (
+            <button
+              type="button"
+              data-testid="viewport-reopen-right-inspector-btn"
+              onClick={onOpenRightInspector}
+              className="px-2 py-0.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-semibold text-[11px] whitespace-nowrap shrink-0"
+              title="Open Right Command Legend & Studio Inspector Dock"
+            >
+              Inspector
+            </button>
+          )}
         </div>
       </DraggableHudOverlay>
 
-      {/* Lightweight Local Spatial Copilot Bar: Self-Learning Ghost Auto-Complete (Tab), Object Class Mapping, Linger Removal Feedback, Auto-Symmetry, & Selection Command Previews */}
+      {/* Lightweight Contextual Copilot Bar — Only appears when actively predicting ghost runs, showing linger feedback, or using the Region Wand */}
       {(!copilotConfig || copilotConfig.enabled) &&
-        ((detectedSymmetry &&
-          symmetryConfig?.mode === 'off' &&
-          onChangeSymmetryConfig) ||
-          (copilotPredictions.length > 0 && onAcceptCopilotPredictions) ||
+        ((copilotPredictions.length > 0 && onAcceptCopilotPredictions) ||
           Boolean(lastLingerPenaltyToast) ||
-          (pos1 &&
+          (toolMode === 'wand_select' &&
+            pos1 &&
             pos2 &&
             selectionRecommendations.length > 0 &&
             onRunRecommendedCommand)) && (
           <DraggableHudOverlay
             hudId="viewport_spatial_copilot_hud"
             label="Local Spatial Copilot"
-            anchorClassName="top-14 left-1/2 -translate-x-1/2"
+            anchorClassName="top-12 left-1/2 -translate-x-1/2"
             zIndex={21}
           >
             <div
               data-testid="spatial-copilot-hud"
-              className={`flex flex-wrap items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/95 border border-emerald-500/40 shadow-lg text-xs max-w-[92vw] transition-opacity duration-200 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-r-xl bg-slate-950/95 border border-emerald-500/40 shadow-lg text-xs max-w-[90vw] overflow-x-auto no-scrollbar transition-opacity duration-200 ${
                 uiConfig?.autoFadeHudOnPan && isViewportPanningOrDrawing
                   ? 'opacity-25 pointer-events-none'
                   : 'opacity-100'
               }`}
             >
-            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">
-              Local Copilot
-            </span>
-
-            {detectedObjectClass && (
-              <span
-                className="text-[10px] font-mono text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 hidden sm:inline"
-                title={detectedObjectClass.nextStageHint}
-              >
-                {detectedObjectClass.label}
+              <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 shrink-0">
+                Copilot
               </span>
-            )}
 
-            {/* 1. One-Tap Accept Predictive Ghost Auto-Complete (Tab) with Learned Reason */}
-            {copilotPredictions.length > 0 && onAcceptCopilotPredictions && (
-              <button
-                type="button"
-                data-testid="copilot-accept-ghost-btn"
-                onClick={onAcceptCopilotPredictions}
-                className="px-2.5 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1.5 shadow-sm"
-                title="Accept predicted 3D block run (Keyboard shortcut: Tab)"
-              >
-                <span>
-                  Accept +{copilotPredictions.length} Ghost Run (Tab)
-                </span>
-                <span className="px-1 py-0.2 rounded bg-slate-950/20 text-[9px] font-mono uppercase">
-                  {copilotPredictions[0].reason === 'learned_archive_habit'
-                    ? 'Learned Habit'
-                    : copilotPredictions[0].reason === 'object_class_template'
-                    ? 'Object Class'
-                    : copilotPredictions[0].reason === 'connected_texture_match'
-                    ? 'CTM Match'
-                    : copilotPredictions[0].reason === 'slope_continuation'
-                    ? 'Roof Slope'
-                    : 'Momentum'}
-                </span>
-              </button>
-            )}
-
-            {/* Linger Removal Negative-Reinforcement Feedback Badge */}
-            {lastLingerPenaltyToast && (
-              <span
-                data-testid="copilot-linger-penalty-toast"
-                className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/50 text-amber-200 text-[10px] font-mono"
-              >
-                {lastLingerPenaltyToast}
-              </span>
-            )}
-
-            {/* 2. Auto-Detected Symmetry Suggestion Chip */}
-            {detectedSymmetry &&
-              symmetryConfig?.mode === 'off' &&
-              onChangeSymmetryConfig && (
+              {/* 1. One-Tap Accept Predictive Ghost Auto-Complete (Tab) with Learned Reason */}
+              {copilotPredictions.length > 0 && onAcceptCopilotPredictions && (
                 <button
                   type="button"
-                  data-testid="copilot-enable-detected-symmetry-btn"
-                  onClick={() =>
-                    onChangeSymmetryConfig({
-                      ...symmetryConfig,
-                      mode: detectedSymmetry.recommendedMode,
-                      pivotX: detectedSymmetry.pivotX,
-                      pivotZ: detectedSymmetry.pivotZ,
-                    })
-                  }
-                  className="px-2.5 py-0.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/50 text-sky-200 font-semibold text-[11px] flex items-center gap-1"
-                  title={detectedSymmetry.summary}
+                  data-testid="copilot-accept-ghost-btn"
+                  onClick={onAcceptCopilotPredictions}
+                  className="px-2 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1.5 shadow-sm whitespace-nowrap shrink-0"
+                  title="Accept predicted 3D block run (Keyboard shortcut: Tab)"
                 >
                   <span>
-                    {detectedSymmetry.recommendedMode === 'quad_xz'
-                      ? '4-Way Symmetry'
-                      : detectedSymmetry.recommendedMode === 'mirror_x'
-                        ? `X-Symmetry (X=${detectedSymmetry.pivotX})`
-                        : `Z-Symmetry (Z=${detectedSymmetry.pivotZ})`}{' '}
-                    ({Math.round(detectedSymmetry.confidence * 100)}%) — Enable
-                    Mirror
+                    Accept +{copilotPredictions.length} Ghost (Tab)
+                  </span>
+                  <span className="px-1 py-0.2 rounded bg-slate-950/20 text-[9px] font-mono uppercase">
+                    {copilotPredictions[0].reason === 'learned_archive_habit'
+                      ? 'Learned'
+                      : copilotPredictions[0].reason === 'object_class_template'
+                        ? 'Class'
+                        : copilotPredictions[0].reason === 'connected_texture_match'
+                          ? 'CTM'
+                          : copilotPredictions[0].reason === 'slope_continuation'
+                            ? 'Slope'
+                            : 'Run'}
                   </span>
                 </button>
               )}
 
-            {/* 3. Smart Selection Morphology & Non-Destructive Command Preview Chips */}
-            {pos1 &&
-              pos2 &&
-              selectionRecommendations.length > 0 &&
-              onRunRecommendedCommand && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Preview & Run:
-                  </span>
-                  {selectionRecommendations.slice(0, 3).map((rec) => {
-                    const isPreviewing =
-                      activeCommandPreviewMode === rec.previewMode;
-                    return (
-                      <button
-                        key={rec.command}
-                        type="button"
-                        onMouseEnter={() =>
-                          onHoverCommandPreviewMode?.(rec.previewMode)
-                        }
-                        onMouseLeave={() => onHoverCommandPreviewMode?.(null)}
-                        onClick={() => {
-                          onHoverCommandPreviewMode?.(null);
-                          onRunRecommendedCommand(rec.command);
-                        }}
-                        className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold border transition-colors ${
-                          isPreviewing
-                            ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
-                            : 'bg-slate-900 text-amber-300 border-slate-700 hover:border-amber-400'
-                        }`}
-                        title={`${rec.reason} — Hover to preview 3D ghost blocks, click to execute ${rec.command}`}
-                      >
-                        {rec.label} ({Math.round(rec.confidence * 100)}%)
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* Linger Removal Negative-Reinforcement Feedback Badge */}
+              {lastLingerPenaltyToast && (
+                <span
+                  data-testid="copilot-linger-penalty-toast"
+                  className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/50 text-amber-200 text-[10px] font-mono whitespace-nowrap shrink-0"
+                >
+                  {lastLingerPenaltyToast}
+                </span>
               )}
+
+              {/* 2. Smart Selection Command Previews when in Wand Select Mode */}
+              {toolMode === 'wand_select' &&
+                pos1 &&
+                pos2 &&
+                selectionRecommendations.length > 0 &&
+                onRunRecommendedCommand && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    {selectionRecommendations.slice(0, 3).map((rec) => {
+                      const isPreviewing =
+                        activeCommandPreviewMode === rec.previewMode;
+                      return (
+                        <button
+                          key={rec.command}
+                          type="button"
+                          onMouseEnter={() =>
+                            onHoverCommandPreviewMode?.(rec.previewMode)
+                          }
+                          onMouseLeave={() => onHoverCommandPreviewMode?.(null)}
+                          onClick={() => {
+                            onHoverCommandPreviewMode?.(null);
+                            onRunRecommendedCommand(rec.command);
+                          }}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border transition-colors whitespace-nowrap ${
+                            isPreviewing
+                              ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
+                              : 'bg-slate-900 text-amber-300 border-slate-700 hover:border-amber-400'
+                          }`}
+                          title={`${rec.reason} — Hover to preview 3D ghost blocks, click to execute ${rec.command}`}
+                        >
+                          {rec.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
             </div>
           </DraggableHudOverlay>
         )}

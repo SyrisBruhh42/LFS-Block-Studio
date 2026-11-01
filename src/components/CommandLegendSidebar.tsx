@@ -1028,6 +1028,19 @@ export const CommandLegendSidebar: React.FC<CommandLegendSidebarProps> = ({
                   <p className="text-[11px] text-slate-300">
                     {walkabilityReport.summary}
                   </p>
+                  {walkabilityReport.steepDropCoords.length > 0 && (
+                    <div className="flex items-center justify-between px-2 py-1 rounded bg-rose-500/10 border border-rose-500/30 text-[10px] text-rose-300">
+                      <span>
+                        Steep Drops (≥3 blk):{' '}
+                        <strong className="font-mono">
+                          {walkabilityReport.steepDropCoords.length}
+                        </strong>
+                      </span>
+                      <span className="font-mono text-rose-400">
+                        Red Grid Pulse Active
+                      </span>
+                    </div>
+                  )}
                   {walkabilityReport.darkInteriorCoords.length > 0 &&
                     onAutoLightDarkSpots && (
                       <button
@@ -1182,7 +1195,7 @@ export const CommandLegendSidebar: React.FC<CommandLegendSidebarProps> = ({
                 className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-amber-400"
               >
                 <option value="grass_island">
-                  Skyblock Grass Island Pad (10×10 + Lantern)
+                  Turf Foundation Pad (10×10 + Lantern)
                 </option>
                 <option value="stone_foundation">
                   Architectural Stone Foundation (12×12)

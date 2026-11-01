@@ -56,10 +56,16 @@ import {
   FolderOpen,
   Trophy,
   Film,
+  Magnet,
   Volume2,
   VolumeX,
+  ShieldCheck,
+  Bug,
 } from 'lucide-react';
-import { triggerResetAllStudioWindows } from './DraggableWindow';
+import {
+  triggerResetAllStudioWindows,
+  useStudioSnapMode,
+} from './DraggableWindow';
 
 export type RibbonTabId =
   | 'home'
@@ -145,6 +151,7 @@ interface StudioRibbonHeaderProps {
   onToggleCinemaDock?: () => void;
   soundEnabled?: boolean;
   onToggleSoundEnabled?: () => void;
+  onOpenAuditorModal?: (tab: 'self_tests' | 'visual_bug_reporter') => void;
 }
 
 export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
@@ -202,7 +209,10 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
   onToggleCinemaDock,
   soundEnabled = true,
   onToggleSoundEnabled,
+  onOpenAuditorModal,
 }) => {
+  const [snapMode, toggleSnapMode] = useStudioSnapMode();
+
   const formatHour = (val: number) => {
     const hrs = Math.floor(val);
     const mins = Math.round((val - hrs) * 60);
@@ -214,7 +224,7 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
       {/* Row 1: Microsoft Word / VS Code Quick-Access Title Bar + Ribbon Tab Strip (Adapts cleanly to narrow/split-screen window resizing) */}
       <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 px-3 py-1.5 bg-slate-950 border-b border-slate-800">
         {/* Left: App Brand Main Menu Button + Quick Access Toolbar (Projects, Block Market, Biomes/Contracts, Cinema, Save, Undo, Redo) */}
-        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             data-testid="open-main-menu-brand-btn"
@@ -285,6 +295,33 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
               <Film className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden xl:inline">Cinema</span>
             </button>
+          )}
+
+          {/* Self-Testing Harness & Issue Auditor Modal Button */}
+          {onOpenAuditorModal && (
+            <>
+              <button
+                type="button"
+                data-testid="ribbon-self-test-audit-btn"
+                onClick={() => onOpenAuditorModal('self_tests')}
+                title="Open Automated 6-Suite Self-Testing Harness, GPU Memory Auditor & Self-Publishing Issue Tracker"
+                className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 shrink-0"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden lg:inline">Self-Test & Audit</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="ribbon-circle-bug-btn"
+                onClick={() => onOpenAuditorModal('visual_bug_reporter')}
+                title="Snap a 3D Viewport Screenshot, Circle a Bug in Red, and Analyze with Gemini Vision"
+                className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-1.5 shrink-0"
+              >
+                <Bug className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden xl:inline">Circle Bug</span>
+              </button>
+            </>
           )}
 
           <div className="h-4 w-px bg-slate-800 shrink-0" />
@@ -367,7 +404,7 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
         {/* Center: Microsoft Word Style Ribbon Tabs */}
         <nav
           aria-label="Studio Ribbon Tabs"
-          className="flex items-center gap-1 overflow-x-auto"
+          className="flex items-center gap-1 overflow-x-auto no-scrollbar"
         >
           {(
             [
@@ -395,8 +432,8 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
           ))}
         </nav>
 
-        {/* Right: Quick Action Buttons (HUD Bars Edit, Reset Windows, Stylus, UI Scale, Hotkeys, Drive, Cloud, Ribbon Collapse) */}
-        <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto max-w-full">
+        {/* Right: Quick Action Buttons (HUD Bars Edit, Snap/Free Toggle, Reset Windows, Stylus, UI Scale, Hotkeys, Drive, Cloud, Ribbon Collapse) */}
+        <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar max-w-full">
           {onToggleHudEditMode && (
             <button
               type="button"
@@ -415,6 +452,29 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
               </span>
             </button>
           )}
+
+          <button
+            type="button"
+            data-testid="ribbon-snap-mode-toggle"
+            onClick={() =>
+              toggleSnapMode(snapMode === 'snap' ? 'free' : 'snap')
+            }
+            title={
+              snapMode === 'snap'
+                ? 'Window & HUD Drag Mode: Magnetic Grid/Edge Snap (16px / 2%). Click to switch to Free 1px Dragging, or hold Shift while dragging.'
+                : 'Window & HUD Drag Mode: Free 1px Dragging. Click to switch to Magnetic Grid/Edge Snap, or hold Shift while dragging.'
+            }
+            className={`px-2 py-1 rounded border text-xs font-mono font-semibold flex items-center gap-1 whitespace-nowrap transition-colors ${
+              snapMode === 'snap'
+                ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/25'
+                : 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25'
+            }`}
+          >
+            <Magnet className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">
+              {snapMode === 'snap' ? 'Snap 16px' : 'Free Drag'}
+            </span>
+          </button>
 
           <button
             type="button"
@@ -510,7 +570,7 @@ export const StudioRibbonHeader: React.FC<StudioRibbonHeaderProps> = ({
 
       {/* Row 2: Contextual Office Ribbon Toolbar (Gracefully collapsible on compact/mobile windows) */}
       {!ribbonCollapsed && (
-      <div className="px-4 py-2 bg-slate-900 flex items-center justify-between gap-4 overflow-x-auto">
+      <div className="px-4 py-2 bg-slate-900 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
         {activeRibbonTab === 'home' && (
           <div className="flex items-center gap-4">
             {/* Group 1: Clipboard (Word / Paint style) */}
