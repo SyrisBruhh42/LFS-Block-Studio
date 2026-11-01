@@ -10,6 +10,7 @@ import {
 } from '../engine/types';
 import {
   STUDIO_DRAG_MIME,
+  applyHudPercentSnapSystem,
   computeResponsiveBarLayout,
   dragPayloadToSlotItem,
   parseStudioDragPayload,
@@ -19,6 +20,7 @@ import {
   DraggableHudOverlay,
   DraggableWindow,
   triggerResetAllStudioWindows,
+  useStudioSnapMode,
 } from './DraggableWindow';
 import {
   Eraser,
@@ -29,6 +31,7 @@ import {
   Hammer,
   Layers,
   Lock,
+  Magnet,
   Move,
   Paintbrush,
   Pipette,
@@ -102,6 +105,7 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
   hudBarAutoScale = 1,
   shouldStackBottomBars = false,
 }) => {
+  const [snapMode, toggleSnapMode] = useStudioSnapMode();
   const [isHudManagerOpen, setIsHudManagerOpen] = useState(false);
   const [activeManagerTab, setActiveManagerTab] = useState<
     'bars' | 'macros' | 'assign'
@@ -111,6 +115,12 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
     slotIdx: number;
   } | null>(null);
   const [dragOverSlotKey, setDragOverSlotKey] = useState<string | null>(null);
+  const [activeBarSnapGuide, setActiveBarSnapGuide] = useState<{
+    barId: string;
+    verticalPercent: number | null;
+    horizontalPercent: number | null;
+    badge: string | null;
+  } | null>(null);
 
   // Dragging state for moving bars around the viewport
   const draggingBarRef = useRef<{
@@ -177,7 +187,11 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
   ) => {
     if (!forceAllowDrag && bar.locked && !hudConfig.masterHudEditMode) return;
     e.stopPropagation();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore synthetic or already-released pointer IDs
+    }
     draggingBarRef.current = {
       barId: bar.id,
       startClientX: e.clientX,
@@ -196,21 +210,31 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
     const dxPct = ((e.clientX - drag.startClientX) / vw) * 100;
     const dyPct = ((e.clientY - drag.startClientY) / vh) * 100;
 
-    let nextX = Math.max(6, Math.min(94, drag.origXPercent + dxPct));
-    let nextY = Math.max(8, Math.min(93, drag.origYPercent + dyPct));
+    const rawX = drag.origXPercent + dxPct;
+    const rawY = drag.origYPercent + dyPct;
 
-    const snap = hudConfig.snapToGridPercent || 0;
-    if (snap > 0) {
-      nextX = Math.round(nextX / snap) * snap;
-      nextY = Math.round(nextY / snap) * snap;
-    }
+    // Hold Shift while dragging to temporarily invert Free vs Magnetic Snap
+    const effectiveMode = e.shiftKey
+      ? snapMode === 'snap'
+        ? 'free'
+        : 'snap'
+      : snapMode;
+
+    const snapped = applyHudPercentSnapSystem(rawX, rawY, effectiveMode);
+
+    setActiveBarSnapGuide({
+      barId: drag.barId,
+      verticalPercent: snapped.verticalGuidePercent,
+      horizontalPercent: snapped.horizontalGuidePercent,
+      badge: snapped.snapBadge,
+    });
 
     updateBar(drag.barId, (b) => ({
       ...b,
       locked: false,
       position: {
-        xPercent: Number(nextX.toFixed(1)),
-        yPercent: Number(nextY.toFixed(1)),
+        xPercent: snapped.xPercent,
+        yPercent: snapped.yPercent,
       },
     }));
   };
@@ -219,6 +243,7 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
     if (draggingBarRef.current) {
       e.stopPropagation();
       draggingBarRef.current = null;
+      setActiveBarSnapGuide(null);
     }
   };
 
@@ -380,18 +405,49 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
 
   return (
     <>
+      {/* Live Magnetic Alignment Guides while dragging any Modular Action Bar */}
+      {activeBarSnapGuide && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-30 overflow-hidden"
+        >
+          {activeBarSnapGuide.verticalPercent !== null && (
+            <div
+              style={{ left: `${activeBarSnapGuide.verticalPercent}%` }}
+              className="absolute top-0 bottom-0 w-px bg-cyan-400/90 shadow-[0_0_8px_rgba(34,211,238,0.9)]"
+            />
+          )}
+          {activeBarSnapGuide.horizontalPercent !== null && (
+            <div
+              style={{ top: `${activeBarSnapGuide.horizontalPercent}%` }}
+              className="absolute left-0 right-0 h-px bg-cyan-400/90 shadow-[0_0_8px_rgba(34,211,238,0.9)]"
+            />
+          )}
+        </div>
+      )}
+
       {/* WoW / ElvUI Master Edit Mode Snap Grid Overlay */}
       {hudConfig.masterHudEditMode && (
         <div
           data-testid="hud-edit-mode-banner"
           className="pointer-events-none absolute inset-0 z-20 border-2 border-dashed border-amber-400/50 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:24px_24px] opacity-80"
         >
-          <div className="pointer-events-auto absolute top-16 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-xl flex items-center gap-3">
-            <Move className="w-4 h-4" />
+          <div className="pointer-events-auto absolute top-14 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-xl flex flex-wrap items-center justify-center gap-2 max-w-[94vw]">
+            <Move className="w-4 h-4 shrink-0" />
             <span>
-              HUD Edit Mode Active — Drag any bar header to move, drag slots to
+              HUD Edit Mode — Drag bars freely or on magnetic snap, drag slots to
               swap, or click a slot to assign
             </span>
+            <button
+              type="button"
+              onClick={() =>
+                toggleSnapMode(snapMode === 'snap' ? 'free' : 'snap')
+              }
+              className="px-2 py-0.5 rounded bg-slate-950 text-cyan-300 font-mono text-[11px] flex items-center gap-1"
+            >
+              <Magnet className="w-3 h-3" />
+              <span>{snapMode === 'snap' ? 'Snap 2%' : 'Free Drag'}</span>
+            </button>
             <button
               type="button"
               onClick={handleToggleMasterEditMode}
@@ -454,6 +510,21 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
 
         <button
           type="button"
+          data-testid="floating-snap-mode-toggle"
+          onClick={() => toggleSnapMode(snapMode === 'snap' ? 'free' : 'snap')}
+          className={`px-2 py-1 rounded-lg border font-mono text-[11px] flex items-center gap-1 transition-colors whitespace-nowrap ${
+            snapMode === 'snap'
+              ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40'
+              : 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+          }`}
+          title="Toggle between Magnetic Grid/Edge Snap and Free 1px Dragging (or hold Shift while dragging)"
+        >
+          <Magnet className="w-3 h-3" />
+          <span>{snapMode === 'snap' ? 'Snap' : 'Free'}</span>
+        </button>
+
+        <button
+          type="button"
           data-testid="floating-hud-lock-toggle"
           onClick={handleToggleMasterEditMode}
           className={`p-1.5 rounded-lg border transition-colors ${
@@ -489,25 +560,25 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
                     position: { xPercent: 50, yPercent: 91 },
                   };
                 }
-                if (b.id === 'bar_quick_tools') {
+                if (b.id === 'bar_tools_macros' || b.id === 'bar_quick_tools') {
                   return {
                     ...b,
                     locked: true,
-                    position: { xPercent: 50, yPercent: 82 },
+                    position: { xPercent: 50, yPercent: 83 },
                   };
                 }
                 if (b.id === 'bar_most_used') {
                   return {
                     ...b,
                     locked: true,
-                    position: { xPercent: 20, yPercent: 91 },
+                    position: { xPercent: 18, yPercent: 88 },
                   };
                 }
                 if (b.id === 'bar_command_loops') {
                   return {
                     ...b,
                     locked: true,
-                    position: { xPercent: 80, yPercent: 91 },
+                    position: { xPercent: 82, yPercent: 88 },
                   };
                 }
                 return b;
@@ -521,7 +592,7 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
         </button>
       </DraggableHudOverlay>
 
-      {/* Render All Enabled Moveable, Resizable & Lockable Action Bars */}
+      {/* Render All Enabled Moveable, Resizable & Lockable Action Bars (Visible across all viewport widths!) */}
       {hudConfig.bars
         .filter((bar) => bar.enabled)
         .map((bar) => {
@@ -546,6 +617,7 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
                   : 'flex flex-row items-center gap-1';
 
           const slotPx = Math.round(40 * responsivePos.effectiveScale);
+          const isDraggingThisBar = activeBarSnapGuide?.barId === bar.id;
 
           return (
             <div
@@ -560,10 +632,12 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
                     ? 0.25
                     : bar.opacity || 0.95,
               }}
-              className={`absolute hidden sm:flex flex-col z-20 rounded-xl bg-slate-950/95 ${
-                isUnlocked
-                  ? 'border-2 border-amber-400 shadow-amber-500/10'
-                  : 'border border-slate-800/90 hover:border-slate-700'
+              className={`absolute flex flex-col z-20 rounded-xl bg-slate-950/95 ${
+                isDraggingThisBar
+                  ? 'border-2 border-cyan-400 shadow-cyan-500/20'
+                  : isUnlocked
+                    ? 'border-2 border-amber-400 shadow-amber-500/10'
+                    : 'border border-slate-800/90 hover:border-slate-700'
               } shadow-xl p-1.5 select-none transition-opacity duration-150`}
             >
               {/* Always-Accessible Compact Bar Header / Drag Handle */}
@@ -571,16 +645,20 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
                 onPointerDown={(e) => handleBarPointerDown(e, bar, true)}
                 onPointerMove={handleBarPointerMove}
                 onPointerUp={handleBarPointerUp}
-                title={`Drag ${bar.name} to reposition anywhere in the 3D viewport`}
+                title={`Drag ${bar.name} to reposition (${snapMode === 'snap' ? 'Snap 2% · Hold Shift for Free' : 'Free Drag · Hold Shift for Snap'})`}
                 className={`flex items-center justify-between gap-2 px-1.5 py-0.5 mb-1 rounded cursor-grab active:cursor-grabbing text-[10px] ${
                   isUnlocked
                     ? 'bg-slate-900 border border-slate-800'
                     : 'bg-slate-900/60 hover:bg-slate-900 border border-transparent hover:border-slate-800'
                 }`}
               >
-                <span className="font-mono font-bold text-slate-300 hover:text-amber-300 flex items-center gap-1 truncate max-w-[140px]">
+                <span className="font-mono font-bold text-slate-300 hover:text-amber-300 flex items-center gap-1 truncate max-w-[160px]">
                   <GripVertical className="w-3 h-3 text-amber-400 shrink-0" />
-                  <span className="truncate">{bar.name.split(':')[0]}</span>
+                  <span className="truncate">
+                    {isDraggingThisBar && activeBarSnapGuide?.badge
+                      ? activeBarSnapGuide.badge
+                      : bar.name.split(':')[0]}
+                  </span>
                 </span>
 
                 <div className="flex items-center gap-1 shrink-0">

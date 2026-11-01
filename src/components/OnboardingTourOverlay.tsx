@@ -12,7 +12,7 @@ const TOUR_STEPS = [
   {
     step: 1,
     badge: 'Step 1 of 4 · 3D Viewport & Touch/Mouse Controls',
-    title: 'Snap-Build on the Floating Skyblock Island',
+    title: 'Snap-Build on the 3D Studio Plot',
     body: 'Click or tap any block face to place a block. Right-click (or switch to Erase) to break blocks with voxel debris particles. On mobile/tablet, use two fingers to pinch-to-zoom and pan smoothly.',
     highlightHint: 'Try clicking a block in the 3D viewport right now!',
   },

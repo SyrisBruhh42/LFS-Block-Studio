@@ -108,7 +108,9 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+if (typeof window !== 'undefined') {
+  testConnection();
+}
 
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
@@ -189,6 +191,67 @@ export interface CloudWorldSummary {
   customBlocksData: string;
 }
 
+export const MAX_CLOUD_WORLD_BLOCKS_BYTES = 495000;
+export const MAX_CLOUD_CUSTOM_BLOCKS_BYTES = 195000;
+export const MAX_CLOUD_BLUEPRINT_BYTES = 295000;
+
+export function getScopedDefaultWorldId(uid?: string | null): string {
+  if (!uid || typeof uid !== 'string' || !uid.trim()) {
+    return 'world_default_skyblock';
+  }
+  const cleanUid = uid.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16);
+  return cleanUid ? `world_${cleanUid}_skyblock` : 'world_default_skyblock';
+}
+
+/**
+ * Serializes world blocks & custom definitions for Firestore storage.
+ * Fails closed with a structured error if serialized JSON exceeds safe Firestore field limits,
+ * NEVER slicing mid-JSON.
+ */
+export function serializeCloudWorldPayload(
+  blocks: Record<string, PlacedBlock>,
+  customBlocks: Record<string, CustomBlockDefinition>,
+  maxBlocksBytes = MAX_CLOUD_WORLD_BLOCKS_BYTES,
+  maxCustomBytes = MAX_CLOUD_CUSTOM_BLOCKS_BYTES
+): { blocksJson: string; customJson: string; blockCount: number } {
+  const customList = Object.values(customBlocks || {}).filter((d) => d.isCustom);
+  const blocksJson = JSON.stringify(blocks || {});
+  const customJson = JSON.stringify(customList);
+
+  if (blocksJson.length > maxBlocksBytes) {
+    throw new Error(
+      `Cloud world blocks payload (${blocksJson.length.toLocaleString()} bytes) exceeds safe Firestore limit (${maxBlocksBytes.toLocaleString()} bytes). Please export as a local .lfsproj.json file or reduce block count.`
+    );
+  }
+  if (customJson.length > maxCustomBytes) {
+    throw new Error(
+      `Cloud custom blocks payload (${customJson.length.toLocaleString()} bytes) exceeds safe Firestore limit (${maxCustomBytes.toLocaleString()} bytes).`
+    );
+  }
+
+  return {
+    blocksJson,
+    customJson,
+    blockCount: Math.min(50000, Object.keys(blocks || {}).length),
+  };
+}
+
+export function serializeCloudBlueprintPayload(
+  bp: BlueprintPrefab,
+  maxBytes = MAX_CLOUD_BLUEPRINT_BYTES
+): { payloadStr: string } {
+  const payloadStr = JSON.stringify({
+    blocks: bp.blocks,
+    customBlockDefs: bp.customBlockDefs,
+  });
+  if (payloadStr.length > maxBytes) {
+    throw new Error(
+      `Cloud blueprint payload (${payloadStr.length.toLocaleString()} bytes) exceeds safe Firestore limit (${maxBytes.toLocaleString()} bytes).`
+    );
+  }
+  return { payloadStr };
+}
+
 export async function saveWorldToCloud(params: {
   worldId: string;
   name: string;
@@ -200,14 +263,18 @@ export async function saveWorldToCloud(params: {
   const user = auth.currentUser;
   if (!user) throw new Error('Must be signed in to save cloud worlds.');
 
-  const safeId = sanitizeId(params.worldId);
+  const resolvedWorldId =
+    params.worldId === 'world_default_skyblock'
+      ? getScopedDefaultWorldId(user.uid)
+      : params.worldId;
+  const safeId = sanitizeId(resolvedWorldId);
   const path = `worlds/${safeId}`;
   const docRef = doc(db, 'worlds', safeId);
 
-  const customList = Object.values(params.customBlocks).filter((d) => d.isCustom);
-  const blocksJson = JSON.stringify(params.blocks).slice(0, 495000);
-  const customJson = JSON.stringify(customList).slice(0, 195000);
-  const blockCount = Math.min(50000, Object.keys(params.blocks).length);
+  const { blocksJson, customJson, blockCount } = serializeCloudWorldPayload(
+    params.blocks,
+    params.customBlocks
+  );
   const safeName = (params.name.trim() || 'Skyblock Island').slice(0, 80);
   const safeOwnerName = (user.displayName || user.email || 'Builder').slice(0, 80);
   const safeRoomCode = sanitizeId(params.roomCode || 'SKY1').slice(0, 16);
@@ -399,10 +466,7 @@ export async function saveBlueprintToCloud(bp: BlueprintPrefab): Promise<void> {
   const path = `blueprints/${safeId}`;
   const docRef = doc(db, 'blueprints', safeId);
 
-  const payloadStr = JSON.stringify({
-    blocks: bp.blocks,
-    customBlockDefs: bp.customBlockDefs,
-  }).slice(0, 295000);
+  const { payloadStr } = serializeCloudBlueprintPayload(bp);
 
   try {
     const existing = await getDoc(docRef);

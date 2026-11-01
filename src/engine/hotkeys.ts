@@ -140,14 +140,14 @@ export const HOTKEY_ACTIONS_META: HotkeyActionMeta[] = [
     label: 'Reset Isometric View',
     description: 'Snap camera back to starter Skyblock isometric angle',
     category: 'flight',
-    defaultKey: 'KeyV',
+    defaultKey: 'KeyZ',
   },
 
   // Building & Tools
   {
     id: 'toolPlace',
     label: 'Place Block Tool',
-    description: 'Equip Lego block placement tool',
+    description: 'Equip interlocking stud block placement tool',
     category: 'tools',
     defaultKey: 'KeyB',
   },
@@ -352,6 +352,8 @@ export const HOTKEY_ACTIONS_META: HotkeyActionMeta[] = [
     defaultKey: 'KeyV',
   },
 ];
+
+export const DEFAULT_HOTKEYS = HOTKEY_ACTIONS_META;
 
 export const DEFAULT_HOTKEY_BINDINGS: Record<HotkeyActionId, string> =
   HOTKEY_ACTIONS_META.reduce(

@@ -1,7 +1,7 @@
 {
-  "name": "LFS Block Studio — 3D Voxel & Skyblock Architect",
+  "name": "LFS Block Studio — 3D Voxel & Architectural Studio",
   "short_name": "LFS Studio",
-  "description": "3D architectural voxel & Skyblock building studio with 47-tile CTM connected textures, 3D volume brushes, WorldEdit CLI, and self-learning spatial copilot.",
+  "description": "3D architectural voxel & block building studio with 47-tile CTM connected textures, 3D volume brushes, WorldEdit CLI, and self-learning spatial copilot.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

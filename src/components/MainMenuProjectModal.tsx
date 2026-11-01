@@ -76,10 +76,10 @@ const WORLD_TEMPLATES: {
 }[] = [
   {
     id: 'starter_skyblock',
-    name: 'Starter Skyblock Island',
+    name: 'Starter Studio Plot',
     badge: 'Classic',
     description:
-      'Multi-layered turf and cobblestone floating island with starter tree, beacon, and terrain.',
+      'Multi-layered turf and cobblestone foundation plot with starter tree, beacon, and terrain.',
   },
   {
     id: 'citadel_plaza',

@@ -254,8 +254,10 @@ export async function evaluateBlockMappingsWithAI(
   });
 }
 
+export const MAX_SAFE_SCHEMATIC_VOLUME = 65536;
+
 /**
- * Exports a Sponge Schematic v2 (.schem.json) structure compatible with WorldEdit, FAWE, Litematica & Axiom tools
+ * Exports a Sponge Schematic v2 JSON (.schem.json — Intermediate JSON Format) structure compatible with JSON schematic importers
  */
 export function exportSpongeSchematicJson(
   worldName: string,
@@ -264,46 +266,82 @@ export function exportSpongeSchematicJson(
 ): string {
   const placedList = Object.values(blocks);
   if (placedList.length === 0) {
-    return JSON.stringify({ Version: 2, Width: 1, Height: 1, Length: 1, Palette: { 'minecraft:air': 0 }, BlockData: [0] }, null, 2);
+    return JSON.stringify(
+      {
+        Format: 'Sponge Schematic v2 JSON (.schem.json — Intermediate JSON Format)',
+        Version: 2,
+        Width: 1,
+        Height: 1,
+        Length: 1,
+        Palette: { 'minecraft:air': 0 },
+        BlockData: [0],
+      },
+      null,
+      2
+    );
   }
 
-  const minX = Math.min(...placedList.map((b) => b.position.x));
-  const maxX = Math.max(...placedList.map((b) => b.position.x));
-  const minY = Math.min(...placedList.map((b) => b.position.y));
-  const maxY = Math.max(...placedList.map((b) => b.position.y));
-  const minZ = Math.min(...placedList.map((b) => b.position.z));
-  const maxZ = Math.max(...placedList.map((b) => b.position.z));
+  for (const blk of placedList) {
+    if (
+      !blk?.position ||
+      !Number.isFinite(blk.position.x) ||
+      !Number.isFinite(blk.position.y) ||
+      !Number.isFinite(blk.position.z)
+    ) {
+      throw new Error(
+        'Cannot export Sponge Schematic JSON: build contains non-finite block coordinates.'
+      );
+    }
+  }
+
+  const minX = Math.min(...placedList.map((b) => Math.round(b.position.x)));
+  const maxX = Math.max(...placedList.map((b) => Math.round(b.position.x)));
+  const minY = Math.min(...placedList.map((b) => Math.round(b.position.y)));
+  const maxY = Math.max(...placedList.map((b) => Math.round(b.position.y)));
+  const minZ = Math.min(...placedList.map((b) => Math.round(b.position.z)));
+  const maxZ = Math.max(...placedList.map((b) => Math.round(b.position.z)));
 
   const width = maxX - minX + 1;
   const height = maxY - minY + 1;
   const length = maxZ - minZ + 1;
+  const volume = width * height * length;
+
+  if (!Number.isFinite(volume) || volume <= 0 || volume > MAX_SAFE_SCHEMATIC_VOLUME) {
+    throw new Error(
+      `Schematic bounding box volume (${width}×${height}×${length} = ${volume} cells) exceeds safe memory allocation threshold (${MAX_SAFE_SCHEMATIC_VOLUME} cells).`
+    );
+  }
 
   const palette: Record<string, number> = {
     'minecraft:air': 0,
   };
   let nextPaletteIdx = 1;
 
-  const blockData = new Array<number>(width * height * length).fill(0);
+  const blockData = new Array<number>(volume).fill(0);
 
   for (const blk of placedList) {
     const targetId = mappingByBlockId[blk.blockDefId] || 'minecraft:stone_bricks';
     if (palette[targetId] === undefined) {
       palette[targetId] = nextPaletteIdx++;
     }
-    const rx = blk.position.x - minX;
-    const ry = blk.position.y - minY;
-    const rz = blk.position.z - minZ;
+    const rx = Math.round(blk.position.x) - minX;
+    const ry = Math.round(blk.position.y) - minY;
+    const rz = Math.round(blk.position.z) - minZ;
     // Sponge Schematic index order: (y * length + z) * width + x
     const index = (ry * length + rz) * width + rx;
-    blockData[index] = palette[targetId];
+    if (index >= 0 && index < blockData.length) {
+      blockData[index] = palette[targetId];
+    }
   }
 
   return JSON.stringify(
     {
-      Format: 'Sponge Schematic v2 (WorldEdit / FAWE / Axiom / Litematica)',
+      Format: 'Sponge Schematic v2 JSON (.schem.json — Intermediate JSON Format)',
+      Disclaimer:
+        'Not an official Minecraft, LEGO, or Godot product. Not approved by or associated with Mojang, Microsoft, or The LEGO Group.',
       Metadata: {
         Name: worldName,
-        Author: 'BrickForge Studio',
+        Author: 'LFS Block Studio',
         CreatedAt: new Date().toISOString(),
         TotalBlocks: placedList.length,
       },

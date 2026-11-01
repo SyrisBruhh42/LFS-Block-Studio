@@ -12,7 +12,159 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: '5mb' }));
+  app.use(express.json({ limit: '15mb' }));
+
+  // Server-side Multimodal Gemini Vision Bug & Issue Analyzer Endpoint
+  app.post('/api/ai/analyze-issue', async (req, res) => {
+    try {
+      const {
+        annotatedImageBase64,
+        circledRegions = [],
+        telemetrySnapshot = {},
+        userDescription = '',
+      } = req.body || {};
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({
+          error:
+            'GEMINI_API_KEY is not configured on the server; client will use deterministic heuristic triage.',
+        });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+
+      const parts: any[] = [];
+      if (
+        typeof annotatedImageBase64 === 'string' &&
+        annotatedImageBase64.length > 64
+      ) {
+        const cleanedBase64 = annotatedImageBase64.replace(
+          /^data:image\/[a-zA-Z0-9+.-]+;base64,/,
+          ''
+        );
+        parts.push({
+          inlineData: {
+            mimeType: 'image/png',
+            data: cleanedBase64,
+          },
+        });
+      }
+
+      const promptText = `You are a Principal Game QA Architect, WebGL Rendering Auditor, and React/Three.js Systems Engineer inspecting LFS Block Studio.
+Analyze the attached viewport screenshot (which may contain red circles, bounding boxes, or numbered pins drawn by the user/tester) alongside the normalized annotation coordinates and live runtime telemetry below.
+
+User/Tester Note:
+${userDescription || '(No manual description provided — inspect visual layout, HUD ergonomics, 3D rendering, and telemetry anomalies)'}
+
+Normalized Circled/Highlighted Regions (0..1 relative to viewport width/height):
+${JSON.stringify(circledRegions, null, 2)}
+
+Live Studio Telemetry Snapshot:
+${JSON.stringify(telemetrySnapshot, null, 2)}
+
+Identify the most critical visual, UX, rendering, persistence, or logic defect shown in the circled area or telemetry, map it to the exact source file in this codebase (e.g. src/components/SkyblockViewport.tsx, src/components/StudioRibbonHeader.tsx, src/components/DraggableWindow.tsx, src/engine/worldEditEngine.ts, src/engine/spatialCopilotEngine.ts, etc.), and generate a ready-to-paste AI Studio self-improvement prompt.`;
+
+      parts.push({ text: promptText });
+
+      const candidateModels = [
+        process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+        'gemini-2.5-flash',
+        'gemini-flash-latest',
+      ];
+
+      let lastErr: unknown = null;
+      for (const modelName of candidateModels) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: [{ role: 'user', parts }],
+            config: {
+              systemInstruction:
+                'Return a structured JSON diagnosis with rootCause, visualEvidence, suspectedFiles, recommendedCodeFix, and a complete ready-to-paste aiStudioFixPrompt.',
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  title: {
+                    type: Type.STRING,
+                    description: 'Concise technical title of the detected issue.',
+                  },
+                  severity: {
+                    type: Type.STRING,
+                    description: 'P0, P1, or P2 severity rating.',
+                  },
+                  domain: {
+                    type: Type.STRING,
+                    description:
+                      'One of: UI_OVERLAP, RENDERING_ARTIFACT, RAYCAST_OCCLUSION, STATE_DESYNC, MEMORY_LEAK, COMMAND_BOUNDS, PERSISTENCE, BALANCE_PROGRESSION, IP_COMPLIANCE.',
+                  },
+                  rootCause: {
+                    type: Type.STRING,
+                    description: 'Technical root cause explanation.',
+                  },
+                  visualEvidence: {
+                    type: Type.STRING,
+                    description:
+                      'Specific visual evidence observed inside the red circled/annotated regions or viewport.',
+                  },
+                  suspectedFiles: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: 'Array of source file paths in the repository.',
+                  },
+                  recommendedCodeFix: {
+                    type: Type.STRING,
+                    description: 'Concrete code-level fix instructions.',
+                  },
+                  aiStudioFixPrompt: {
+                    type: Type.STRING,
+                    description:
+                      'Self-contained, copy-pasteable prompt for AI Studio Build to fix and regression-test this issue.',
+                  },
+                  confidence: {
+                    type: Type.INTEGER,
+                    description: 'Confidence score from 1 to 100.',
+                  },
+                },
+                required: [
+                  'title',
+                  'severity',
+                  'domain',
+                  'rootCause',
+                  'visualEvidence',
+                  'suspectedFiles',
+                  'recommendedCodeFix',
+                  'aiStudioFixPrompt',
+                  'confidence',
+                ],
+              },
+            },
+          });
+
+          const text = (response.text ?? '{}').trim();
+          const analysis = JSON.parse(text);
+          return res.json({ analysis, modelUsed: modelName });
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+
+      throw lastErr || new Error('All Gemini vision model candidates failed.');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to analyze visual issue.';
+      console.error('Gemini analyze-issue error:', message);
+      return res.status(500).json({ error: message });
+    }
+  });
 
   // Server-side Gemini AI Closest-Block Comparison & Schematic Mapper Endpoint
   app.post('/api/ai/block-mapping', async (req, res) => {

@@ -334,13 +334,12 @@ export const AdaptiveMobileStylusHub: React.FC<AdaptiveMobileStylusHubProps> = (
 
   return (
     <>
-      {/* 1. Ergonomic Floating Android / Stylus Quick-Hub (Visible on Mobile/Tablet or whenever Stylus Mode is active, and Draggable!) */}
+      {/* 1. Ergonomic Floating Stylus Quick-Hub (Visible when Stylus Mode is active, and Draggable!) */}
+      {stylusConfig.enabled && (
       <DraggableHudOverlay
         hudId="adaptive_mobile_stylus_hub"
         label="Mobile & Stylus Hub"
-        anchorClassName={`${dockPositionClass} ${
-          stylusConfig.enabled ? 'flex' : 'lg:hidden flex'
-        }`}
+        anchorClassName={dockPositionClass}
         zIndex={22}
       >
         <div
@@ -423,7 +422,7 @@ export const AdaptiveMobileStylusHub: React.FC<AdaptiveMobileStylusHubProps> = (
 
         {/* Primary Ergonomic Action Bar: Active Swatch + Pinned Tools + Stylus Toggle + All-Tools Drawer Button */}
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-slate-950/95 ${highContrastBorder} shadow-2xl overflow-x-auto max-w-[95vw]`}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-slate-950/95 ${highContrastBorder} shadow-2xl overflow-x-auto no-scrollbar max-w-[95vw]`}
         >
           {/* Active Block Swatch Button -> Opens Block & Paint Palette */}
           <button
@@ -528,6 +527,7 @@ export const AdaptiveMobileStylusHub: React.FC<AdaptiveMobileStylusHubProps> = (
         </div>
         </div>
       </DraggableHudOverlay>
+      )}
 
       {/* 2. Expandable All-Tools, Stylus & Adaptive UI Drawer Window (Moveable & Resizable!) */}
       <DraggableWindow

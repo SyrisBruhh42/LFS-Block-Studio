@@ -32,61 +32,61 @@ export interface CreatorPackMeta {
 export const OPEN_SOURCE_CREATOR_PACKS: CreatorPackMeta[] = [
   {
     id: 'polyhaven_cc0',
-    name: 'Poly Haven CC0 Architectural',
-    author: 'Poly Haven Community',
+    name: 'Built-in Procedural Studio Pack: Masonry & Ashlar',
+    author: 'LFS Procedural Surface Lab (CC0 Inspired)',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-amber-300 border-amber-500/40 bg-amber-500/10',
     description:
-      'Photogrammetry-derived masonry, basalt ashlar, weathered castle limestone, and Roman travertine.',
-    sourceUrlLabel: 'polyhaven.com (CC0)',
+      'Built-in procedural studio masonry, basalt ashlar, weathered castle limestone, and Roman travertine.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'kenney_voxel_cc0',
-    name: 'Kenney Voxel Pack CC0',
-    author: 'Kenney.nl Open Assets',
+    name: 'Built-in Procedural Studio Pack: Nordic Timber & Terrain',
+    author: 'LFS Procedural Surface Lab (CC0 Inspired)',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10',
     description:
-      'Clean, high-readability architectural timber, desert adobe, glacial ice, and modular terrain.',
-    sourceUrlLabel: 'kenney.nl (CC0)',
+      'Built-in procedural studio timber, desert adobe, glacial ice, and modular terrain.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'ambientcg_pbr',
-    name: 'AmbientCG PBR Surfaces',
-    author: 'Lennart Demes (ambientCG)',
+    name: 'Built-in Procedural Studio Pack: Architectural Metals & Marble',
+    author: 'LFS Procedural Surface Lab (CC0 Inspired)',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-sky-300 border-sky-500/40 bg-sky-500/10',
     description:
-      'Physically-based brushed metals, oxidized copper, Nero marble, and industrial riveted steel.',
-    sourceUrlLabel: 'ambientcg.com (CC0)',
+      'Built-in procedural brushed metals, oxidized copper, Nero marble, and industrial riveted steel.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'opengameart_pixel',
-    name: 'OpenGameArt Pixel-Art HD',
-    author: 'OGA CC0 Contributors',
+    name: 'Built-in Procedural Studio Pack: Emissive Runes & Prismarine',
+    author: 'LFS Procedural Surface Lab (CC0 Inspired)',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-violet-300 border-violet-500/40 bg-violet-500/10',
     description:
-      '64×64 hand-crafted pixel-art runestones, prismarine, magma conduits, and emissive crystals.',
-    sourceUrlLabel: 'opengameart.org (CC0)',
+      'Built-in procedural runestones, prismarine, magma conduits, and emissive synth crystals.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'lfs_architectural',
-    name: 'LFS Studio Master Trim Pack',
+    name: 'Built-in Procedural Studio Pack: Master Trim & Vaults',
     author: 'LFS Block Studio Core',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-rose-300 border-rose-500/40 bg-rose-500/10',
     description:
-      'Vaulted arches, mansard roof slopes, Tudor half-timber framing, and warm shoji lanterns.',
-    sourceUrlLabel: 'LFS Built-In CC0',
+      'Built-in procedural vaulted arches, mansard roof slopes, Tudor half-timber framing, and warm shoji lanterns.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
 ];
 
 export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
-  // 1. Poly Haven CC0 Architectural
+  // 1. Built-in Procedural Masonry & Ashlar
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['stone', 'basalt', 'dark', 'castle', 'ashlar'],
@@ -109,7 +109,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['limestone', 'warm', 'citadel', 'wall'],
@@ -132,7 +132,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['column', 'roman', 'travertine', 'pillar'],
@@ -155,7 +155,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'roofing_trim',
     tags: ['terracotta', 'roof', 'slope', 'shingle'],
@@ -178,7 +178,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['brick', 'industrial', 'kiln', 'wall'],
@@ -201,7 +201,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'nature_terrain',
     tags: ['moss', 'cobble', 'ruins', 'dungeon'],
@@ -223,10 +223,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
     },
   },
 
-  // 2. Kenney Voxel Pack CC0
+  // 2. Built-in Procedural Nordic Timber & Terrain
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'timber',
     tags: ['birch', 'wood', 'plank', 'floor', 'nordic'],
@@ -249,7 +249,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'timber',
     tags: ['spruce', 'dark', 'timber', 'beam'],
@@ -272,7 +272,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['adobe', 'sandstone', 'desert', 'mesa'],
@@ -295,7 +295,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'glass_neon',
     tags: ['ice', 'glacier', 'translucent', 'frost'],
@@ -318,7 +318,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'nature_terrain',
     tags: ['foliage', 'autumn', 'leaves', 'hedge'],
@@ -340,10 +340,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
     },
   },
 
-  // 3. AmbientCG PBR Surfaces
+  // 3. Built-in Procedural Metals & Marble
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'metals',
     tags: ['copper', 'patina', 'verdigris', 'dome'],
@@ -366,7 +366,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'metals',
     tags: ['bronze', 'gold', 'trim', 'gilded'],
@@ -389,7 +389,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['marble', 'black', 'luxury', 'polished'],
@@ -412,7 +412,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'metals',
     tags: ['steel', 'industrial', 'dark', 'factory'],
@@ -434,10 +434,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
     },
   },
 
-  // 4. OpenGameArt Pixel-Art HD
+  // 4. Built-in Procedural Emissive Runes & Prismarine
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'glass_neon',
     tags: ['runestone', 'magic', 'emissive', 'cyan'],
@@ -460,7 +460,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'masonry',
     tags: ['prismarine', 'ocean', 'temple', 'teal'],
@@ -483,7 +483,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'glass_neon',
     tags: ['magma', 'lava', 'ember', 'glow'],
@@ -506,7 +506,7 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
+    creatorName: 'LFS Procedural Surface Lab',
     license: 'CC0 1.0 Public Domain',
     category: 'glass_neon',
     tags: ['cyberpunk', 'neon', 'magenta', 'synth'],
@@ -738,7 +738,7 @@ export const DEFAULT_MODULAR_HUD_CONFIG: ModularHudConfig = {
 };
 
 /**
- * Resets the entire world to a clean architectural starter template while preserving Undo history.
+ * Resets the entire world to a clean architectural starter template while preserving a single atomic Undo snapshot.
  */
 export function resetEntireWorldToTemplate(
   state: WorldEditEngineState,
@@ -756,12 +756,11 @@ export function resetEntireWorldToTemplate(
         pos1: null,
         pos2: null,
       },
-      summary: `Reset entire world to Starter Skyblock Island (${Object.keys(fresh.blocks).length} blocks).`,
+      summary: `Reset entire world to Starter Studio Plot (${Object.keys(fresh.blocks).length} blocks).`,
     };
   }
 
   if (templateId === 'empty_void') {
-    // Place a single center anchor block at (0,0,0) so the user always has a raycast anchor in addition to ground plane
     const anchor: Record<string, PlacedBlock> = {
       [coordKey(0, 0, 0)]: {
         id: 'blk_0_0_0',
@@ -781,7 +780,6 @@ export function resetEntireWorldToTemplate(
     };
   }
 
-  // Build clean 12x12 architectural foundation pad around (0,0)
   const styleMap: Record<
     Exclude<WorldResetTemplateId, 'starter_skyblock' | 'empty_void'>,
     'stone_foundation' | 'timber_deck' | 'sandstone_plaza'
@@ -798,23 +796,33 @@ export function resetEntireWorldToTemplate(
     pos2: null,
   };
 
+  // Pass skipUndoSnapshot: true so expandWorldIntoChunk does NOT overwrite the pre-reset undo snapshot!
   const expanded = expandWorldIntoChunk(
     clearedState,
     0,
     0,
     styleMap[templateId],
-    chunkSize
+    chunkSize,
+    { skipUndoSnapshot: true }
   );
 
-  // If cyber_grid, tint the plaza into sleek titanium & neon corners
+  // If cyber_grid, style the 12x12 platform with sleek titanium & neon corners
   if (templateId === 'cyber_grid') {
     const cyberBlocks: Record<string, PlacedBlock> = {};
     for (const [k, blk] of Object.entries(expanded.nextState.blocks)) {
-      const isCorner =
-        Math.abs(blk.position.x) === 5 && Math.abs(blk.position.z) === 5;
+      const isRaisedLantern = blk.position.y >= 1;
+      const isBorder =
+        blk.position.x === -5 ||
+        blk.position.x === 6 ||
+        blk.position.z === -5 ||
+        blk.position.z === 6;
       cyberBlocks[k] = {
         ...blk,
-        blockDefId: isCorner ? 'neon_beacon' : 'titanium_panel',
+        blockDefId: isRaisedLantern
+          ? 'neon_beacon'
+          : isBorder
+            ? 'cobble_brick'
+            : 'titanium_panel',
       };
     }
     return {
@@ -832,8 +840,10 @@ export function resetEntireWorldToTemplate(
   };
 }
 
+export const resetWorldWithPreset = resetEntireWorldToTemplate;
+
 /**
- * Resets or clears ONLY a single specific chunk (cx, cz), leaving all other chunks untouched.
+ * Resets or clears ONLY a single specific chunk (cx, cz), leaving all other chunks untouched, with a single atomic Undo snapshot.
  */
 export function resetSpecificChunkInWorld(
   state: WorldEditEngineState,
@@ -887,7 +897,8 @@ export function resetSpecificChunkInWorld(
     cx,
     cz,
     action,
-    chunkSize
+    chunkSize,
+    { skipUndoSnapshot: true }
   );
 
   return {
@@ -897,6 +908,8 @@ export function resetSpecificChunkInWorld(
     summary: `Reset Chunk (${cx}, ${cz}) to "${action}" (-${removedCount} old, +${rebuilt.addedCount} new blocks).`,
   };
 }
+
+export const resetSingleChunk = resetSpecificChunkInWorld;
 
 /**
  * Counts how many blocks currently reside in each chunk key "cx,cz".

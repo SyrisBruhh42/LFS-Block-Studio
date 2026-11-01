@@ -86,6 +86,7 @@ import {
 import {
   CameraViewPreset,
   SkyblockViewport,
+  getViewportRenderTelemetry,
 } from './components/SkyblockViewport';
 import {
   RightInspectorTab,
@@ -150,6 +151,7 @@ import {
   applyProceduralBiomeToWorld,
   buildOrderedTimelapseList,
   computeMasteryRank,
+  computeUpdatedBuildStreak,
   getAtmospherePresetById,
   sliceBlocksAtTimelapseStep,
 } from './engine/studioEngagementEngine';
@@ -157,6 +159,11 @@ import { ContractsAndBiomesModal } from './components/ContractsAndBiomesModal';
 import { CinematicTimelapseDock } from './components/CinematicTimelapseDock';
 import { OnboardingTourOverlay } from './components/OnboardingTourOverlay';
 import { DraggableHudOverlay } from './components/DraggableWindow';
+import {
+  SelfTestingAuditorModal,
+  AuditorModalTab,
+} from './components/SelfTestingAuditorModal';
+import { installGlobalIssueInterceptors } from './engine/issueTrackerEngine';
 import { computeResponsiveWorkspaceMetrics } from './engine/windowLayoutEngine';
 import {
   BookOpen,
@@ -186,6 +193,9 @@ function generateShortHash(): string {
 export default function App() {
   const [engineState, setEngineState] = useState<WorldEditEngineState>(() => {
     const initial = createInitialEngineState();
+    // Start with a clean unobstructed 3D viewport (no unsolicited Wand box over the island)
+    initial.pos1 = null;
+    initial.pos2 = null;
     try {
       const savedCustomRaw = localStorage.getItem(LOCAL_CUSTOM_BLOCKS_STORAGE_KEY);
       if (savedCustomRaw) {
@@ -711,7 +721,7 @@ export default function App() {
         id: 'commit_init',
         hash: 'a1f8c20',
         branch: 'main',
-        message: 'Initial realistic Skyblock island foundation',
+        message: 'Initial architectural studio plot foundation',
         timestamp: new Date().toISOString(),
         blockCount: count,
         addedDelta: count,
@@ -790,25 +800,59 @@ export default function App() {
     | 'main_menu'
     | 'contracts_biomes'
   >('none');
+  const [isAuditorModalOpen, setIsAuditorModalOpen] = useState<boolean>(false);
+  const [auditorInitialTab, setAuditorInitialTab] =
+    useState<AuditorModalTab>('self_tests');
+
+  useEffect(() => {
+    installGlobalIssueInterceptors(() => {
+      const gpu = getViewportRenderTelemetry();
+      return {
+        capturedAtIso: new Date().toISOString(),
+        activeBlockCount: Object.keys(engineState.blocks).length,
+        unlockedChunksCount: chunkConfig.unlockedChunks.length,
+        activeToolMode: toolMode,
+        activeBlockId,
+        webglGeometries: gpu.geometries,
+        webglTextures: gpu.textures,
+        webglDrawCalls: gpu.calls,
+        webglTriangles: gpu.triangles,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        lastCommands: commandLog.slice(-6).map((c) => c.cmd),
+        openWindows: activeModal === 'none' ? [] : [activeModal],
+      };
+    });
+  }, [
+    engineState.blocks,
+    chunkConfig.unlockedChunks.length,
+    toolMode,
+    activeBlockId,
+    commandLog,
+    activeModal,
+  ]);
 
   // Firebase Auth, Google Drive OAuth, & Multiplayer state
   const [user, setUser] = useState<User | null>(null);
   const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
   const [needsDriveAuth, setNeedsDriveAuth] = useState<boolean>(true);
-  const [worldId, setWorldId] = useState<string>('skyblock_island_1');
+  const [worldId, setWorldId] = useState<string>('studio_plot_1');
   const [worldName, setWorldName] = useState<string>(() => {
     try {
       const snapsRaw = localStorage.getItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY);
       if (snapsRaw) {
         const snaps: LocalAutosaveSnapshot[] = JSON.parse(snapsRaw);
-        if (snaps[0]?.worldName) return snaps[0].worldName;
+        const savedName = snaps[0]?.worldName;
+        if (savedName && savedName !== 'Starter Skyblock Island') {
+          return savedName;
+        }
       }
     } catch {
       // Ignore
     }
-    return 'Starter Skyblock Island';
+    return 'Starter Studio Plot';
   });
-  const [roomCode, setRoomCode] = useState<string>('SKY101');
+  const [roomCode, setRoomCode] = useState<string>('STUDIO101');
   const [isPublicWorld, setIsPublicWorld] = useState<boolean>(true);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [collaborators, setCollaborators] = useState<CollaboratorPresence[]>([]);
@@ -1573,7 +1617,7 @@ export default function App() {
     [activeBlueprint, placementRotation, appendLog]
   );
 
-  // Set Pos1 / Pos2
+  // Set Pos1 / Pos2 / Clear Selection
   const handleSetPos1 = useCallback(
     (coord: GridCoord) => {
       setEngineState((prev) => ({ ...prev, pos1: coord }));
@@ -1589,6 +1633,16 @@ export default function App() {
     },
     [appendLog]
   );
+
+  const handleClearSelection = useCallback(() => {
+    setEngineState((prev) => ({ ...prev, pos1: null, pos2: null }));
+    setSelectionGizmoUnlocked(false);
+    setActiveCommandPreviewMode(null);
+    if (toolMode === 'wand_select') {
+      setToolMode('place');
+    }
+    appendLog('//desel', 'Cleared 3D region selection.', true);
+  }, [toolMode, appendLog]);
 
   // Nudge 3D selection box face handle (+x, -x, +y, -y, +z, -z)
   const handleNudgeSelectionFace = useCallback(
@@ -1682,8 +1736,25 @@ export default function App() {
   // Execute WorldEdit CLI command
   const handleRunCommand = useCallback(
     (rawCmd: string) => {
+      const normalized = rawCmd.trim().toLowerCase();
+      if (normalized === '//desel' || normalized === '//deselect' || normalized === '//sel') {
+        handleClearSelection();
+        return;
+      }
       setEngineState((prev) => {
-        const res = executeWorldEditCommand(prev, rawCmd, hoveredCoord);
+        // If user triggers a region command (//set, //walls, //hollow, //stack, //copy, //cut) without a selection, default to a 5x3x5 region on the island
+        const needsRegion = /^\/\/(set|walls|hollow|replace|stack|move|copy|cut)\b/i.test(
+          normalized
+        );
+        const workingState =
+          needsRegion && (!prev.pos1 || !prev.pos2)
+            ? {
+                ...prev,
+                pos1: prev.pos1 || { x: -2, y: 1, z: -2 },
+                pos2: prev.pos2 || { x: 2, y: 3, z: 2 },
+              }
+            : prev;
+        const res = executeWorldEditCommand(workingState, rawCmd, hoveredCoord);
         appendLog(rawCmd, res.message, res.success);
         if (res.equipWand) {
           setToolMode('wand_select');
@@ -1691,7 +1762,7 @@ export default function App() {
         return res.nextState;
       });
     },
-    [hoveredCoord, appendLog]
+    [hoveredCoord, appendLog, handleClearSelection]
   );
 
   // Save a newly designed Custom Block from Workshop
@@ -1844,7 +1915,7 @@ export default function App() {
       setWorldName(`${bp.name} World`);
       appendLog(
         `//blueprint load-world`,
-        `Loaded blueprint "${bp.name}" into a new Skyblock world (${bp.blocks.length} structure blocks).`,
+        `Loaded blueprint "${bp.name}" into a new studio world (${bp.blocks.length} structure blocks).`,
         true
       );
     },
@@ -2608,12 +2679,17 @@ export default function App() {
         userProgress.soundEnabled,
         userProgress.hapticsEnabled
       );
+      const streakUpdate = computeUpdatedBuildStreak(
+        userProgress.lastBuildDate,
+        userProgress.streakDays,
+        dateKey
+      );
       const next: StudioUserProgressState = {
         ...userProgress,
         xp: userProgress.xp + bonusXp,
         claimedDailyDates: [...userProgress.claimedDailyDates, dateKey],
-        streakDays: userProgress.streakDays + 1,
-        lastBuildDate: dateKey,
+        streakDays: streakUpdate.streakDays,
+        lastBuildDate: streakUpdate.lastBuildDate,
       };
       persistUserProgress(next);
       appendLog(
@@ -2692,6 +2768,14 @@ export default function App() {
       }
 
       if (activeModal !== 'none') return;
+
+      if (e.key === 'Escape') {
+        if (engineState.pos1 || engineState.pos2 || toolMode === 'wand_select') {
+          e.preventDefault();
+          handleClearSelection();
+          return;
+        }
+      }
 
       const { bindings } = hotkeyConfig;
 
@@ -2825,7 +2909,20 @@ export default function App() {
         setActiveModal('hotkeys');
       } else if (e.key >= '1' && e.key <= '9') {
         const idx = parseInt(e.key, 10) - 1;
-        if (hotbarBlockIds[idx]) {
+        const primaryBar = hudConfig.bars.find(
+          (b) => b.id === 'bar_primary_blocks'
+        ) || hudConfig.bars[0];
+        const slot = primaryBar?.slots[idx];
+        if (slot) {
+          if (slot.type === 'block') {
+            setActiveBlockId(slot.targetId);
+            setToolMode('place');
+          } else if (slot.type === 'tool') {
+            setToolMode(slot.targetId as ToolMode);
+          } else if (slot.type === 'command') {
+            handleRunCommand(slot.targetId);
+          }
+        } else if (hotbarBlockIds[idx]) {
           setActiveBlockId(hotbarBlockIds[idx]);
           setToolMode('place');
         }
@@ -2863,6 +2960,10 @@ export default function App() {
     handleAcceptCopilotPredictions,
     handleRunCommand,
     performSaveSnapshot,
+    engineState.pos1,
+    engineState.pos2,
+    toolMode,
+    handleClearSelection,
   ]);
 
   const totalBlockCount = Object.keys(engineState.blocks).length;
@@ -2964,6 +3065,10 @@ export default function App() {
             soundEnabled: !userProgress.soundEnabled,
           })
         }
+        onOpenAuditorModal={(tab) => {
+          setAuditorInitialTab(tab);
+          setIsAuditorModalOpen(true);
+        }}
       />
 
       {/* Center Workbench Area: Left MS Paint Toolbox + Center 3D Viewport + Right Command Legend / Git / Lighting Dock */}
@@ -3048,6 +3153,7 @@ export default function App() {
             onStampBlueprintAt={handleStampBlueprintAt}
             onSetPos1={handleSetPos1}
             onSetPos2={handleSetPos2}
+            onClearSelection={handleClearSelection}
             onNudgeSelectionFace={handleNudgeSelectionFace}
             volumeBrush={volumeBrush}
             onChangeVolumeBrush={setVolumeBrush}
@@ -3061,6 +3167,7 @@ export default function App() {
             onChangeSymmetryConfig={setSymmetryConfig}
             detectedSymmetry={detectedSymmetry}
             copilotConfig={copilotConfig}
+            onChangeCopilotConfig={setCopilotConfig}
             copilotPredictions={copilotPredictions}
             onAcceptCopilotPredictions={handleAcceptCopilotPredictions}
             selectionRecommendations={
@@ -3084,6 +3191,10 @@ export default function App() {
               }
             }}
             onSelectToolMode={setToolMode}
+            isLeftToolboxOpen={isLeftToolboxOpen}
+            onOpenLeftToolbox={() => setIsLeftToolboxOpen(true)}
+            isRightInspectorOpen={rightSidebarTab !== 'closed'}
+            onOpenRightInspector={() => setRightSidebarTab('legend')}
           />
 
           {/* Cinematic Photo Mode & Chronological Build Timelapse Dock */}
@@ -3158,44 +3269,6 @@ export default function App() {
             hudBarAutoScale={workspaceMetrics.hudBarAutoScale}
             shouldStackBottomBars={workspaceMetrics.shouldStackBottomBars}
           />
-
-          {/* Floating Quick Re-Open Toolbox Button when Left Dock is closed */}
-          {!isLeftToolboxOpen && (
-            <DraggableHudOverlay
-              hudId="reopen_left_toolbox_hud"
-              label="Paint & Blocks Button"
-              anchorClassName="top-3 left-3"
-              zIndex={20}
-            >
-              <button
-                type="button"
-                onClick={() => setIsLeftToolboxOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-slate-900/95 border border-slate-700 hover:border-amber-400 text-xs font-semibold text-slate-100 flex items-center gap-1.5 shadow-lg"
-              >
-                <Palette className="w-3.5 h-3.5 text-amber-400" />
-                <span>Paint & Blocks</span>
-              </button>
-            </DraggableHudOverlay>
-          )}
-
-          {/* Floating Quick Re-Open Inspector Button if Right Dock is closed */}
-          {rightSidebarTab === 'closed' && (
-            <DraggableHudOverlay
-              hudId="reopen_right_inspector_hud"
-              label="Command Legend Button"
-              anchorClassName="top-3 right-3"
-              zIndex={20}
-            >
-              <button
-                type="button"
-                onClick={() => setRightSidebarTab('legend')}
-                className="px-3 py-1.5 rounded-lg bg-slate-900/95 border border-slate-700 hover:border-amber-400 text-xs font-semibold text-slate-100 flex items-center gap-1.5 shadow-lg"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                <span>Command Legend</span>
-              </button>
-            </DraggableHudOverlay>
-          )}
 
           {/* Adaptive Android / Tablet / Stylus Ergonomic Quick-Hub & All-Tools Customizer Drawer */}
           <AdaptiveMobileStylusHub
@@ -3281,7 +3354,7 @@ export default function App() {
       </div>
 
       {/* Bottom Studio Status Bar & Integrated WorldEdit Command Bar (Adapts cleanly to narrow/split-screen window resizing) */}
-      <footer className="min-h-[40px] py-1 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between gap-2 z-30 shrink-0 select-none overflow-x-auto">
+      <footer className="min-h-[40px] py-1 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between gap-2 z-30 shrink-0 select-none overflow-x-auto no-scrollbar">
         {/* Left: WorldEdit CLI Input + Latest Output Feedback */}
         <div className="flex items-center gap-2 flex-1 min-w-0 max-w-2xl">
           <form
@@ -3532,6 +3605,24 @@ export default function App() {
         worldName={worldName}
         blocks={engineState.blocks}
         customBlocks={engineState.customBlocks}
+      />
+
+      <SelfTestingAuditorModal
+        isOpen={isAuditorModalOpen}
+        initialTab={auditorInitialTab}
+        onClose={() => setIsAuditorModalOpen(false)}
+        activeBlockCount={totalBlockCount}
+        unlockedChunksCount={chunkConfig.unlockedChunks.length}
+        activeToolMode={toolMode}
+        activeBlockId={activeBlockId}
+        lastCommands={commandLog.slice(-8).map((c) => c.cmd)}
+        openWindows={
+          activeModal === 'none'
+            ? isAuditorModalOpen
+              ? ['self_testing_auditor_modal']
+              : []
+            : [activeModal]
+        }
       />
     </div>
   );
