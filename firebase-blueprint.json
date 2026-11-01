@@ -1,0 +1,247 @@
+{
+  "entities": {
+    "WorldDocument": {
+      "title": "WorldDocument",
+      "description": "Represents a saved or multiplayer 3D Skyblock world.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the Skyblock world.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the world creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerName": {
+          "type": "string",
+          "description": "Display name of the world owner.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "roomCode": {
+          "type": "string",
+          "description": "Short alphanumeric room code for co-building.",
+          "minLength": 4,
+          "maxLength": 16,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether the world allows open co-building via room code."
+        },
+        "blocksData": {
+          "type": "string",
+          "description": "Compact serialized representation of placed blocks up to 500KB.",
+          "minLength": 2,
+          "maxLength": 500000
+        },
+        "customBlocksData": {
+          "type": "string",
+          "description": "Compact serialized representation of custom block definitions.",
+          "minLength": 2,
+          "maxLength": 200000
+        },
+        "blockCount": {
+          "type": "integer",
+          "description": "Total number of blocks in the world."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the world was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the world was last updated."
+        }
+      },
+      "required": [
+        "name",
+        "ownerId",
+        "ownerName",
+        "roomCode",
+        "isPublic",
+        "blocksData",
+        "customBlocksData",
+        "blockCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PresenceDocument": {
+      "title": "PresenceDocument",
+      "description": "Tracks a live builder cursor and selection inside a multiplayer world.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the active collaborator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Display name of the collaborator.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex color of the collaborator cursor.",
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "cursorX": {
+          "type": "integer",
+          "description": "Grid X coordinate of collaborator cursor."
+        },
+        "cursorY": {
+          "type": "integer",
+          "description": "Grid Y coordinate of collaborator cursor."
+        },
+        "cursorZ": {
+          "type": "integer",
+          "description": "Grid Z coordinate of collaborator cursor."
+        },
+        "activeTool": {
+          "type": "string",
+          "description": "Currently selected tool name.",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "isWorldPublic": {
+          "type": "boolean",
+          "description": "Mirrors parent world public status for list query validation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the cursor update."
+        }
+      },
+      "required": [
+        "userId",
+        "userName",
+        "color",
+        "cursorX",
+        "cursorY",
+        "cursorZ",
+        "activeTool",
+        "isWorldPublic",
+        "updatedAt"
+      ]
+    },
+    "BlueprintDocument": {
+      "title": "BlueprintDocument",
+      "description": "Stores a reusable custom block or multi-block structure blueprint.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the custom block or structure blueprint.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the blueprint.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the blueprint creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the blueprint author.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "blueprintType": {
+          "type": "string",
+          "description": "Whether this blueprint is a custom_block or structure_blueprint.",
+          "enum": ["custom_block", "structure_blueprint"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether this blueprint is published to the Community Gallery."
+        },
+        "blockCount": {
+          "type": "integer",
+          "description": "Number of blocks inside the blueprint."
+        },
+        "sizeX": {
+          "type": "integer",
+          "description": "Bounding box width in studs."
+        },
+        "sizeY": {
+          "type": "integer",
+          "description": "Bounding box height in plates/bricks."
+        },
+        "sizeZ": {
+          "type": "integer",
+          "description": "Bounding box depth in studs."
+        },
+        "payload": {
+          "type": "string",
+          "description": "Serialized blueprint definition and relative block positions.",
+          "minLength": 2,
+          "maxLength": 300000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the blueprint was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the blueprint was updated."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "authorId",
+        "authorName",
+        "blueprintType",
+        "isPublic",
+        "blockCount",
+        "sizeX",
+        "sizeY",
+        "sizeZ",
+        "payload",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/worlds/{worldId}": {
+      "schema": { "$ref": "#/entities/WorldDocument" },
+      "description": "Stores saved and multiplayer Skyblock worlds."
+    },
+    "/worlds/{worldId}/presence/{userId}": {
+      "schema": { "$ref": "#/entities/PresenceDocument" },
+      "description": "Stores real-time collaborator cursor positions inside a world."
+    },
+    "/blueprints/{blueprintId}": {
+      "schema": { "$ref": "#/entities/BlueprintDocument" },
+      "description": "Stores reusable custom blocks and multi-block structure blueprints."
+    }
+  }
+}

@@ -1,0 +1,195 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidWorld(data) {
+      return data.keys().hasAll([
+        'name', 'ownerId', 'ownerName', 'roomCode', 'isPublic',
+        'blocksData', 'customBlocksData', 'blockCount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'name', 'ownerId', 'ownerName', 'roomCode', 'isPublic',
+        'blocksData', 'customBlocksData', 'blockCount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+      data.ownerId is string && isValidId(data.ownerId) &&
+      data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 80 &&
+      data.roomCode is string && data.roomCode.size() >= 4 && data.roomCode.size() <= 16 && data.roomCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.isPublic is bool &&
+      data.blocksData is string && data.blocksData.size() >= 2 && data.blocksData.size() <= 500000 &&
+      data.customBlocksData is string && data.customBlocksData.size() >= 2 && data.customBlocksData.size() <= 200000 &&
+      data.blockCount is int && data.blockCount >= 0 && data.blockCount <= 50000 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidPresence(data) {
+      return data.keys().hasAll([
+        'userId', 'userName', 'color', 'cursorX', 'cursorY', 'cursorZ', 'activeTool', 'isWorldPublic', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'userName', 'color', 'cursorX', 'cursorY', 'cursorZ', 'activeTool', 'isWorldPublic', 'updatedAt'
+      ]) &&
+      data.userId is string && isValidId(data.userId) &&
+      data.userId == request.auth.uid &&
+      data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 80 &&
+      data.color is string && data.color.size() >= 4 && data.color.size() <= 16 &&
+      data.cursorX is int && data.cursorX >= -512 && data.cursorX <= 512 &&
+      data.cursorY is int && data.cursorY >= -512 && data.cursorY <= 512 &&
+      data.cursorZ is int && data.cursorZ >= -512 && data.cursorZ <= 512 &&
+      data.activeTool is string && data.activeTool.size() >= 1 && data.activeTool.size() <= 32 &&
+      data.isWorldPublic is bool &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidBlueprint(data) {
+      return data.keys().hasAll([
+        'name', 'description', 'authorId', 'authorName', 'blueprintType',
+        'isPublic', 'blockCount', 'sizeX', 'sizeY', 'sizeZ', 'payload', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'name', 'description', 'authorId', 'authorName', 'blueprintType',
+        'isPublic', 'blockCount', 'sizeX', 'sizeY', 'sizeZ', 'payload', 'createdAt', 'updatedAt'
+      ]) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+      data.description is string && data.description.size() >= 0 && data.description.size() <= 300 &&
+      data.authorId is string && isValidId(data.authorId) &&
+      data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+      data.blueprintType is string && data.blueprintType.size() <= 32 &&
+      (data.blueprintType == 'custom_block' || data.blueprintType == 'structure_blueprint') &&
+      data.isPublic is bool &&
+      data.blockCount is int && data.blockCount >= 1 && data.blockCount <= 25000 &&
+      data.sizeX is int && data.sizeX >= 1 && data.sizeX <= 256 &&
+      data.sizeY is int && data.sizeY >= 1 && data.sizeY <= 256 &&
+      data.sizeZ is int && data.sizeZ >= 1 && data.sizeZ <= 256 &&
+      data.payload is string && data.payload.size() >= 2 && data.payload.size() <= 300000 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /worlds/{worldId} {
+      allow get: if isValidId(worldId) && (
+        existing().isPublic == true ||
+        (isSignedIn() && existing().ownerId == request.auth.uid)
+      );
+
+      allow list: if existing().isPublic == true ||
+        (isSignedIn() && existing().ownerId == request.auth.uid);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(worldId) &&
+        isValidWorld(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(worldId) &&
+        isValidWorld(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Tier 1: Owner full configuration or world state update
+          (existing().ownerId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'isPublic', 'blocksData', 'customBlocksData', 'blockCount', 'updatedAt'
+            ])
+          ) ||
+          // Tier 2: Collaborator co-building on a public multiplayer room
+          (existing().isPublic == true &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'blocksData', 'customBlocksData', 'blockCount', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(worldId) &&
+        existing().ownerId == request.auth.uid;
+
+      match /presence/{userId} {
+        allow get: if isValidId(worldId) && isValidId(userId) && isSignedIn() && (
+          existing().userId == request.auth.uid ||
+          existing().isWorldPublic == true
+        );
+
+        allow list: if isSignedIn() && (
+          existing().userId == request.auth.uid ||
+          existing().isWorldPublic == true
+        );
+
+        allow create, update: if isVerifiedUser() &&
+          isValidId(worldId) &&
+          isValidId(userId) &&
+          userId == request.auth.uid &&
+          isValidPresence(incoming()) &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/worlds/$(worldId)) && (
+            get(/databases/$(database)/documents/worlds/$(worldId)).data.isPublic == true ||
+            get(/databases/$(database)/documents/worlds/$(worldId)).data.ownerId == request.auth.uid
+          );
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(worldId) &&
+          isValidId(userId) &&
+          userId == request.auth.uid;
+      }
+    }
+
+    match /blueprints/{blueprintId} {
+      allow get: if isValidId(blueprintId) && (
+        existing().isPublic == true ||
+        (isSignedIn() && existing().authorId == request.auth.uid)
+      );
+
+      allow list: if existing().isPublic == true ||
+        (isSignedIn() && existing().authorId == request.auth.uid);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(blueprintId) &&
+        isValidBlueprint(incoming()) &&
+        incoming().authorId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(blueprintId) &&
+        isValidBlueprint(incoming()) &&
+        existing().authorId == request.auth.uid &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'description', 'isPublic', 'blockCount', 'sizeX', 'sizeY', 'sizeZ', 'payload', 'updatedAt'
+        ]);
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(blueprintId) &&
+        existing().authorId == request.auth.uid;
+    }
+  }
+}
