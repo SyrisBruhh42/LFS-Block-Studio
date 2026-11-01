@@ -1,0 +1,6 @@
+{
+  "name": "BrickForge Studio",
+  "description": "A 3D Lego-style Skyblock snap-building sandbox with a custom Block & Micro-Voxel Workshop, WorldEdit command system, reusable structure blueprints, real-time Firebase multiplayer, and Godot export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
