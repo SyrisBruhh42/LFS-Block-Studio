@@ -1,0 +1,5 @@
+{"name":"a project larger than the history allowance opens, makes small edits and reports bounded retained changes","ok":true,"projectBytes":20972951,"history":{"undo":3,"redo":0,"bytes":836}}
+{"name":"large-project actual Undo and Redo restore full payloads with stable retained change accounting","ok":true,"originalHash":"bebc7ba6ab61f7e08eb5b6ab36822ca321b98f6209b0e20f3992a55e531aae7d","changedHash":"abd97c4f660d9d6e6ef4d21a566ef0cb6182a8da9e41dad222d66d0c7932bf69"}
+{"name":"complete large project and independent compact backup survive save and reload while live history restarts","ok":true,"backupBytes":20973084,"backupSha256":"da8e2b24c88bccf7dac78ce979d0c3ce4828d8d05af524f636c2f60fe03836ea"}
+{"name":"near-limit admitted project downloads inside its own opening limit and reopens as an independent copy","ok":true,"compactInputBytes":33552384,"formerPrettyBytes":33598640,"actualBackupBytes":33552384,"backupSha256":"8d77989e4ab86ae02a43e2cdb470b24ac1b8b8812a2e24e979e14a320244e6b3","independentCopy":true}
+{"ok":true,"checks":4,"storageErrors":[]}

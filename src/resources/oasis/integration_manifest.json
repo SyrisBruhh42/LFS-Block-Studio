@@ -1,0 +1,48 @@
+{
+  "capturedAt": "2026-11-01",
+  "source": "Owner-directed local Oasis resource capture, end-to-end-plan-20261101T175600Z",
+  "rights": "Proprietary source-available. Original notices retained; no relicensing or external publication.",
+  "scope": "Scoped studio menu; no scene materials, provider, server or identity integration.",
+  "files": [
+    {
+      "path": "lds-tokens.css",
+      "sha256": "e82f6916c2f21fb698619210eac64bdce0540114f6e0b387f84a8e26b3afffef",
+      "bytes": 32721
+    },
+    {
+      "path": "lds-tokens.w3c.json",
+      "sha256": "88766f0eb7a1dbab28520550d5c6fb0064ab379e6533fccdc43498d834e13170",
+      "bytes": 30896
+    },
+    {
+      "path": "SolarpunkIcon.tsx",
+      "sha256": "3e38767e2540eeb0c33d59f71ae7f0c04579a1d4e75979e05a05e5cfb3115699",
+      "bytes": 5501
+    },
+    {
+      "path": "notices/LICENSE",
+      "sha256": "18fddea6f4d96de7891b654dcb88cb35f94056d3ab737f2d8a7c535a5b251004",
+      "bytes": 4287
+    },
+    {
+      "path": "notices/LEGAL.md",
+      "sha256": "ac1b263226063d3aa29fbf7e93c00e908dc53872458d145eaad5ff70e02d2c9e",
+      "bytes": 5336
+    },
+    {
+      "path": "notices/CREDITS.md",
+      "sha256": "49a1aa8441c11c1d804aacf311c96d2ef2cf9581794798eff7eed668ae3d2a62",
+      "bytes": 14605
+    },
+    {
+      "path": "source_manifest.json",
+      "sha256": "4f9e560fe8255768bc591393cb4c9844609e98892539ad47a00810896fd2f436",
+      "bytes": 2216
+    },
+    {
+      "path": "README.md",
+      "sha256": "1f4d3505b4bf4280edb3da32c33f7b60eead53707dc539fc2e41f50f1f882747",
+      "bytes": 4556
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{"name":"failed future-schema hydration exposes raw download without activation or writes","ok":true}
+{"name":"failed hydration can independently download preserved candidate originals including BOM and whitespace","ok":true}
+{"name":"mounted recovery browses127 candidates with bounded pages and reversible navigation","ok":true}
+{"name":"mounted recovery distinguishes unavailable reads from an empty list and can retry","ok":true}
+{"name":"damaged surrogate text cannot be downloaded lossily and has a lossless envelope alternative","ok":true}
+{"name":"encoded candidate has exact byte/text downloads and a lossless original-source envelope","ok":true}
+{"name":"invalid UTF-8 candidate retains byte rescue while opening remains unavailable","ok":true}

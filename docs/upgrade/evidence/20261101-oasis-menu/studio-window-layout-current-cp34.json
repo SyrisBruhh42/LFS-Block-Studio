@@ -1,0 +1,108 @@
+{
+  "startedAt": "2026-11-01T18:57:23.208Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "../../src/components/DraggableWindow.tsx": "a0318b2c11220bf57ca8a73b5068dca8cc8d84c1cd43ad980f5152c20e652c38",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "75a02058b93f464ad69cba2f4386d721938448571477f78f12a7c38c3829989a"
+  },
+  "results": [
+    {
+      "name": "numeric position/size fields work without drag and persist exact layout",
+      "ok": true,
+      "elapsedMs": 634
+    },
+    {
+      "name": "invalid dimensions retain the draft and do not write preferences",
+      "ok": true,
+      "elapsedMs": 501
+    },
+    {
+      "name": "off-screen layout is clamped and centering remains reachable",
+      "ok": true,
+      "elapsedMs": 516
+    },
+    {
+      "name": "future preference data is retained and session-only feedback is honest",
+      "ok": true,
+      "elapsedMs": 538
+    },
+    {
+      "name": "snap mode alternates and synchronizes while browser writes are denied",
+      "ok": true,
+      "elapsedMs": 454
+    },
+    {
+      "name": "secondary pointers cannot acquire or move a window",
+      "ok": true,
+      "elapsedMs": 434
+    },
+    {
+      "name": "actual mouse drag stops after pointer cancellation and blur",
+      "ok": true,
+      "elapsedMs": 1106
+    },
+    {
+      "name": "ordinary toolbar buttons click without repositioning the toolbar",
+      "ok": true,
+      "elapsedMs": 534
+    },
+    {
+      "name": "layout reset leaves unrelated stored project data intact",
+      "ok": true,
+      "elapsedMs": 552
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Mounted real window/HUD components and real mouse/keyboard tasks; selected cancellation/secondary-pointer events are synthetic. No physical touch/pen, assistive-technology or full accessibility acceptance.",
+    "App project/history/export invariants are qualified separately on a frozen application build. No provider requests or normal browser/user storage."
+  ],
+  "lastFixture": {
+    "text": "Window A\nLayout\n\nMove or resize this window without dragging.\n\nLeft (px)\nTop (px)\nWidth (px)\nHeight (px)\nApply window layoutCenter and restore size\n\nLayout applied and saved; kept within the viewport.\n\nSnap 16px\nModal\n\nWindow A content\n\nToolbar action 0",
+    "fields": [
+      {
+        "name": "Window x",
+        "value": "150",
+        "valid": true,
+        "validationMessage": ""
+      },
+      {
+        "name": "Window y",
+        "value": "45",
+        "valid": true,
+        "validationMessage": ""
+      },
+      {
+        "name": "Window width",
+        "value": "520",
+        "valid": true,
+        "validationMessage": ""
+      },
+      {
+        "name": "Window height",
+        "value": "520",
+        "valid": true,
+        "validationMessage": ""
+      }
+    ],
+    "statuses": [
+      "Layout applied and saved; kept within the viewport."
+    ],
+    "disclosures": [
+      {
+        "open": true
+      }
+    ]
+  },
+  "sourceAfter": {
+    "../../src/components/DraggableWindow.tsx": "a0318b2c11220bf57ca8a73b5068dca8cc8d84c1cd43ad980f5152c20e652c38",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "75a02058b93f464ad69cba2f4386d721938448571477f78f12a7c38c3829989a"
+  },
+  "sourceStable": true,
+  "finishedAt": "2026-11-01T18:57:28.482Z",
+  "ok": true
+}

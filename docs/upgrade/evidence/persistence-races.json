@@ -1,0 +1,53 @@
+{
+  "testedAt": "2026-11-01T14:03:10.736Z",
+  "results": [
+    {
+      "name": "StrictMode hydrates once and initializes one verified project",
+      "ok": true
+    },
+    {
+      "name": "double restore submission activates exactly one copy",
+      "ok": true
+    },
+    {
+      "name": "edits during prerequisite save stop replacement and remain open",
+      "ok": true
+    },
+    {
+      "name": "edits during candidate verification retain candidate without activating it",
+      "ok": true
+    },
+    {
+      "name": "edits while promotion awaits completion stay open and can fork from fresh authority",
+      "ok": true
+    },
+    {
+      "name": "cross-writer conflict preserves unsaved work and fork saves it separately",
+      "ok": true
+    },
+    {
+      "name": "unmount aborts pending save and ignores its callback",
+      "ok": true
+    },
+    {
+      "name": "retry cancels old hydration and stale candidate cannot activate",
+      "ok": true
+    },
+    {
+      "name": "unmount after committed promotion cannot restore into the old component",
+      "ok": true
+    },
+    {
+      "name": "failed and unexpectedly rejected saves never claim saved or enable replacement",
+      "ok": true
+    },
+    {
+      "name": "named copy preserves all fields without moving active pointer or save receipt",
+      "ok": true
+    },
+    {
+      "name": "document-only properties survive partial UI capture and reset on explicit replacement",
+      "ok": true
+    }
+  ]
+}

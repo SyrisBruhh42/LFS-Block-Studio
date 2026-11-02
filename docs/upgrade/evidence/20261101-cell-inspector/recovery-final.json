@@ -1,0 +1,42 @@
+{
+  "testedAt": "2026-11-01T22:09:06.843Z",
+  "bundleAssets": [
+    "/assets/index-BjocarM_.js",
+    "/assets/index-BxvGy-C2.css"
+  ],
+  "results": [
+    {
+      "name": "file restore as copy preserves complete authored data and absent lighting across reload",
+      "ok": true
+    },
+    {
+      "name": "animated pattern preview leaves authored settings and saved status unchanged",
+      "ok": true
+    },
+    {
+      "name": "unknown schema import leaves current saved project intact",
+      "ok": true
+    },
+    {
+      "name": "named copy saves/exports a complete document without changing active; explicit open activates a copy",
+      "ok": true
+    },
+    {
+      "name": "two-tab conflict never overwrites first writer; unsaved download and separate fork preserve both",
+      "ok": true
+    },
+    {
+      "name": "injected quota failure stays visible and retains previous saved revision",
+      "ok": true
+    },
+    {
+      "name": "existing IndexedDB document opens with localStorage unavailable",
+      "ok": true
+    },
+    {
+      "name": "corrupt legacy data blocks editing and remains byte-preserved when starting separate project",
+      "ok": true
+    }
+  ],
+  "errors": []
+}

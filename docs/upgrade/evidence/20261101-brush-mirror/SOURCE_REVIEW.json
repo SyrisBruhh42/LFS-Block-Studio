@@ -1,0 +1,109 @@
+{
+  "recordedAtUTC": "2026-11-01T21:16:34.958652+00:00",
+  "scope": "Source review and actual receipt readback, not independent native/hardware or release qualification.",
+  "predecessor": "history-capacity-checkpoint-20261101T203917Z",
+  "predecessorSource": {
+    "file": "CURRENT_SOURCE.zip",
+    "bytes": 1414927,
+    "sha256": "0b8a1f6cbaff116d2cc2d1ac2a8219dacef702f3f7c8c756906609099c4a9dca"
+  },
+  "candidate": {
+    "js": "index-DnOzWERi.js",
+    "css": "index-D3u5_oEE.css"
+  },
+  "changedCodeAndQa": [
+    {
+      "path": "src/App.tsx",
+      "sha256": "c04cc33d1d02a67ae3df0d2b1a126c5538539fb2534f494440755f449acb6653",
+      "new": false
+    },
+    {
+      "path": "src/components/SkyblockViewport.tsx",
+      "sha256": "fe68df5f7e04d4d559f6a74f9d35bba86bb440fd358473b128277cf3c26b1ce2",
+      "new": false
+    },
+    {
+      "path": "src/components/StudioBuildToolOptions.tsx",
+      "sha256": "ff33663eeabc08c9510950d7979022bab0b8e5c494321da3dcbe02e61e0ae2e1",
+      "new": true
+    },
+    {
+      "path": "src/components/StudioCoordinateEditor.tsx",
+      "sha256": "e5a9350c3db8bd655f00247378ce01be36de322a70ee4d0beaf3c00d54d1d64c",
+      "new": false
+    },
+    {
+      "path": "src/engine/blueprintDefinitionSafety.ts",
+      "sha256": "ec1fc28f921e17f929eb16d624984e94da813d6cc970794d0132888827a99731",
+      "new": false
+    },
+    {
+      "path": "src/engine/chunkAndPatternEngine.safety.test.ts",
+      "sha256": "05f21e894e89251c185ba63d79815153eecadcd79cf8e7cd363b4d183c3bf359",
+      "new": false
+    },
+    {
+      "path": "src/engine/chunkAndPatternEngine.ts",
+      "sha256": "d0da41ae9409edd1587e243ecf49e712fced718ab9bd05ee6144c558785b90d0",
+      "new": false
+    },
+    {
+      "path": "src/engine/placementContent.ts",
+      "sha256": "a9b94e596e4003a9fc44eba95773a74ca1852eab237ef49971dd0d0a67d5555e",
+      "new": true
+    },
+    {
+      "path": "src/engine/spatialCopilotEngine.ts",
+      "sha256": "8fe0b16da931c555503f76dfdae973c97a400c9cebd300ff2a2f944a97de13a6",
+      "new": false
+    },
+    {
+      "path": "src/lib/studioBrushEdit.test.ts",
+      "sha256": "5c5cef2c91ae54e02fb6acf934d2ed7e84875b221fd14c7834d20af88a3c4586",
+      "new": true
+    },
+    {
+      "path": "src/lib/studioBrushEdit.ts",
+      "sha256": "960acd279658e9e3220ae8e8355afaa81faa992f0c8caf82e087946b12a40b57",
+      "new": true
+    },
+    {
+      "path": "scripts/qa/README.md",
+      "sha256": "4eb13f410b5d7eb322a2c9460995ae771fec89ef64d0fb059499179474cb4912",
+      "new": false
+    },
+    {
+      "path": "scripts/qa/brush-workflow.mjs",
+      "sha256": "817c944b8ff3b58815abec185976d0e5815d2a0e14898bf964c6fccbcb8abf1e",
+      "new": true
+    },
+    {
+      "path": "scripts/qa/build-tool-options.mjs",
+      "sha256": "f1ce2c9b07c1005ebbae1f59a94d65986309ae7be55ba8ef0bcc2725014922e0",
+      "new": true
+    },
+    {
+      "path": "scripts/qa/compatibility-workflow.mjs",
+      "sha256": "373d2794a3106db2c794e5ffc5485d3d8ab6609c097ff172d212009b26c1ea39",
+      "new": false
+    }
+  ],
+  "observedProductionDefect": "Before-fix repeated identical brush regenerates instance IDs and changes legacy history. Preserved deterministic failed fixture.",
+  "implemented": [
+    "Reuse extracted placement content comparator without changing its old consumers",
+    "Detached same-source brush proposals with whole-mirror preflight and one session/history commit",
+    "Exact whole/half pivots; negative layers no longer clipped at-16",
+    "Stable existing IDs and final unique changed-cell/effect accounting; legacy snapshots omitted by mounted path",
+    "Exact locked directionless candidate mirrors keep mapped state and rotation0; full target validation remains",
+    "Rendered direct-source gates and project/session/epoch gesture cancellation",
+    "Numeric brush/mirror alternatives, stale draft preservation and actual native keyboard/reflow checks"
+  ],
+  "remaining": [
+    "Other cached/async/effect and whole-stroke G2 paths",
+    "Faithful custom geometry reflection",
+    "Whole studio P4/accessibility/physical input",
+    "Source convergence/diagnostics/provider containment",
+    "P1 retention/named-copy/quota/update lifecycle",
+    "Native skipped; useful palette, faithful geometry export, measured scale, release gates"
+  ]
+}

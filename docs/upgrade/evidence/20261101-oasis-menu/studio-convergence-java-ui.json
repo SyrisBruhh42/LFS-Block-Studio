@@ -1,0 +1,31 @@
+{
+  "startedAt": "2026-11-01T18:50:41.062Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "../../src/components/DraggableWindow.tsx": "346733661e902766fb37a6e269ddb02eb74a62a31c4edecd86cc1462a513d26f",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/components/StudioJavaExportModal.tsx": "6d19892ba43708ad6adf023d7866e8ac246e20fb4ffcdf849878f32a466043f5",
+    "../../src/components/StudioJavaExportModal.css": "304ce02ff73f7db8b0bbb73ea7ed3010bdbc5fb1e25ebb04b9da4ccdfe37f51c",
+    "../../src/components/SchematicExportModal.tsx": "910700d37fee8ebefd37d99195a9eebf21e213ba5831be0d4c02d390be3be3de",
+    "../../src/lib/studioJavaExport.ts": "0979ced5c3fb8282be15a115c293951c4867f0c5f88004858621623997cef7f6",
+    "./java-export-ui.mjs": "ec8e7848657aeaa2d529302abbeadcfa86eb2977ebbb78387e2b8ebe7c592599"
+  },
+  "results": [],
+  "pageErrors": [],
+  "limitations": [
+    "Mounted components and controlled encode completion in disposable Chromium. Generated Blob downloads observed; no OS file saving, provider or native game operation.",
+    "App/download semantic qualification has a separate runner. Not full accessibility, other browsers, hardware or release acceptance."
+  ],
+  "sourceAfter": {
+    "../../src/components/DraggableWindow.tsx": "346733661e902766fb37a6e269ddb02eb74a62a31c4edecd86cc1462a513d26f",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/components/StudioJavaExportModal.tsx": "6d19892ba43708ad6adf023d7866e8ac246e20fb4ffcdf849878f32a466043f5",
+    "../../src/components/StudioJavaExportModal.css": "304ce02ff73f7db8b0bbb73ea7ed3010bdbc5fb1e25ebb04b9da4ccdfe37f51c",
+    "../../src/components/SchematicExportModal.tsx": "910700d37fee8ebefd37d99195a9eebf21e213ba5831be0d4c02d390be3be3de",
+    "../../src/lib/studioJavaExport.ts": "0979ced5c3fb8282be15a115c293951c4867f0c5f88004858621623997cef7f6",
+    "./java-export-ui.mjs": "ec8e7848657aeaa2d529302abbeadcfa86eb2977ebbb78387e2b8ebe7c592599"
+  },
+  "sourceStable": true,
+  "finishedAt": "2026-11-01T18:50:53.480Z",
+  "ok": false
+}

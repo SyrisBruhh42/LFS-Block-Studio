@@ -1,0 +1,168 @@
+{
+  "startedAt": "2026-11-01T15:44:41.359Z",
+  "origin": "http://127.0.0.1:4173",
+  "browser": "156.0.8078.79",
+  "sourceHashes": {
+    "../../src/components/BlockWorkshopModal.tsx": "32bafb3b4a08374eebbcc7f1964dddfd49efbdb30b7e27866545bb4eeb2faab2",
+    "../../src/components/MainMenuProjectModal.tsx": "26439897549c0c3213c77631b05dc7105f3dd10b58cca2108a651223790b1298",
+    "../../src/components/BlueprintsModal.tsx": "add6c93f30f5c9a0b6242543346ef1d451716ecaa98fdae77a95dd07be0dcadb",
+    "./action-outcomes.mjs": "7b5e09368b68b476826b24b2d20e831abfa6b397c7385288e2023c6d50239db3"
+  },
+  "results": [
+    {
+      "name": "world and chunk resets distinguish rejected, unchanged and applied outcomes",
+      "ok": true
+    },
+    {
+      "name": "workshop false and thrown outcomes retain the draft; true closes after completion",
+      "ok": true
+    },
+    {
+      "name": "blueprint false and thrown outcomes retain library; true closes after completion",
+      "ok": true
+    },
+    {
+      "name": "pending workshop save does not discard edits made after the submitted draft",
+      "ok": true
+    },
+    {
+      "name": "same-turn edit and save completion retain the new draft and track the saved version",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains blueprint notes",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains publish choice",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains shape changes",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains width slider",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains depth slider",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains heightPlates slider",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains Shift+wheel dimensions",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains snap-mode geometry rounding",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains architectural template",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains texture",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains material finish",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains palette color",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains custom color",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains mirrored voxel draw",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains mirrored voxel erase",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains voxel recolor",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains voxel fill layer",
+      "ok": true
+    },
+    {
+      "name": "pending workshop success retains voxel clear layer",
+      "ok": true
+    },
+    {
+      "name": "unchanged authored values and view-only preview actions still close after success",
+      "ok": true
+    },
+    {
+      "name": "invalid newer draft survives successful earlier save and validates before retry",
+      "ok": true
+    },
+    {
+      "name": "pending failure preserves later values and retry submits them once",
+      "ok": true
+    },
+    {
+      "name": "close/reopen via cancel fences stale success even with identical values",
+      "ok": true
+    },
+    {
+      "name": "close/reopen via prop fences stale success even with identical values",
+      "ok": true
+    },
+    {
+      "name": "stale failure after close/reopen cannot replace the new draft notice",
+      "ok": true
+    },
+    {
+      "name": "blueprint import awaits true, prevents duplicate submissions, and retains false/error drafts",
+      "ok": true
+    },
+    {
+      "name": "blueprint import preserves newer text on same-turn success and retries exact newer bytes",
+      "ok": true
+    },
+    {
+      "name": "blueprint import completion preserves another active tab and its local draft",
+      "ok": true
+    },
+    {
+      "name": "blueprint import close/reopen fences stale success without duplicate writes",
+      "ok": true
+    },
+    {
+      "name": "blueprint import prop/reopen fences stale success without duplicate writes",
+      "ok": true
+    },
+    {
+      "name": "blueprint import ignores stale rejection after reopen and preserves a new draft",
+      "ok": true
+    },
+    {
+      "name": "blueprint import reports a pending rejection against the submitted text without losing later edits",
+      "ok": true
+    },
+    {
+      "name": "blueprint import preserves synchronous boolean callback compatibility",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Actual React components with controlled callbacks; no application integration, persistence, cloud publication, native game, accessibility or hardware qualification.",
+    "Range, color and wheel cases dispatch DOM events to actual mounted controls. They verify React result handling, not physical input hardware."
+  ],
+  "finishedAt": "2026-11-01T15:45:54.826Z",
+  "ok": true
+}

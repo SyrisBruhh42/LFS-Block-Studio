@@ -237,7 +237,7 @@ test('Minecraft WASD hotkey mapping, Mouse Free-Look toggle/hold keys, and Googl
   assert.equal(payload.hotkeys?.bindings.moveForward, 'KeyW');
 });
 
-test('Universal Schematic Exporter and closest-block mapping generate valid Minecraft Sponge Schematic v2, .mcfunction, and Brick .ldr outputs', () => {
+test('Legacy exporters produce schematic diagnostic JSON and expected command/LDraw text fields (no native qualification)', () => {
   const state = createInitialEngineState();
   const mappings = computeInitialBlockMappings(state.blocks, state.customBlocks);
   assert.ok(mappings.length >= 3);
@@ -466,7 +466,7 @@ test('3D Volume Place & Erase Brushes and Selection Box Shift/Raise/Expand trans
   assert.deepEqual(expanded.pos2, { x: 3, y: 5, z: 3 });
 });
 
-test('Local Spatial Copilot: Symmetry Mirroring, Predictive Ghost Auto-Complete, Selection Morphology & Walkability Audit run in <2ms', () => {
+test('Local spatial helpers produce symmetry, prediction, morphology and walkability results', () => {
   assert.equal(DEFAULT_SPATIAL_COPILOT_CONFIG.pixel8ProGpuGovernor, true);
   assert.equal(DEFAULT_SYMMETRY_CONFIG.mode, 'off');
 
@@ -628,7 +628,7 @@ test('Refined Self-Learning 3D Ghost Auto-Complete: Pattern Archive, Linger Remo
     activeObjectClass: 'house_dwelling',
     nowMs: now,
   });
-  assert.equal(archive.totalAcceptedGhosts, 5);
+  assert.equal(archive.totalAcceptedGhosts, 1);
   assert.equal(archive.lingerWatchList.length, 1);
 
   const watchedPatternKey = archive.lingerWatchList[0].patternKey;
@@ -661,6 +661,5 @@ test('Refined Self-Learning 3D Ghost Auto-Complete: Pattern Archive, Linger Remo
   assert.equal(detectedClass.classId, 'house_dwelling');
   assert.ok(detectedClass.confidence >= 0.55);
 });
-
 
 

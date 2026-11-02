@@ -21,3 +21,37 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+.studio-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-width: 36px;
+  min-height: 36px;
+  padding: .35rem .7rem;
+  border: 1px solid #52665c;
+  border-radius: .55rem;
+  color: #ecf4f0;
+  background: #1b2924;
+  font-size: .8rem;
+}
+.studio-control:hover:not(:disabled) { background: #2a3c35; }
+.studio-control:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 2px; }
+.studio-control:disabled { opacity: .5; cursor: not-allowed; }
+.studio-recovery-dialog {
+  margin: auto;
+  width: min(680px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #52665c;
+  border-radius: 16px;
+  background: #141f1b;
+  color: #ecf4f0;
+}
+.studio-recovery-dialog::backdrop { background: rgb(0 0 0 / .65); }
+@media (pointer: coarse) { .studio-control { min-width: 48px; min-height: 48px; } }
+@media (prefers-reduced-motion: reduce) {
+  .studio-control, .studio-recovery-dialog { transition: none; animation: none; }
+}

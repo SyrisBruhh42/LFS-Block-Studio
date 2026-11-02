@@ -13,7 +13,10 @@ import {
   WorldChunkConfig,
   WorldEditEngineState,
 } from './types';
-import { coordKey, pushUndoSnapshot } from './worldEditEngine';
+import {
+  ENGINE_EDIT_LIMITS, coordKey, getGridCoordError, getSelectionVolumeError, pushUndoSnapshot,
+} from './worldEditEngine';
+import { samePlacementContent } from './placementContent';
 
 export const DEFAULT_CHUNK_CONFIG: WorldChunkConfig = {
   chunkSize: 16,
@@ -178,15 +181,43 @@ export function computeChunkPerformanceStats(
 /**
  * Expands the world into a target chunk (cx, cz) by generating a starter platform or island pad
  */
+export function getChunkExpansionError(
+  cx: number, cz: number, style: ChunkExpansionStyle, chunkSize = 16
+): string | null {
+  if (!Number.isSafeInteger(cx) || !Number.isSafeInteger(cz) ||
+      !Number.isSafeInteger(chunkSize) || chunkSize < 1) {
+    return 'Chunk coordinates and size must be finite whole numbers, with a positive size.';
+  }
+  if (!['grass_island', 'stone_foundation', 'timber_deck', 'sandstone_plaza', 'empty_grid'].includes(style)) {
+    return 'Unknown chunk expansion style.';
+  }
+  const bounds = getChunkWorldBounds(cx, cz, chunkSize);
+  const boundsError = getSelectionVolumeError(
+    { x: bounds.minX, y: 0, z: bounds.minZ }, { x: bounds.maxX, y: 0, z: bounds.maxZ });
+  if (boundsError) return boundsError;
+  const midX = Math.floor((bounds.minX + bounds.maxX) / 2);
+  const midZ = Math.floor((bounds.minZ + bounds.maxZ) / 2);
+  // Existing templates can extend outside small chunks; check their actual pad.
+  const radius = style === 'grass_island' ? 4 : style === 'stone_foundation' || style === 'timber_deck' || style === 'sandstone_plaza' ? 5 : 0;
+  return getSelectionVolumeError(
+    { x: midX - radius, y: -2, z: midZ - radius },
+    { x: midX + radius + 1, y: 2, z: midZ + radius + 1 });
+}
+
 export function expandWorldIntoChunk(
   state: WorldEditEngineState,
   cx: number,
   cz: number,
   style: ChunkExpansionStyle,
-  chunkSize = 16
-): { nextState: WorldEditEngineState; addedCount: number } {
-  const withUndo = pushUndoSnapshot(state, `Expand Chunk (${cx}, ${cz})`);
-  const nextBlocks = { ...withUndo.blocks };
+  chunkSize = 16,
+  options?: { skipUndoSnapshot?: boolean }
+): { nextState: WorldEditEngineState; addedCount: number; error?: string } {
+  const error = getChunkExpansionError(cx, cz, style, chunkSize);
+  if (error) return { nextState: state, addedCount: 0, error };
+  const baseState = options?.skipUndoSnapshot
+    ? state
+    : pushUndoSnapshot(state, `Expand Chunk (${cx}, ${cz})`);
+  const nextBlocks = { ...baseState.blocks };
   const bounds = getChunkWorldBounds(cx, cz, chunkSize);
   const midX = Math.floor((bounds.minX + bounds.maxX) / 2);
   const midZ = Math.floor((bounds.minZ + bounds.maxZ) / 2);
@@ -244,6 +275,31 @@ export function expandWorldIntoChunk(
         }
       }
     }
+  } else if (style === 'sandstone_plaza') {
+    for (let x = midX - 5; x <= midX + 6; x++) {
+      for (let z = midZ - 5; z <= midZ + 6; z++) {
+        const isBorder =
+          x === midX - 5 || x === midX + 6 || z === midZ - 5 || z === midZ + 6;
+        const isCenterMedallion =
+          x >= midX - 1 && x <= midX + 2 && z >= midZ - 1 && z <= midZ + 2;
+        setBlk(
+          x,
+          0,
+          z,
+          isBorder
+            ? 'cobble_brick'
+            : isCenterMedallion
+              ? 'quartz_pillar'
+              : 'lego_amber_2x4'
+        );
+        const isCorner =
+          (x === midX - 5 || x === midX + 6) &&
+          (z === midZ - 5 || z === midZ + 6);
+        if (isCorner) {
+          setBlk(x, 1, z, 'voxel_lantern');
+        }
+      }
+    }
   } else {
     for (let x = midX; x <= midX + 1; x++) {
       for (let z = midZ; z <= midZ + 1; z++) {
@@ -254,7 +310,7 @@ export function expandWorldIntoChunk(
 
   return {
     nextState: {
-      ...withUndo,
+      ...baseState,
       blocks: nextBlocks,
     },
     addedCount,
@@ -901,11 +957,35 @@ export function computeSmartBlockVariation(
  * Computes all relative (dx, dy, dz) grid offsets inside a 3D Volume Brush
  * (sphere, cube, cylinder, or diamond; solid or hollow shell).
  */
+export function getVolumeBrushError(brush: VolumeBrushConfig, center?: GridCoord): string | null {
+  if (!brush || !['sphere', 'cube', 'cylinder', 'diamond'].includes(brush.shape)) {
+    return 'Unknown volume brush shape.';
+  }
+  // Radius zero intentionally retains the existing single-cell brush behavior.
+  if (!Number.isSafeInteger(brush.radius) || brush.radius < 0 || brush.radius > 8 ||
+      !Number.isSafeInteger(brush.height) || brush.height < 1 || brush.height > 12) {
+    return 'Brush radius must be a whole number from 0 to 8 and height from 1 to 12.';
+  }
+  if (typeof brush.hollow !== 'boolean' || typeof brush.airOnly !== 'boolean') {
+    return 'Brush hollow and air-only settings must be true or false.';
+  }
+  const origin = center ?? { x: 0, y: 0, z: 0 };
+  const originError = getGridCoordError(origin);
+  if (originError) return originError;
+  const radius = brush.radius;
+  const minY = radius === 0 || brush.shape === 'cylinder' ? 0 : -radius;
+  const maxY = radius === 0 ? 0 : brush.shape === 'cylinder' ? brush.height - 1 : radius;
+  return getSelectionVolumeError(
+    { x: origin.x - radius, y: origin.y + minY, z: origin.z - radius },
+    { x: origin.x + radius, y: origin.y + maxY, z: origin.z + radius });
+}
+
 export function computeVolumeBrushOffsets(
   brush: VolumeBrushConfig
 ): GridCoord[] {
-  const r = Math.max(0, Math.min(8, Math.round(brush.radius)));
-  const h = Math.max(1, Math.min(12, Math.round(brush.height || r * 2 + 1)));
+  if (getVolumeBrushError(brush)) return [];
+  const r = brush.radius;
+  const h = brush.height;
   const offsets: GridCoord[] = [];
 
   if (r === 0) {
@@ -956,7 +1036,7 @@ export function computeVolumeBrushOffsets(
  * Applies a 3D Volume Brush (large-scale place or large-scale remove/excavate)
  * centered at `center` in a single atomic Undo-able operation.
  */
-export function applyVolumeBrushToWorld(params: {
+export interface VolumeBrushApplicationParams {
   state: WorldEditEngineState;
   center: GridCoord;
   mode: 'brush_place' | 'brush_erase' | 'place' | 'erase';
@@ -965,10 +1045,32 @@ export function applyVolumeBrushToWorld(params: {
   rotation: 0 | 90 | 180 | 270;
   customScale?: BlockScale3D;
   patternConfig?: SmartPatternVariationConfig;
-}): {
+}
+
+export function getVolumeBrushApplicationError(params: VolumeBrushApplicationParams): string | null {
+  const coordinateError = getGridCoordError(params.center);
+  if (coordinateError) return coordinateError;
+  const brushError = getVolumeBrushError(params.brush, params.center);
+  if (brushError) return brushError;
+  if (!['brush_place', 'brush_erase', 'place', 'erase'].includes(params.mode)) return 'Unknown volume brush operation.';
+  if (![0, 90, 180, 270].includes(params.rotation)) return 'Brush rotation must be 0, 90, 180, or 270 degrees.';
+  if (params.customScale && ![params.customScale.x, params.customScale.y, params.customScale.z]
+    .every(value => Number.isFinite(value) && value >= 0.2 && value <= 8)) {
+    return 'Brush scale must be finite and between 0.2 and 8 on each axis.';
+  }
+  if ((params.mode === 'brush_place' || params.mode === 'place') && !params.state.customBlocks[params.activeBlockId]) {
+    return `Missing brush block definition "${params.activeBlockId}".`;
+  }
+  return null;
+}
+
+export function applyVolumeBrushToWorld(params: VolumeBrushApplicationParams, options: { recordHistory?: boolean } = {}): {
   nextState: WorldEditEngineState;
   affectedCount: number;
+  error?: string;
 } {
+  const error = getVolumeBrushApplicationError(params);
+  if (error) return { nextState: params.state, affectedCount: 0, error };
   const {
     state,
     center,
@@ -997,7 +1099,6 @@ export function applyVolumeBrushToWorld(params: {
       y: center.y + off.y,
       z: center.z + off.z,
     };
-    if (target.y < -16) continue;
     const key = coordKey(target.x, target.y, target.z);
 
     if (isErase) {
@@ -1021,8 +1122,8 @@ export function applyVolumeBrushToWorld(params: {
             colorOverride?: string;
             textureOverride?: import('./types').BlockTexturePattern;
           });
-      nextBlocks[key] = {
-        id: `blk_${target.x}_${target.y}_${target.z}_${Date.now()}`,
+      const placed: PlacedBlock = {
+        id: nextBlocks[key]?.id ?? `blk_${target.x}_${target.y}_${target.z}_${Date.now()}`,
         blockDefId: activeBlockId,
         position: target,
         rotation,
@@ -1034,7 +1135,10 @@ export function applyVolumeBrushToWorld(params: {
           : {}),
         ...(hasCustomScale ? { customScale: { ...customScale! } } : {}),
       };
-      affectedCount++;
+      if (!samePlacementContent(nextBlocks[key], placed)) {
+        nextBlocks[key] = placed;
+        affectedCount++;
+      }
     }
   }
 
@@ -1045,7 +1149,9 @@ export function applyVolumeBrushToWorld(params: {
   const label = isErase
     ? `3D Erase Brush (R=${brush.radius}, -${affectedCount})`
     : `3D Place Brush (R=${brush.radius}, +${affectedCount})`;
-  const withUndo = pushUndoSnapshot(state, label);
+  // The mounted studio session owns complete history; legacy standalone callers
+  // retain their old engine history without making duplicate session snapshots.
+  const withUndo = options.recordHistory === false ? state : pushUndoSnapshot(state, label);
   return {
     nextState: {
       ...withUndo,
@@ -1080,7 +1186,7 @@ export type SelectionTransformAction =
 /**
  * Shifts, raises, lowers, expands, or contracts a Pos1–Pos2 selection region cleanly.
  */
-export function transformSelectionBox(
+function calculateSelectionTransform(
   pos1: GridCoord | null,
   pos2: GridCoord | null,
   action: SelectionTransformAction,
@@ -1189,3 +1295,35 @@ export function transformSelectionBox(
   };
 }
 
+const SELECTION_TRANSFORM_ACTIONS: SelectionTransformAction[] = [
+  'raise_up', 'lower_down', 'shift_up', 'shift_down', 'shift_north', 'shift_south', 'shift_west', 'shift_east',
+  'expand_up', 'expand_down', 'expand_north', 'expand_south', 'expand_west', 'expand_east',
+  'expand_all', 'expand_all_xz', 'expand_all_xyz', 'contract_all', 'contract_all_xz', 'contract_all_xyz',
+];
+
+export function getSelectionTransformError(
+  pos1: GridCoord | null, pos2: GridCoord | null, action: SelectionTransformAction, step = 1
+): string | null {
+  if (!SELECTION_TRANSFORM_ACTIONS.includes(action)) return 'Unknown selection transform.';
+  if (!Number.isSafeInteger(step) || step < 1 || step > ENGINE_EDIT_LIMITS.maxAbsCoordinate) {
+    return 'Selection transform step must be a positive whole number within the coordinate limit.';
+  }
+  const a = pos1 || pos2 || { x: 0, y: 1, z: 0 };
+  const b = pos2 || pos1 || { x: 0, y: 1, z: 0 };
+  const sourceError = getSelectionVolumeError(a, b);
+  if (sourceError) return sourceError;
+  const next = calculateSelectionTransform(a, b, action, step);
+  return getSelectionVolumeError(next.pos1, next.pos2);
+}
+
+export function transformSelectionBox(
+  pos1: GridCoord | null, pos2: GridCoord | null, action: SelectionTransformAction, step = 1
+): { pos1: GridCoord; pos2: GridCoord; error?: string } {
+  const error = getSelectionTransformError(pos1, pos2, action, step);
+  if (error) return {
+    pos1: pos1 || pos2 || { x: 0, y: 1, z: 0 },
+    pos2: pos2 || pos1 || { x: 0, y: 1, z: 0 },
+    error,
+  };
+  return calculateSelectionTransform(pos1, pos2, action, step);
+}

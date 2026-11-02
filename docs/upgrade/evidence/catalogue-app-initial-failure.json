@@ -1,0 +1,39 @@
+{
+  "startedAt": "2026-11-01T16:45:11.124Z",
+  "origin": "http://127.0.0.1:4174",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-COgR8-4M.js",
+    "http://127.0.0.1:4174/assets/index-jR8-WG5e.css"
+  ],
+  "results": [
+    {
+      "name": "project fixture contains an already-used conflicting catalogue definition",
+      "ok": true
+    },
+    {
+      "name": "individual catalogue ID collision rejects without retargeting placed blocks or clearing history",
+      "ok": true
+    },
+    {
+      "name": "mixed catalogue batch rejects atomically when one definition conflicts",
+      "ok": true
+    },
+    {
+      "name": "new catalogue definition adds once and complete Undo/Redo preserves existing definitions and world",
+      "ok": true,
+      "definitionId": "ph_castle_limestone"
+    },
+    {
+      "name": "identical catalogue install is a no-op preserving actual pending Redo",
+      "ok": false,
+      "error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('block-market-modal').getByRole('status').filter({ hasText: 'already in your library' }) to be visible\u001b[22m\n"
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "Desktop Chromium with software WebGL; local procedural catalogue, no provider/download-license or physical-device qualification."
+  ],
+  "failureUi": " explicit X Y Z.\n\nRegion Selection · Drag to Hotbar\n//pos1\n//pos2 [x y z]\nRun\n\nSets selection corner 2 (Pos2) to your current cursor coordinate or explicit X Y Z.\n\nRegion Selection · Drag to Hotbar\n//pos2\n//expand <amount> [up|down|north|south|east|west]\nRun\n\nExpands the active Pos1–Pos2 bounding box outward in the specified direction.\n\nRegion Selection · Drag to Hotbar\n//expand 2 up\n//set <block_id>\nRun\n\nFills every voxel inside the Pos1–Pos2 selection region with the specified block.\n\nBlock Operations · Drag to Hotbar\n//set ph_castle_limestone\n//replace [from_block] <to_block>\nRun\n\nReplaces all non-air blocks (or a specific block type) inside the selection with the active block.\n\nBlock Operations · Drag to Hotbar\n//replace ph_castle_limestone\n//walls <block_id>\nRun\n\nBuilds 4 vertical perimeter walls around the Pos1–Pos2 region (leaves roof and floor open).\n\nBlock Operations · Drag to Hotbar\n//walls ph_castle_limestone\n//box <block_id>\nRun\n\nConstructs a hollow 6-sided architectural room shell around the Pos1–Pos2 selection.\n\nBlock Operations · Drag to Hotbar\n//box ph_castle_limestone\n//hollow\nRun\n\nHollows out the interior of a solid structure inside Pos1–Pos2, keeping a 1-block outer shell.\n\nBlock Operations · Drag to Hotbar\n//hollow\n//clear\nRun\n\nDeletes all blocks within the selected Pos1–Pos2 region (same as //set air).\n\nBlock Operations · Drag to Hotbar\n//set air\n//sphere <block_id> <radius>\nRun\n\nGenerates a solid 3D voxel sphere centered at Pos1 with the given radius.\n\nGeometry Generators · Drag to Hotbar\n//sphere ph_castle_limestone 3\n//hsphere <block_id> <radius>\nRun\n\nGenerates a hollow geodesic dome / sphere shell centered at Pos1.\n\nGeometry Generators · Drag to Hotbar\n//hsphere ph_castle_limestone 4\n//cyl <block_id> <radius> [height]\nRun\n\nGenerates a vertical cylindrical tower or circular floor pad centered at Pos1.\n\nGeometry Generators · Drag to Hotbar\n//cyl ph_castle_limestone 3 4\n//copy\nRun\n\nCopies all blocks within the Pos1–Pos2 selection into your WorldEdit clipboard.\n\nClipboard & Transform · Drag to Hotbar\n//copy\n//cut\nRun\n\nCopies the Pos1–Pos2 selection to the clipboard and clears the original region.\n\nClipboard & Transform · Drag to Hotbar\n//cut\n//paste\nRun\n\nPastes the copied structure from the clipboard anchored at Pos1.\n\nClipboard & Transform · Drag to Hotbar\n//paste\n//stack <count> [up|down|north|south|east|west]\nRun\n\nRepeats and stacks the selected structure N times along an axis (ideal for multi-story buildings or bridges).\n\nClipboard & Transform · Drag to Hotbar\n//stack 2 up\n//move <distance> [up|down|north|south|east|west]\nRun\n\nShifts all blocks inside the selection by N units in the given direction.\n\nClipboard & Transform · Drag to Hotbar\n//move 2 up\n//undo\nRun\n\nReverts the last block placement, paint action, or WorldEdit operation (Ctrl+Z).\n\nHistory · Drag to Hotbar\n//undo\n//redo\nRun\n\nRe-applies a previously undone operation (Ctrl+Shift+Z).\n\nHistory · Drag to Hotbar\n//redo\nRun\n//market installAdded \"Castle Limestone\" from the local catalogue to your Studio Library.\nXYZ: (0, 1, 0)\n|\nSel: 1×1×1 (1)\n|\nmain@a1f8c20\n|\n13:30\n|\n2 blocks\nLFS Double Market — Open-Source CC0 Texture Packs & Studio Library\n· Drag any block onto a Hotbar slot or click to equip\n(Drag to move · Drag edges/corners to resize)\nCustom Block Workshop\n3D Interactive\n\nAdded to your library. Undo restores the previous library.\n\n1. OPEN-SOURCE CREATOR PACKS (1 BLOCKS)\nInstall Shown Pack to My Library\nAll CC0 Creators\nPoly Haven CC0 Architectural\nKenney Voxel Pack CC0\nAmbientCG PBR Surfaces\nOpenGameArt Pixel-Art HD\nLFS Studio Master Trim Pack\nAll Materials\nMasonry & Stone\nTimber & Wood\nBrushed Metals\nGlass & Neon\nNature & Turf\nRoofing & Arches\nCUB\nCastle Limestone\n4.9\n\nPoly Haven Community • cobblestone\n\nSun-bleached Mediterranean castle limestone with organic warm variation.\n\nCC0 1.0 Public Domain\nEquipped\n2. MY STUDIO LIBRARY (15 BLOCKS)\nMost Used\nMarket/Custom\nA–Z\n\nClick any block in your library to build with it immediately, or click Hotbar 1–9 to assign it to a shortcut key.\n\nWeathered Cobblestone\n18\nbrick • cobblestone • matte\nHotbar 1–9\nUse\nHewn Oak Planks\n14\nbrick • oak_planks • matte\nHotbar 1–9\nUse\nLush Mossy Turf\n11\nbrick • cobblestone • matte\nHotbar 1–9\nUse\nTempered Clear Glass\n9\ntile • smooth_abs • glass\nHotbar 1–9\nUse\nForged Glow Lantern\n8\nmicro_voxel • smooth_abs • neon\nHotbar 1–9\nUse\nSlate Roof Stair\n6\nslope • brick_masonry • matte\nHotbar 1–9\nUse\nCarved Stone Arch\narch • brick_masonry • matte\nHotbar 1–9\nUse\nCastle Limestone\ncube • cobblestone • matte\nHotbar 1–9\nUse\nChiseled Iron Block\nbrick • tech_panel • metallic\nHotbar 1–9\nUse\nChiseled Oak Canopy\nmicro_voxel • cobblestone • matte\nHotbar 1–9\nUse\nCourse Loam Soil\nbrick • cobblestone • matte\nHotbar 1–9\nUse\nCut Sandstone Block\nbrick • brick_masonry • matte\nHotbar 1–9\nUse\nExisting personal basalt\ncube • smooth_abs • glass\nHotbar 1–9\nUse\nFired Clay Bricks\nbrick • brick_masonry • matte\nHotbar 1–9\nUse\nSea Lantern Core\ncylinder • checker_tile • neon\nHotbar 1–9\nUse",
+  "finishedAt": "2026-11-01T16:45:44.357Z",
+  "ok": false
+}

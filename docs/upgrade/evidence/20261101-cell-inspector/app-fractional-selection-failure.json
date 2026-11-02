@@ -1,0 +1,31 @@
+{
+  "startedAt": "2026-11-01T21:45:06.388Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-Bi2ZcUfZ.js",
+    "http://127.0.0.1:4174/assets/index-B86ezzgp.css"
+  ],
+  "results": [
+    {
+      "name": "scene discovery opens a modeless properties panel without changing the project, history or canvas",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/lfs-cell-properties.png"
+  ],
+  "limitations": [
+    "Actual App controls and downloaded complete projects in disposable Chromium/software WebGL. External/API traffic and service workers blocked.",
+    "No App globals, React internals, hidden controller access or storage writes construct editing outcomes.",
+    "Scoped modeless-panel keyboard/reflow/token contrast checks; no physical touch/pen, assistive technology, other browser, large-world performance or full-shell accessibility qualification.",
+    "Native Minecraft/WorldEdit NOT_RUN — skipped by user. Locked editing checks are candidate policy evidence only."
+  ],
+  "failure": {
+    "stage": "reviewed position, type, rotation and scale apply in one step with stable identity and complete Undo/Redo",
+    "message": "Expected values to be strictly equal:\n\n'other' !== 'unit'\n",
+    "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n'other' !== 'unit'\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:63:38\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+  },
+  "finishedAt": "2026-11-01T21:45:23.703Z"
+}

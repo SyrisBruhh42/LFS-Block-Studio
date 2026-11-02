@@ -1,0 +1,74 @@
+{
+  "startedAt": "2026-11-01T18:44:01.892Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "6285bf280f9cfd1b8a0b52ff0dc2cb3913193e8b43b2e83a0ee821d05606cfdb"
+  },
+  "results": [
+    {
+      "name": "numeric position/size fields work without drag and persist exact layout",
+      "ok": true,
+      "elapsedMs": 531
+    },
+    {
+      "name": "invalid dimensions retain the draft and do not write preferences",
+      "ok": true,
+      "elapsedMs": 378
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Mounted real window/HUD components and real mouse/keyboard tasks; selected cancellation/secondary-pointer events are synthetic. No physical touch/pen, assistive-technology or full accessibility acceptance.",
+    "App project/history/export invariants are qualified separately on a frozen application build. No provider requests or normal browser/user storage."
+  ],
+  "lastFixture": {
+    "text": "Window A\nLayout\n\nMove or resize this window without dragging.\n\nLeft (px)\nTop (px)\nWidth (px)\nHeight (px)\nApply window layoutCenter and restore size\n\nLayout applied and saved; kept within the viewport.\n\nSnap 16px\nModal\n\nWindow A content\n\nToolbar action 0",
+    "fields": [
+      {
+        "name": "Window x",
+        "value": "30",
+        "valid": true,
+        "validationMessage": ""
+      },
+      {
+        "name": "Window y",
+        "value": "44",
+        "valid": true,
+        "validationMessage": ""
+      },
+      {
+        "name": "Window width",
+        "value": "520",
+        "valid": true,
+        "validationMessage": ""
+      },
+      {
+        "name": "Window height",
+        "value": "520",
+        "valid": true,
+        "validationMessage": ""
+      }
+    ],
+    "statuses": [
+      "Layout applied and saved; kept within the viewport."
+    ],
+    "disclosures": [
+      {
+        "open": true
+      }
+    ]
+  },
+  "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(b.x > 100 && b.x < 600 && b.y >= 8)\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:79:327\n    at async run (file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:64:60)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:78:2",
+  "sourceAfter": {
+    "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "6285bf280f9cfd1b8a0b52ff0dc2cb3913193e8b43b2e83a0ee821d05606cfdb"
+  },
+  "sourceStable": true,
+  "finishedAt": "2026-11-01T18:44:03.255Z",
+  "ok": false
+}

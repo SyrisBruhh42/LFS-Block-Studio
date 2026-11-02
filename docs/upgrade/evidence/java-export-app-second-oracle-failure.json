@@ -1,0 +1,58 @@
+{
+  "startedAt": "2026-11-01T17:43:08.665Z",
+  "origin": "http://127.0.0.1:4174",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-BFhf1rk6.js",
+    "http://127.0.0.1:4174/assets/index-BuFy5GDy.css"
+  ],
+  "results": [
+    {
+      "name": "real project import and explicit game compatibility review establish the source",
+      "ok": true,
+      "mappingsAreDeliberatelyDifferentFromAppearance": true
+    },
+    {
+      "name": "locked export mounts the typed binary path and requires an explicit anchor and review",
+      "ok": true
+    },
+    {
+      "name": "downloaded world .schem independently decodes exact axes, offsets, states, air and Unicode name",
+      "ok": true,
+      "sha256": "d029b72b3d835f8683c2364f2809ca9a17d66afd917bc31bf6d3fbe6a396ec1a",
+      "dimensions": [
+        3,
+        2,
+        4
+      ],
+      "offset": [
+        -5,
+        7,
+        -3
+      ]
+    },
+    {
+      "name": "separate export report identifies the exact downloaded bytes and captured source without modifying storage",
+      "ok": true,
+      "reportSha256": "fdb5d951511f02e72df3bea02bed00d09ae58c124239699d41ce3f9986f8f9e1"
+    },
+    {
+      "name": "export leaves both real Undo and Redo payloads available",
+      "ok": true
+    },
+    {
+      "name": "selection export excludes only explicit outside scope and preserves selected air",
+      "ok": false,
+      "error": "Expected values to be strictly equal:\n\n2 !== 4\n"
+    }
+  ],
+  "errors": [],
+  "nativeQualification": "NOT_RUN",
+  "limitations": [
+    "Desktop Chromium/software WebGL; no physical-device, assistive technology or performance qualification.",
+    "Independent test-only NBT reader; no native Minecraft/WorldEdit paste, persistence or export-back.",
+    "External/provider requests blocked; only product UI, downloads and read-only IndexedDB observations."
+  ],
+  "failureUi": "ylus: Off\nToggle: C · Hold: Alt\nShift+Scroll: 1×1×1\n-\n+\nSNAP\nXYZ All\nW×D Flat\nHeight Y\nWidth X\nDepth Z\nHold N: Drag Nodes\nSymmetry: Off (V)\nUI & Stylus\nLOCAL COPILOT\nGabled House / Cottage\nPreview & Run:\nFill Floor (4 blks) (95%)\nPerimeter Curb (78%)\nProjects\nMarket\nHUD Bars\nBar 1\n1×N\n100%\n1\nBre\n2\nBeo\n3\nBLK\n4\nBLK\n5\nBLK\n6\nBLK\n7\nBLK\n8\nBLK\n9\nBLK\nBar 2\n1×N\n95%\nB\nPlace\nX\nErase\nY\n3D Brush+\nO\n3D Brush-\nE\nWand\nTower Loop\nRoom Shell\n⌃Z\nUndo\nLegend\nChunks & Art\nGit\nLight\n3D MOUSE & CAMERA LEGEND\nKey C (Toggle)\nSwitch Free-Look Fly Builder ↔ Studio Pan\nHold Alt\nHold to momentarily look around or pan\nLeft Click\nPlace block, Erase, Paint, or set Pos1\nRight Drag\nOrbit 3D camera (or set Pos2 with Wand)\nScroll Wheel\nZoom camera in / out smoothly\nKey R\nRotate block or stair orientation 90°\nMINECRAFT WASD FLIGHT LEGEND\nRemap Keys\nW / A / S / D\nStrafe & fly horizontally\nSpace / Shift\nFly Up (+Y) / Down (-Y)\nHold Ctrl\nSprint Flight Speed Boost\n1 – 9 Keys\nSelect quick block slot\nWORLDEDIT COMMAND LEGEND (20)\n//wand\nRun\n\nEquips the Region Wand tool. Left-click any block to set Pos1; Right-click to set Pos2.\n\nRegion Selection · Drag to Hotbar\n//wand\n//pos1 [x y z]\nRun\n\nSets selection corner 1 (Pos1) to your current cursor coordinate or explicit X Y Z.\n\nRegion Selection · Drag to Hotbar\n//pos1\n//pos2 [x y z]\nRun\n\nSets selection corner 2 (Pos2) to your current cursor coordinate or explicit X Y Z.\n\nRegion Selection · Drag to Hotbar\n//pos2\n//expand <amount> [up|down|north|south|east|west]\nRun\n\nExpands the active Pos1–Pos2 bounding box outward in the specified direction.\n\nRegion Selection · Drag to Hotbar\n//expand 2 up\n//set <block_id>\nRun\n\nFills every voxel inside the Pos1–Pos2 selection region with the specified block.\n\nBlock Operations · Drag to Hotbar\n//set cobble_brick\n//replace [from_block] <to_block>\nRun\n\nReplaces all non-air blocks (or a specific block type) inside the selection with the active block.\n\nBlock Operations · Drag to Hotbar\n//replace cobble_brick\n//walls <block_id>\nRun\n\nBuilds 4 vertical perimeter walls around the Pos1–Pos2 region (leaves roof and floor open).\n\nBlock Operations · Drag to Hotbar\n//walls cobble_brick\n//box <block_id>\nRun\n\nConstructs a hollow 6-sided architectural room shell around the Pos1–Pos2 selection.\n\nBlock Operations · Drag to Hotbar\n//box cobble_brick\n//hollow\nRun\n\nHollows out the interior of a solid structure inside Pos1–Pos2, keeping a 1-block outer shell.\n\nBlock Operations · Drag to Hotbar\n//hollow\n//clear\nRun\n\nDeletes all blocks within the selected Pos1–Pos2 region (same as //set air).\n\nBlock Operations · Drag to Hotbar\n//set air\n//sphere <block_id> <radius>\nRun\n\nGenerates a solid 3D voxel sphere centered at Pos1 with the given radius.\n\nGeometry Generators · Drag to Hotbar\n//sphere cobble_brick 3\n//hsphere <block_id> <radius>\nRun\n\nGenerates a hollow geodesic dome / sphere shell centered at Pos1.\n\nGeometry Generators · Drag to Hotbar\n//hsphere cobble_brick 4\n//cyl <block_id> <radius> [height]\nRun\n\nGenerates a vertical cylindrical tower or circular floor pad centered at Pos1.\n\nGeometry Generators · Drag to Hotbar\n//cyl cobble_brick 3 4\n//copy\nRun\n\nCopies all blocks within the Pos1–Pos2 selection into your WorldEdit clipboard.\n\nClipboard & Transform · Drag to Hotbar\n//copy\n//cut\nRun\n\nCopies the Pos1–Pos2 selection to the clipboard and clears the original region.\n\nClipboard & Transform · Drag to Hotbar\n//cut\n//paste\nRun\n\nPastes the copied structure from the clipboard anchored at Pos1.\n\nClipboard & Transform · Drag to Hotbar\n//paste\n//stack <count> [up|down|north|south|east|west]\nRun\n\nRepeats and stacks the selected structure N times along an axis (ideal for multi-story buildings or bridges).\n\nClipboard & Transform · Drag to Hotbar\n//stack 2 up\n//move <distance> [up|down|north|south|east|west]\nRun\n\nShifts all blocks inside the selection by N units in the given direction.\n\nClipboard & Transform · Drag to Hotbar\n//move 2 up\n//undo\nRun\n\nReverts the last block placement, paint action, or WorldEdit operation (Ctrl+Z).\n\nHistory · Drag to Hotbar\n//undo\n//redo\nRun\n\nRe-applies a previously undone operation (Ctrl+Shift+Z).\n\nHistory · Drag to Hotbar\n//redo\nRun\n//pos2 -3 2 8Pos2 set to (-3, 2, 8).\nXYZ: (0, 1, 0)\n|\nSel: 2×1×2 (4)\n|\nmain@a1f8c20\n|\n13:30\n|\n4 blocks\nJava schematic export\n· Actual binary export fixture\n(Drag to move · Drag edges/corners to resize)\n3D Interactive\nMinecraft Java candidate · native import not qualified\n\nThis writes gzip-compressed binary Sponge v3 .schem using the project’s reviewed mappings. Minecraft Java 1.21.1 / WorldEdit 7.3.8 native paste, save/reload and export-back have not passed yet.\n\nProject backup preserves the complete editable project. Schematic export carries the admitted cells, not lighting, resources, opaque extensions or unsupported entities/biomes.\n\nReview game compatibility\nExport source and placement\nSchematic name\nExport scope\nComplete build\nSelection region\n\nScope includes hidden/inactive content inside its bounds. Empty cells inside the rectangular bounds become air and may clear cells when pasted.\n\nUse world origin as paste anchor\nUse selection start as paste anchor\nPaste anchor X\nPaste anchor Y\nPaste anchor Z\nReview schematic export\nReview before download\n\n1 solid cells · 3 air cells · 3 blocks outside the explicit scope.\n\nBounds: (-4, 2, 7) to (-3, 2, 8). Dimensions: 2 × 1 × 2.\n\nPaste anchor: (1, -5, 10). Stored offset: (-5, 7, -3).\n\nSource: live edit 13 · captured saved revision 2 · lock On.\n\nSource and profile identity\n\nColors, textures and finish are reviewed substitutions; the schematic contains the exact native states below.\n\nBlue explicit oak\noak_plank → minecraft:oak_planks\n1 cells\nI reviewed the scope, paste anchor, mapped states and air cells.\nDownload experimental .schem\n\n240 bytes · SHA256 345fbef27a27d4291a4d1afbd1cf3a22892855e41783a002559c8efc3f83ed31\n\nDownload .schem again\nDownload export report\n\nSchematic prepared and download requested. Keep its report with the file; saving it on your device is handled by your browser.",
+  "finishedAt": "2026-11-01T17:43:27.154Z",
+  "ok": false
+}

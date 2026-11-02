@@ -1,0 +1,91 @@
+{
+  "startedAt": "2026-11-02T00:21:39.910Z",
+  "origin": "http://127.0.0.1:4174",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-ChU-Vftz.js",
+    "http://127.0.0.1:4174/assets/index-N7aGP9Kv.css"
+  ],
+  "results": [
+    {
+      "name": "native menu focus, search and keyboard activation preserve the canvas and authored source",
+      "ok": true
+    },
+    {
+      "name": "opening an existing review from search survives native menu close and does not change the build",
+      "ok": true
+    },
+    {
+      "name": "paged scene discovery and inspection are read-only; explicit cell selection shares actual Undo and Redo",
+      "ok": true,
+      "selectedCell": [
+        98,
+        2,
+        7
+      ],
+      "actualHistoryDirections": true
+    },
+    {
+      "name": "menu themes, text, targets and width are independent, source-neutral and use readable token pairs",
+      "ok": true,
+      "colors": [
+        {
+          "theme": "evergreen-dark",
+          "textContrast": 15.11406496478034,
+          "boundaryContrast": 7.084572997715053
+        },
+        {
+          "theme": "evergreen-light",
+          "textContrast": 17.377921419136158,
+          "boundaryContrast": 7.578772166202801
+        },
+        {
+          "theme": "high-contrast",
+          "textContrast": 21,
+          "boundaryContrast": 18.301462405381745
+        },
+        {
+          "theme": "calm",
+          "textContrast": 15.98843351866261,
+          "boundaryContrast": 7.959775936467948
+        }
+      ],
+      "preferencesPreservedPendingRedo": true
+    },
+    {
+      "name": "200 percent menu text reflows at 320 CSS pixels without horizontal loss of controls",
+      "ok": true,
+      "viewportCssPixels": 320,
+      "textPercent": 200
+    },
+    {
+      "name": "preferences survive reload while local project naming remains one undoable authored edit",
+      "ok": true
+    },
+    {
+      "name": "future preference storage preserves originals and gives honest session-only feedback",
+      "ok": true
+    },
+    {
+      "name": "denied preference storage preserves originals and gives honest session-only feedback",
+      "ok": true
+    },
+    {
+      "name": "emulated coarse-pointer menu controls retain at least 48 CSS-pixel targets",
+      "ok": true,
+      "controls": 33,
+      "physicalDeviceQualification": "NOT_RUN"
+    }
+  ],
+  "pageErrors": [],
+  "screenshots": [
+    "/tmp/lfs-kit-menu-final.png",
+    "/tmp/lfs-kit-menu-final-narrow.png"
+  ],
+  "limitations": [
+    "Desktop Chromium/software WebGL and emulated coarse pointer only. No physical touch/pen, screen-reader, other browser, provider, native game or release acceptance.",
+    "60-cell paged scene fixture; no supported capacity or performance claim.",
+    "Themes and independent comfort controls cover the new menu; existing studio panels are not restyled by this slice."
+  ],
+  "finishedAt": "2026-11-02T00:23:19.943Z",
+  "ok": true
+}

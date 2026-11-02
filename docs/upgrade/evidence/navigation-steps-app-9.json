@@ -1,0 +1,215 @@
+{
+  "startedAt": "2026-11-01T17:10:00.303Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-D2ll2dOf.js",
+    "http://127.0.0.1:4174/assets/index-DTFwzooM.css"
+  ],
+  "results": [
+    {
+      "name": "Orbit/Fly/C/F/Home and legacy ribbon labels share one mode",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "temporary Alt look restores the orthographic camera after flight movement",
+      "ok": true,
+      "referenceCameraHash": "4ac9a77dc005331b3bd9af388c9f1565751396248ed7e4ac4bb43dca08f6d1cf",
+      "restoredCameraHash": "6c49cf853cd5af5dc3110d7cf8ea840a5065e49532896f3bfa7c04f6a86430ef",
+      "maxCameraMatrixDifference": 5.935140167894859e-15,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "ordinary navigation cancels temporary look; stale and coalesced releases are harmless",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "Pan, frame/view/home/previous actions preserve authored content",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "native Tab traverses controls without accepting ghosts or changing camera",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "project dialog text/shortcuts and command drops cannot fly or mutate authored content",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37",
+      "dropFixture": "synthetic command drop while actual project dialog is open"
+    },
+    {
+      "name": "hotkey capture preserves Tab, stops for composition and does not survive close",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "single-click camera steps change perspective and orthographic views, Previous restores each, and authored state stays equal",
+      "ok": true,
+      "steps": [
+        {
+          "projection": "perspective",
+          "action": "Pan left",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "ad1e0b9a7879cddd59cf98e4bdaf715615003af6a123d856b649d7c2f4dd04c8"
+        },
+        {
+          "projection": "perspective",
+          "action": "Pan right",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "5d68b388f87bcb4d70f1301ba0c9d1c28b646c14a0707c9c5fa954ccd96dddbd"
+        },
+        {
+          "projection": "perspective",
+          "action": "Pan up",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "677184d3fe8602a4de4a7ea290813a1b10c8f74c2680d4e32714a7347d08a2db"
+        },
+        {
+          "projection": "perspective",
+          "action": "Pan down",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "533c9cf8597c9fe228039fddda950607a441bc183c94127888a80bc4fac8e6ce"
+        },
+        {
+          "projection": "perspective",
+          "action": "Orbit left",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "2d822ef5cf8958dba9c7cb7985e875f6b090b19c855100bc92b15d5ebd73d4ab"
+        },
+        {
+          "projection": "perspective",
+          "action": "Orbit right",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "fdf2b9d98e9da978fed2c14178a3be4efc1bd995d252c426109fc0278ae5e35a"
+        },
+        {
+          "projection": "perspective",
+          "action": "Orbit up",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "56efadfc23f8381589640b25e2bfa42208d46adddb1270be8c12219eaa468e1c"
+        },
+        {
+          "projection": "perspective",
+          "action": "Orbit down",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "b44aba4f174d66a8dd603d28f48a084e071c12743a9d581d63fbf7b4490559c7"
+        },
+        {
+          "projection": "perspective",
+          "action": "Zoom in",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "4c8d35e072a37c1fec51a0bb4725e39ee57c422e543bf721385669e76cc11bc9"
+        },
+        {
+          "projection": "perspective",
+          "action": "Zoom out",
+          "previousImageExact": true,
+          "beforeImageHash": "da8cf2b60643c2e5582b087caa44247f316ce87a0fb75f84d9a9d0b355309180",
+          "movedImageHash": "53bf2541319e9009f2a628a6e7035e1be59b8cab47ba0446c6fc061db18cc05c"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Pan left",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "8edfa2ad23a4b1ab6b899e5d506df01b146917c87ca33bd03fbac8ed40e4d8c6"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Pan right",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "75f3e336715f7e57369e686ba55f46d7a2a2042d1b63ec48f90262ab7717ec64"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Pan up",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "4839e0005ed4bf27723298c76bac3ab07b7ce6ad0da6e42c387cedd9eb6315cc"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Pan down",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "4cdff697b89d665c66a85f7baa2cdd0f0d6a63ec6e75ef77805d7c722e52803c"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Orbit left",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "5ff667e127d7eb7e2e0341dcd60848b1d3741ac5d50878fa5c20af355be2ff8d"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Orbit right",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "98362927228bc9f9cc7b276bcbb29d25f5683597c5f06f333404f85c57246535"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Orbit up",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "c31fedae453f134e70bbd781ca8dc3881bc84a414c052b3749c5e0de5ac61aa2"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Orbit down",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "22189013062c890cb9898c0e9d55473ab0b81c4e944c7987c4af5736c5dd78d6"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Zoom in",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "7a3cc504fe3da2bc99135b31ee2626692068950410a519a42fb502c100375a88"
+        },
+        {
+          "projection": "orthographic",
+          "action": "Zoom out",
+          "previousImageExact": true,
+          "beforeImageHash": "630e0d747750a8f8b5e4fa2c33116c9f31174e50f695916a9d55802219255e22",
+          "movedImageHash": "1c5c2d04ef31d50632601cea5f4b407342d62c2e0e22282c2c9e3eec92e869bc"
+        }
+      ],
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    },
+    {
+      "name": "native keyboard activation of step controls moves the camera without triggering edits or flight",
+      "ok": true,
+      "authoredHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37"
+    }
+  ],
+  "pageErrors": [],
+  "blockedExternalOrigins": [],
+  "limitations": [
+    "Disposable desktop Chromium context with software WebGL; no native touch, pen, trackpad, gamepad, screen-reader or OS shortcut qualification.",
+    "Composition and coalesced Alt events include synthetic DOM fixtures, not a real IME device.",
+    "Camera matrices are observed through pass-through WebGL uniform instrumentation; no production source/test seam is added.",
+    "External requests and service workers are blocked; cloud/provider behavior is not exercised."
+  ],
+  "cameraMatrixAbsoluteTolerance": 0.000001,
+  "initialDocumentHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37",
+  "finalDocumentHash": "89ebac102916aebefdc3d9fe1244318b6825b0b92c064fd4de66b34b56d38e37",
+  "finishedAt": "2026-11-01T17:10:28.963Z",
+  "ok": true
+}

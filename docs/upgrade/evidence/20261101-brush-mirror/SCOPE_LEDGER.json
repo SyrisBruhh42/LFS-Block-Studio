@@ -1,0 +1,61 @@
+{
+  "recordedAtUTC": "2026-11-01T21:14:18.062121+00:00",
+  "candidate": {
+    "js": "index-DnOzWERi.js",
+    "css": "index-D3u5_oEE.css"
+  },
+  "domain": {
+    "passed": 292,
+    "files": 26,
+    "receipt": "studio-brush-contracts-final.txt"
+  },
+  "app": {
+    "brush": {
+      "passed": 13,
+      "receipt": "studio-brush-app-final.json"
+    },
+    "options": {
+      "passed": 2,
+      "receipt": "studio-brush-options-initial.json"
+    },
+    "authority": {
+      "passed": 8,
+      "receipt": "studio-brush-authority-final.json"
+    },
+    "java": {
+      "passed": 10,
+      "receipt": "studio-brush-java-final.json"
+    },
+    "compatibility": {
+      "passed": 15,
+      "receipt": "studio-brush-compatibility-second.json"
+    },
+    "navigation": {
+      "passed": 9,
+      "receipt": "studio-brush-navigation-final.json"
+    },
+    "menu": {
+      "passed": 9,
+      "receipt": "studio-brush-menu-final.json"
+    },
+    "resources": {
+      "passed": 9,
+      "receipt": "studio-brush-resources-final.json"
+    },
+    "catalogue": {
+      "passed": 6,
+      "receipt": "studio-brush-catalogue-final.json"
+    },
+    "recovery": {
+      "passed": 8,
+      "receipt": "studio-brush-recovery-final.json"
+    },
+    "capacity": {
+      "passed": 4,
+      "receipt": "studio-brush-capacity-final.json"
+    }
+  },
+  "appTotal": 93,
+  "historicalBackend": "Prior capacity checkpoint Ca has107 separately scoped backend/component cases. Not rerun or relabelled as Dn; primary persistence sources unchanged while transitive engine code changed.",
+  "scope": "Disposable Chromium/software WebGL, native controls/browser mouse and selected native keyboard/reflow tasks only. Native Minecraft/WorldEdit skipped; no physical/assistive, performance, provider or release qualification."
+}

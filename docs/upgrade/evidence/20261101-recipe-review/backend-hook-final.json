@@ -1,0 +1,171 @@
+{
+  "testedAt": "2026-11-01T23:01:54.323Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "src/lib/useStudioPersistence.browser-tests.tsx": "4fb084b19b2e0006a95f0b5fb0198716fbb4ba6db52a744d4d2723e6804f8411",
+    "src/lib/useStudioPersistence.ts": "31007579f3b2cb4c29472d555654e6ba2d89b9e66351527fed4f22c8e26b466f",
+    "src/lib/studioDocumentStore.ts": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+    "src/lib/studioEditorSession.ts": "477267b1e20845d851f22a1241b91296c057b2b8b4be5745423107aec5c482dc",
+    "src/lib/studioHistoryDelta.ts": "9bbcd282f124eff09d391407c061a430c8c9665fdda32babb15c625d23fa13a6",
+    "src/lib/legacyStudioImport.ts": "4d0abba2dcf37a39dbfb397a87db4b29a4e037fc478c9dbb709b2ec7c399fc81",
+    "src/lib/studioDocument.ts": "894c6db9a032fd8cccdee7f638c0bfc0c358fe001280a9aba56fdcdd7c980084",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c"
+  },
+  "sourceAfter": {
+    "src/lib/useStudioPersistence.browser-tests.tsx": "4fb084b19b2e0006a95f0b5fb0198716fbb4ba6db52a744d4d2723e6804f8411",
+    "src/lib/useStudioPersistence.ts": "31007579f3b2cb4c29472d555654e6ba2d89b9e66351527fed4f22c8e26b466f",
+    "src/lib/studioDocumentStore.ts": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+    "src/lib/studioEditorSession.ts": "477267b1e20845d851f22a1241b91296c057b2b8b4be5745423107aec5c482dc",
+    "src/lib/studioHistoryDelta.ts": "9bbcd282f124eff09d391407c061a430c8c9665fdda32babb15c625d23fa13a6",
+    "src/lib/legacyStudioImport.ts": "4d0abba2dcf37a39dbfb397a87db4b29a4e037fc478c9dbb709b2ec7c399fc81",
+    "src/lib/studioDocument.ts": "894c6db9a032fd8cccdee7f638c0bfc0c358fe001280a9aba56fdcdd7c980084",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c"
+  },
+  "sourceStable": true,
+  "results": [
+    {
+      "name": "StrictMode hydrates once and initializes one verified project",
+      "ok": true
+    },
+    {
+      "name": "double restore submission activates exactly one copy",
+      "ok": true
+    },
+    {
+      "name": "edits during prerequisite save stop replacement and remain open",
+      "ok": true
+    },
+    {
+      "name": "edits during candidate verification retain candidate without activating it",
+      "ok": true
+    },
+    {
+      "name": "edits while promotion awaits completion stay open and can fork from fresh authority",
+      "ok": true
+    },
+    {
+      "name": "cross-writer conflict preserves unsaved work and fork saves it separately",
+      "ok": true
+    },
+    {
+      "name": "unmount aborts pending save and ignores its callback",
+      "ok": true
+    },
+    {
+      "name": "retry cancels old hydration and stale candidate cannot activate",
+      "ok": true
+    },
+    {
+      "name": "unmount after committed promotion cannot restore into the old component",
+      "ok": true
+    },
+    {
+      "name": "failed and unexpectedly rejected saves never claim saved or enable replacement",
+      "ok": true
+    },
+    {
+      "name": "named copy preserves all fields without moving active pointer or save receipt",
+      "ok": true
+    },
+    {
+      "name": "document-only properties survive partial UI capture and reset on explicit replacement",
+      "ok": true
+    },
+    {
+      "name": "authority stays nonwritable through hydration and retry, then opens only the accepted session",
+      "ok": true
+    },
+    {
+      "name": "authority supplies synchronous content before React publishes it and allows intentional metadata removal",
+      "ok": true
+    },
+    {
+      "name": "ordinary authority saves permit later edits and never overwrite them on completion",
+      "ok": true
+    },
+    {
+      "name": "replacement locks authority synchronously through prerequisite save and accepts restore token rotation",
+      "ok": true
+    },
+    {
+      "name": "named authority copies hold an exclusion and release it on success and storage failure",
+      "ok": true
+    },
+    {
+      "name": "equal-content ABA during authority candidate verification prevents activation",
+      "ok": true
+    },
+    {
+      "name": "equal-content ABA after authority promotion preserves memory and requires a fresh fork",
+      "ok": true
+    },
+    {
+      "name": "authority unmount aborts exclusion and release cannot reopen editing",
+      "ok": true
+    },
+    {
+      "name": "real editor hydration gates editing and recovery browsing preserves concurrent edits",
+      "ok": true
+    },
+    {
+      "name": "real editor save receipt advances durable metadata without changing later edits, tokens or history",
+      "ok": true
+    },
+    {
+      "name": "real editor Undo during an ordinary save survives its receipt and Redo returns to saved content",
+      "ok": true
+    },
+    {
+      "name": "real editor failed replacements retain history and release locks before a successful transition",
+      "ok": true
+    },
+    {
+      "name": "real editor optional metadata survives save history and is absent after explicit removal or clean restore",
+      "ok": true
+    },
+    {
+      "name": "real editor rejected stale-session receipt preserves memory and allows a fresh recovery fork",
+      "ok": true
+    },
+    {
+      "name": "real editor target transition checkpoints policy and clears history only after durable activation",
+      "ok": true
+    },
+    {
+      "name": "target transition blocks stale ABA before activation and preserves the verified candidate",
+      "ok": true
+    },
+    {
+      "name": "failed target checkpoint preserves current history and releases exclusion",
+      "ok": true
+    },
+    {
+      "name": "resource archival readback preserves exact originals without activating or marking current edits saved",
+      "ok": true
+    },
+    {
+      "name": "target proposal getters are rejected before invocation and no candidate is staged",
+      "ok": true
+    },
+    {
+      "name": "recovery read after newer selection is cancelled and cannot replace its page",
+      "ok": true
+    },
+    {
+      "name": "recovery dismissal aborts pending read and cannot reopen the dialog",
+      "ok": true
+    },
+    {
+      "name": "recovery unmount aborts storage read without replacing the editor",
+      "ok": true
+    },
+    {
+      "name": "recovery list failure is explicit and cannot masquerade as empty success",
+      "ok": true
+    },
+    {
+      "name": "project replacement invalidates pending raw rescue without overwriting new document",
+      "ok": true
+    }
+  ]
+}

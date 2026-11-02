@@ -7,7 +7,200 @@ import {
   PlacedBlock,
   SelectionBounds,
   WorldEditEngineState,
+  WorldStateSnapshot,
 } from './types';
+import { blueprintPayloadError, placementPayloadError, sameBlueprintData, samePlacementContent } from './blueprintDefinitionSafety';
+import { createPlacementIdentity } from './placementContent';
+
+// Application work budgets, not Minecraft format/world limits. Validate before
+// allocating a history snapshot, enumerating a region, or generating geometry.
+export const ENGINE_EDIT_LIMITS = Object.freeze({
+  maxAbsCoordinate: 1_000_000,
+  maxOperationCells: 100_000,
+  maxBlueprintDefinitions: 4_096,
+  historyDepth: 30,
+});
+
+export const MAX_SAFE_REGION_CELL_BUDGET = ENGINE_EDIT_LIMITS.maxOperationCells;
+export const MAX_SAFE_WORLD_COORD = ENGINE_EDIT_LIMITS.maxAbsCoordinate;
+
+export function getGridCoordError(coord: GridCoord): string | null {
+  if (!coord || ![coord.x, coord.y, coord.z].every(
+    value => Number.isSafeInteger(value) && Math.abs(value) <= ENGINE_EDIT_LIMITS.maxAbsCoordinate
+  )) return `Coordinates must be whole finite numbers within ±${ENGINE_EDIT_LIMITS.maxAbsCoordinate}.`;
+  return null;
+}
+
+function getCellCountError(dimensions: number[], limit: number = ENGINE_EDIT_LIMITS.maxOperationCells): string | null {
+  let count = 1;
+  for (const dimension of dimensions) {
+    if (!Number.isSafeInteger(dimension) || dimension < 1 || dimension > Math.floor(limit / count)) {
+      return `Operation exceeds the ${limit.toLocaleString('en-US')} cell work budget or has invalid dimensions.`;
+    }
+    count *= dimension;
+  }
+  return null;
+}
+
+export function getSelectionVolumeError(pos1: GridCoord, pos2: GridCoord): string | null {
+  const coordinateError = getGridCoordError(pos1) || getGridCoordError(pos2);
+  if (coordinateError) return coordinateError;
+  return getCellCountError([
+    Math.abs(pos2.x - pos1.x) + 1,
+    Math.abs(pos2.y - pos1.y) + 1,
+    Math.abs(pos2.z - pos1.z) + 1,
+  ]);
+}
+
+function rejectCommand(state: WorldEditEngineState, message: string): CommandExecutionResult {
+  return { nextState: state, success: false, message, affectedCount: 0 };
+}
+
+function parseBoundedInteger(value: string | undefined, fallback: number, max: number): number | null {
+  const parsed = value === undefined ? fallback : Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= max ? parsed : null;
+}
+
+function commandCoordinate(args: string[], fallback: GridCoord): GridCoord | null {
+  if (args.length === 0) return getGridCoordError(fallback) ? null : { ...fallback };
+  if (args.length !== 3) return null;
+  const values = args.map(Number);
+  // Preserve the command language's rounding of finite decimal coordinates.
+  if (!values.every(Number.isFinite)) return null;
+  const target = { x: Math.round(values[0]), y: Math.round(values[1]), z: Math.round(values[2]) };
+  return getGridCoordError(target) ? null : target;
+}
+
+function cloneBlock(block: PlacedBlock): PlacedBlock {
+  return { ...block, position: { ...block.position },
+    ...(block.customScale ? { customScale: { ...block.customScale } } : {}) };
+}
+
+function cloneDefinition(def: CustomBlockDefinition): CustomBlockDefinition {
+  return { ...def,
+    ...(def.defaultScale ? { defaultScale: { ...def.defaultScale } } : {}),
+    ...(def.voxels ? { voxels: def.voxels.map(voxel => ({ ...voxel })) } : {}) };
+}
+
+function captureSnapshot(state: WorldEditEngineState, label: string): WorldStateSnapshot {
+  return {
+    label,
+    blocks: Object.fromEntries(Object.entries(state.blocks).map(([key, block]) => [key, cloneBlock(block)])),
+    customBlocks: Object.fromEntries(Object.entries(state.customBlocks).map(([key, def]) => [key, cloneDefinition(def)])),
+    pos1: state.pos1 ? { ...state.pos1 } : null,
+    pos2: state.pos2 ? { ...state.pos2 } : null,
+    clipboard: state.clipboard.map(cloneBlock),
+    clipboardCustomDefs: state.clipboardCustomDefs.map(cloneDefinition),
+  };
+}
+
+function restoreSnapshot(state: WorldEditEngineState, snapshot: WorldStateSnapshot): WorldEditEngineState {
+  // Old snapshots intentionally fall back to the current non-block domain.
+  const restored = captureSnapshot({ ...state,
+    blocks: snapshot.blocks,
+    customBlocks: snapshot.customBlocks ?? state.customBlocks,
+    pos1: snapshot.pos1 === undefined ? state.pos1 : snapshot.pos1,
+    pos2: snapshot.pos2 === undefined ? state.pos2 : snapshot.pos2,
+    clipboard: snapshot.clipboard ?? state.clipboard,
+    clipboardCustomDefs: snapshot.clipboardCustomDefs ?? state.clipboardCustomDefs,
+  }, snapshot.label);
+  return { ...state, blocks: restored.blocks, customBlocks: restored.customBlocks!,
+    pos1: restored.pos1!, pos2: restored.pos2!, clipboard: restored.clipboard!,
+    clipboardCustomDefs: restored.clipboardCustomDefs! };
+}
+
+function validatePlacementBlocks(
+  blocks: PlacedBlock[], definitions: CustomBlockDefinition[], anchor: GridCoord,
+  rotation: 0 | 90 | 180 | 270, registry: Record<string, CustomBlockDefinition>, payloadValidated = false
+): string | null {
+  const anchorError = getGridCoordError(anchor);
+  if (anchorError) return anchorError;
+  if (![0, 90, 180, 270].includes(rotation)) return 'Rotation must be 0, 90, 180, or 270 degrees.';
+  if (!Array.isArray(blocks) || blocks.length < 1 || blocks.length > ENGINE_EDIT_LIMITS.maxOperationCells) {
+    return `Placement must contain 1–${ENGINE_EDIT_LIMITS.maxOperationCells} blocks.`;
+  }
+  if (!Array.isArray(definitions) || definitions.length > ENGINE_EDIT_LIMITS.maxBlueprintDefinitions) {
+    return 'Placement contains too many block definitions.';
+  }
+  const payloadError = payloadValidated ? null : placementPayloadError(blocks, definitions, registry);
+  if (payloadError) return payloadError;
+  const definitionIds = new Set<string>();
+  for (const def of definitions) {
+    if (!def || typeof def.id !== 'string' || !def.id ||
+        ![def.width, def.depth, def.heightPlates].every(value => Number.isFinite(value) && value > 0 && value <= ENGINE_EDIT_LIMITS.maxAbsCoordinate) ||
+        (def.voxels && (!Array.isArray(def.voxels) || def.voxels.length > 512))) {
+      return 'Placement contains an invalid block definition.';
+    }
+    definitionIds.add(def.id);
+  }
+  let min: GridCoord | null = null;
+  let max: GridCoord | null = null;
+  const occupied = new Set<string>();
+  for (const block of blocks) {
+    if (!block || getGridCoordError(block.position) || ![0, 90, 180, 270].includes(block.rotation)) {
+      return 'Placement contains invalid block coordinates or rotation.';
+    }
+    if (!definitionIds.has(block.blockDefId) && !Object.hasOwn(registry, block.blockDefId)) {
+      return `Missing block definition "${block.blockDefId}".`;
+    }
+    const relative = rotateRelativeCoord(block.position, rotation);
+    const target = { x: anchor.x + relative.x, y: anchor.y + relative.y, z: anchor.z + relative.z };
+    const targetError = getGridCoordError(target);
+    if (targetError) return targetError;
+    const key = coordKey(target.x, target.y, target.z);
+    if (occupied.has(key)) return 'Placement contains duplicate target coordinates; no blocks were placed.';
+    occupied.add(key);
+    min = min ? { x: Math.min(min.x, target.x), y: Math.min(min.y, target.y), z: Math.min(min.z, target.z) } : target;
+    max = max ? { x: Math.max(max.x, target.x), y: Math.max(max.y, target.y), z: Math.max(max.z, target.z) } : target;
+  }
+  return getSelectionVolumeError(min!, max!);
+}
+
+/** Strict merge preflight shared by blueprint and clipboard adapters. No definitions are replaced. */
+export function validateBlueprintDefinitionMerge(registry: Record<string, CustomBlockDefinition>, definitions: CustomBlockDefinition[]): string | null {
+  if (!Array.isArray(definitions) || definitions.length > ENGINE_EDIT_LIMITS.maxBlueprintDefinitions) return 'Placement contains too many block definitions.';
+  return placementPayloadError([], definitions, registry);
+}
+
+function mergePlacementDefinitions(registry: Record<string, CustomBlockDefinition>, definitions: CustomBlockDefinition[]): Record<string, CustomBlockDefinition> {
+  const merged = { ...registry };
+  for (const definition of definitions) if (!Object.hasOwn(registry, definition.id)) merged[definition.id] = cloneDefinition(definition);
+  return merged;
+}
+
+/** Validation is separate so callers can display a rejection before stamping. */
+export function validateBlueprintPlacement(
+  state: WorldEditEngineState, blueprint: BlueprintPrefab, anchor: GridCoord,
+  rotation: 0 | 90 | 180 | 270 = 0
+): string | null {
+  const payloadError = blueprintPayloadError(blueprint, state.customBlocks);
+  if (payloadError) return payloadError;
+  if (!blueprint || !blueprint.size) return 'Blueprint is missing dimensions.';
+  const dimensions = [blueprint.size.lx, blueprint.size.ly, blueprint.size.lz];
+  if (!dimensions.every(value => Number.isFinite(value) && value > 0)) return 'Blueprint dimensions must be finite and positive.';
+  const sizeError = getCellCountError(dimensions.map(Math.ceil));
+  return sizeError || validatePlacementBlocks(blueprint.blocks, blueprint.customBlockDefs, anchor, rotation, state.customBlocks, true);
+}
+
+export function validateBlueprintLoad(
+  state: WorldEditEngineState, blueprint: BlueprintPrefab, includeBasePlatform = true
+): string | null {
+  const blueprintError = validateBlueprintPlacement(state, blueprint, { x: 0, y: 0, z: 0 });
+  if (blueprintError) return blueprintError;
+  const anchor = { x: -Math.floor(blueprint.size.lx / 2), y: 1, z: -Math.floor(blueprint.size.lz / 2) };
+  const placementError = validateBlueprintPlacement(state, blueprint, anchor);
+  if (placementError) return placementError;
+  if (includeBasePlatform) {
+    const padX = Math.max(4, Math.ceil(blueprint.size.lx / 2) + 2);
+    const padZ = Math.max(4, Math.ceil(blueprint.size.lz / 2) + 2);
+    const baseError = getCellCountError([padX * 2 + 1, padZ * 2 + 1], ENGINE_EDIT_LIMITS.maxOperationCells - blueprint.blocks.length);
+    if (baseError) return baseError;
+    if (!state.customBlocks.grass_brick && !blueprint.customBlockDefs.some(def => def.id === 'grass_brick')) {
+      return 'Base platform requires the grass_brick block definition.';
+    }
+  }
+  return null;
+}
 
 export function coordKey(x: number, y: number, z: number): string {
   return `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
@@ -345,11 +538,7 @@ export function pushUndoSnapshot(
   state: WorldEditEngineState,
   label: string
 ): WorldEditEngineState {
-  const snapshotBlocks: Record<string, PlacedBlock> = {};
-  for (const [k, v] of Object.entries(state.blocks)) {
-    snapshotBlocks[k] = { ...v, position: { ...v.position } };
-  }
-  const nextUndo = [...state.undoStack, { blocks: snapshotBlocks, label }].slice(-30);
+  const nextUndo = [...state.undoStack, captureSnapshot(state, label)].slice(-ENGINE_EDIT_LIMITS.historyDepth);
   return {
     ...state,
     undoStack: nextUndo,
@@ -361,6 +550,9 @@ export function resolveBlockAlias(
   alias: string,
   registry: Record<string, CustomBlockDefinition>
 ): CustomBlockDefinition | null {
+  const literal = alias.trim();
+  if (literal.startsWith('@')) return Object.hasOwn(registry, literal.slice(1)) ? registry[literal.slice(1)] : null;
+  if (Object.hasOwn(registry, literal)) return registry[literal];
   const clean = alias.trim().toLowerCase();
   if (!clean) return null;
   if (registry[clean]) return registry[clean];
@@ -427,6 +619,7 @@ export const WORLDEDIT_COMMANDS_HELP: { cmd: string; desc: string; example: stri
   { cmd: '//paste [x y z]', desc: 'Paste clipboard at Pos1 or target coordinates', example: '//paste 0 1 0' },
   { cmd: '//stack <count> [dir]', desc: 'Repeat selection in a direction (up/down/north/south/east/west)', example: '//stack 3 up' },
   { cmd: '//move <dist> [dir]', desc: 'Shift selected blocks by distance in a direction', example: '//move 2 up' },
+  { cmd: '//shift <dist> [dir]', desc: 'Translate selection only by 1–24 cells; placed blocks stay fixed (default: 1 up)', example: '//shift 1 up' },
   { cmd: '//expand <amt> [dir]', desc: 'Expand selection bounds along direction or all', example: '//expand 2 up' },
   { cmd: '//size', desc: 'Inspect selection dimensions and block count', example: '//size' },
   { cmd: '//undo', desc: 'Undo the previous WorldEdit or build operation', example: '//undo' },
@@ -435,7 +628,7 @@ export const WORLDEDIT_COMMANDS_HELP: { cmd: string; desc: string; example: stri
   { cmd: '//island', desc: 'Reset world to the starter Skyblock island', example: '//island' },
 ];
 
-function parseDirectionVector(dirStr?: string): GridCoord {
+function parseDirectionVector(dirStr?: string): GridCoord | null {
   const d = (dirStr || 'up').toLowerCase();
   switch (d) {
     case 'u':
@@ -463,7 +656,7 @@ function parseDirectionVector(dirStr?: string): GridCoord {
     case '-x':
       return { x: -1, y: 0, z: 0 };
     default:
-      return { x: 0, y: 1, z: 0 };
+      return null;
   }
 }
 
@@ -472,6 +665,7 @@ export function executeWorldEditCommand(
   rawCommand: string,
   cursorFallback?: GridCoord
 ): CommandExecutionResult {
+  const placementIdentity = createPlacementIdentity(state.blocks);
   const trimmed = rawCommand.trim();
   if (!trimmed) {
     return {
@@ -497,7 +691,17 @@ export function executeWorldEditCommand(
       nextState: state,
       success: true,
       message:
-        'Commands: //wand, //pos1, //pos2, //set <block>, //replace <from> <to>, //walls <block>, //box <block>, //hollow, //sphere <block> <r>, //cyl <block> <r> [h], //copy, //cut, //paste, //stack <n> [dir], //move <n> [dir], //undo, //redo, //size',
+        'Commands: //wand, //pos1, //pos2, //desel, //set <block>, //replace <from> <to>, //walls <block>, //box <block>, //hollow, //sphere <block> <r>, //cyl <block> <r> [h], //copy, //cut, //paste, //stack <n> [dir], //move <n> [dir], //shift <n> [dir] (selection only, 1–24), //undo, //redo, //size',
+      affectedCount: 0,
+    };
+  }
+
+  if (cmd === 'desel' || cmd === 'deselect' || cmd === 'sel') {
+    if (args.length) return rejectCommand(state, 'Clear selection takes no arguments (//desel).');
+    return {
+      nextState: state.pos1 || state.pos2 ? { ...state, pos1: null, pos2: null } : state,
+      success: true,
+      message: state.pos1 || state.pos2 ? 'Selection cleared. Build and clipboard are unchanged.' : 'Selection is already clear.',
       affectedCount: 0,
     };
   }
@@ -513,13 +717,8 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'pos1' || cmd === '1') {
-    let target = cursorFallback || state.pos1 || { x: 0, y: 1, z: 0 };
-    if (args.length >= 3) {
-      const [nx, ny, nz] = args.map(Number);
-      if (!Number.isNaN(nx) && !Number.isNaN(ny) && !Number.isNaN(nz)) {
-        target = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
-      }
-    }
+    const target = commandCoordinate(args, cursorFallback || state.pos1 || { x: 0, y: 1, z: 0 });
+    if (!target) return rejectCommand(state, 'Pos1 requires three finite coordinates within the coordinate limit.');
     return {
       nextState: { ...state, pos1: target },
       success: true,
@@ -529,13 +728,8 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'pos2' || cmd === '2') {
-    let target = cursorFallback || state.pos2 || { x: 0, y: 1, z: 0 };
-    if (args.length >= 3) {
-      const [nx, ny, nz] = args.map(Number);
-      if (!Number.isNaN(nx) && !Number.isNaN(ny) && !Number.isNaN(nz)) {
-        target = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
-      }
-    }
+    const target = commandCoordinate(args, cursorFallback || state.pos2 || { x: 0, y: 1, z: 0 });
+    if (!target) return rejectCommand(state, 'Pos2 requires three finite coordinates within the coordinate limit.');
     return {
       nextState: { ...state, pos2: target },
       success: true,
@@ -554,16 +748,12 @@ export function executeWorldEditCommand(
       };
     }
     const last = state.undoStack[state.undoStack.length - 1];
-    const currentSnapshot: Record<string, PlacedBlock> = {};
-    for (const [k, v] of Object.entries(state.blocks)) {
-      currentSnapshot[k] = { ...v, position: { ...v.position } };
-    }
+    const currentSnapshot = captureSnapshot(state, last.label);
     return {
       nextState: {
-        ...state,
-        blocks: last.blocks,
+        ...restoreSnapshot(state, last),
         undoStack: state.undoStack.slice(0, -1),
-        redoStack: [...state.redoStack, { blocks: currentSnapshot, label: last.label }],
+        redoStack: [...state.redoStack, currentSnapshot].slice(-ENGINE_EDIT_LIMITS.historyDepth),
       },
       success: true,
       message: `Undid: ${last.label}`,
@@ -583,15 +773,11 @@ export function executeWorldEditCommand(
       };
     }
     const next = state.redoStack[state.redoStack.length - 1];
-    const currentSnapshot: Record<string, PlacedBlock> = {};
-    for (const [k, v] of Object.entries(state.blocks)) {
-      currentSnapshot[k] = { ...v, position: { ...v.position } };
-    }
+    const currentSnapshot = captureSnapshot(state, next.label);
     return {
       nextState: {
-        ...state,
-        blocks: next.blocks,
-        undoStack: [...state.undoStack, { blocks: currentSnapshot, label: next.label }],
+        ...restoreSnapshot(state, next),
+        undoStack: [...state.undoStack, currentSnapshot].slice(-ENGINE_EDIT_LIMITS.historyDepth),
         redoStack: state.redoStack.slice(0, -1),
       },
       success: true,
@@ -602,13 +788,14 @@ export function executeWorldEditCommand(
     };
   }
 
-  if (cmd === 'island') {
-    const withUndo = pushUndoSnapshot(state, '//island reset');
+  if (cmd === 'island' || cmd === 'plot') {
+    const withUndo = pushUndoSnapshot(state, '//plot reset');
     const fresh = createStarterSkyblockWorld();
+    for (const [key, block] of Object.entries(fresh)) block.id = placementIdentity(key);
     return {
       nextState: { ...withUndo, blocks: fresh },
       success: true,
-      message: `Restored starter Skyblock island (${Object.keys(fresh).length} blocks).`,
+      message: `Restored starter studio plot (${Object.keys(fresh).length} blocks).`,
       affectedCount: Object.keys(fresh).length,
     };
   }
@@ -622,32 +809,27 @@ export function executeWorldEditCommand(
         affectedCount: 0,
       };
     }
-    let origin = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
-    if (args.length >= 3) {
-      const [nx, ny, nz] = args.map(Number);
-      if (!Number.isNaN(nx) && !Number.isNaN(ny) && !Number.isNaN(nz)) {
-        origin = { x: Math.round(nx), y: Math.round(ny), z: Math.round(nz) };
-      }
-    }
-    const withUndo = pushUndoSnapshot(state, '//paste');
-    const nextBlocks = { ...withUndo.blocks };
-    const nextCustom = { ...withUndo.customBlocks };
-    for (const def of state.clipboardCustomDefs) {
-      nextCustom[def.id] = def;
-    }
+    const origin = commandCoordinate(args, state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 });
+    if (!origin) return rejectCommand(state, 'Paste requires three finite coordinates within the coordinate limit.');
+    const pasteError = validatePlacementBlocks(state.clipboard, state.clipboardCustomDefs, origin, 0, state.customBlocks);
+    if (pasteError) return rejectCommand(state, pasteError);
+    const nextBlocks = { ...state.blocks };
+    const nextCustom = mergePlacementDefinitions(state.customBlocks, state.clipboardCustomDefs);
     let count = 0;
     for (const b of state.clipboard) {
       const tx = origin.x + b.position.x;
       const ty = origin.y + b.position.y;
       const tz = origin.z + b.position.z;
       const k = coordKey(tx, ty, tz);
-      nextBlocks[k] = {
-        ...b,
-        id: `blk_${tx}_${ty}_${tz}`,
+      const placed: PlacedBlock = {
+        ...cloneBlock(b),
+        id: placementIdentity(coordKey(tx, ty, tz)),
         position: { x: tx, y: ty, z: tz },
       };
-      count++;
+      if (!samePlacementContent(state.blocks[k], placed)) { nextBlocks[k] = placed; count++; }
     }
+    if (count === 0 && sameBlueprintData(nextCustom, state.customBlocks)) return { nextState: state, success: true, message: 'Clipboard already matches the destination; nothing changed.', affectedCount: 0 };
+    const withUndo = pushUndoSnapshot(state, '//paste');
     return {
       nextState: { ...withUndo, blocks: nextBlocks, customBlocks: nextCustom },
       success: true,
@@ -660,10 +842,15 @@ export function executeWorldEditCommand(
   if (cmd === 'sphere' || cmd === 'hsphere') {
     const center = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
     const blockArg = args[0] || 'cobble_brick';
-    const radius = Math.min(12, Math.max(1, parseInt(args[1] || '3', 10) || 3));
+    const radius = parseBoundedInteger(args[1], 3, 12);
+    if (radius === null) return rejectCommand(state, 'Sphere radius must be a whole number from 1 to 12.');
+    const shapeError = getGridCoordError(center) || getSelectionVolumeError(
+      { x: center.x - radius, y: center.y - radius, z: center.z - radius },
+      { x: center.x + radius, y: center.y + radius, z: center.z + radius });
+    if (shapeError) return rejectCommand(state, shapeError);
     const isHollow =
       cmd === 'hsphere' || (args[2] || '').toLowerCase() === 'hollow';
-    const isAir = blockArg === 'air' || blockArg === '0' || blockArg === 'none';
+    const isAir = ['air','0','none'].includes(blockArg.toLowerCase());
     const def = isAir ? null : resolveBlockAlias(blockArg, state.customBlocks);
     if (!isAir && !def) {
       return {
@@ -692,7 +879,7 @@ export function executeWorldEditCommand(
               }
             } else if (def) {
               nextBlocks[k] = {
-                id: `blk_${x}_${y}_${z}`,
+                id: placementIdentity(coordKey(x, y, z)),
                 blockDefId: def.id,
                 position: { x, y, z },
                 rotation: 0,
@@ -714,8 +901,13 @@ export function executeWorldEditCommand(
   if (cmd === 'cyl' || cmd === 'hcyl') {
     const center = state.pos1 || cursorFallback || { x: 0, y: 1, z: 0 };
     const blockArg = args[0] || 'cobble_brick';
-    const radius = Math.min(12, Math.max(1, parseInt(args[1] || '3', 10) || 3));
-    const height = Math.min(20, Math.max(1, parseInt(args[2] || '1', 10) || 1));
+    const radius = parseBoundedInteger(args[1], 3, 12);
+    const height = parseBoundedInteger(args[2], 1, 20);
+    if (radius === null || height === null) return rejectCommand(state, 'Cylinder radius must be 1–12 and height 1–20, both whole numbers.');
+    const shapeError = getGridCoordError(center) || getSelectionVolumeError(
+      { x: center.x - radius, y: center.y, z: center.z - radius },
+      { x: center.x + radius, y: center.y + height - 1, z: center.z + radius });
+    if (shapeError) return rejectCommand(state, shapeError);
     const isHollow =
       cmd === 'hcyl' || (args[3] || '').toLowerCase() === 'hollow';
     const def = resolveBlockAlias(blockArg, state.customBlocks);
@@ -740,7 +932,7 @@ export function executeWorldEditCommand(
             const z = center.z + dz;
             const k = coordKey(x, y, z);
             nextBlocks[k] = {
-              id: `blk_${x}_${y}_${z}`,
+              id: placementIdentity(coordKey(x, y, z)),
               blockDefId: def.id,
               position: { x, y, z },
               rotation: 0,
@@ -768,8 +960,30 @@ export function executeWorldEditCommand(
     };
   }
 
+  const selectionError = getSelectionVolumeError(state.pos1, state.pos2);
+  if (selectionError) return rejectCommand(state, selectionError);
   const bounds = getSelectionBounds(state.pos1, state.pos2);
   const dims = getSelectionDimensions(state.pos1, state.pos2);
+
+  if (cmd === 'shift') {
+    if (args.length > 2) return rejectCommand(state, 'Shift accepts a distance and an optional direction.');
+    const distance = parseBoundedInteger(args[0], 1, 24);
+    if (distance === null) return rejectCommand(state, 'Shift distance must be a whole number from 1 to 24.');
+    const direction = parseDirectionVector(args[1]);
+    if (!direction) return rejectCommand(state, `Unknown direction "${args[1]}".`);
+    const offset = { x: direction.x * distance, y: direction.y * distance, z: direction.z * distance };
+    const pos1 = { x: state.pos1.x + offset.x, y: state.pos1.y + offset.y, z: state.pos1.z + offset.z };
+    const pos2 = { x: state.pos2.x + offset.x, y: state.pos2.y + offset.y, z: state.pos2.z + offset.z };
+    const destinationError = getSelectionVolumeError(pos1, pos2);
+    if (destinationError) return rejectCommand(state, destinationError);
+    // Preserve anchor orientation and all placed/clipboard data. The editor
+    // session owns the transaction and undo entry for this selection-only edit.
+    return {
+      nextState: { ...state, pos1, pos2 }, success: true,
+      message: `Shifted selection by (${offset.x}, ${offset.y}, ${offset.z}); placed blocks stayed fixed.`,
+      affectedCount: 0,
+    };
+  }
 
   if (cmd === 'size' || cmd === 'count') {
     let occupied = 0;
@@ -789,7 +1003,8 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'expand') {
-    const amount = parseInt(args[0] || '1', 10) || 1;
+    const amount = parseBoundedInteger(args[0], 1, ENGINE_EDIT_LIMITS.maxAbsCoordinate);
+    if (amount === null) return rejectCommand(state, 'Expansion amount must be a positive whole number within the coordinate limit.');
     const dir = (args[1] || 'all').toLowerCase();
     const p1 = { ...state.pos1 };
     const p2 = { ...state.pos2 };
@@ -802,6 +1017,7 @@ export function executeWorldEditCommand(
       p2.z = bounds.maxZ + amount;
     } else {
       const vec = parseDirectionVector(dir);
+      if (!vec) return rejectCommand(state, `Unknown direction "${dir}".`);
       p1.x = bounds.minX + (vec.x < 0 ? vec.x * amount : 0);
       p1.y = bounds.minY + (vec.y < 0 ? vec.y * amount : 0);
       p1.z = bounds.minZ + (vec.z < 0 ? vec.z * amount : 0);
@@ -809,6 +1025,8 @@ export function executeWorldEditCommand(
       p2.y = bounds.maxY + (vec.y > 0 ? vec.y * amount : 0);
       p2.z = bounds.maxZ + (vec.z > 0 ? vec.z * amount : 0);
     }
+    const expansionError = getSelectionVolumeError(p1, p2);
+    if (expansionError) return rejectCommand(state, expansionError);
     const newDims = getSelectionDimensions(p1, p2);
     return {
       nextState: { ...state, pos1: p1, pos2: p2 },
@@ -827,7 +1045,7 @@ export function executeWorldEditCommand(
           const b = state.blocks[coordKey(x, y, z)];
           if (b) {
             copied.push({
-              ...b,
+              ...cloneBlock(b),
               position: {
                 x: x - bounds.minX,
                 y: y - bounds.minY,
@@ -835,7 +1053,7 @@ export function executeWorldEditCommand(
               },
             });
             const def = state.customBlocks[b.blockDefId];
-            if (def) customMap[def.id] = def;
+            if (def) customMap[def.id] = cloneDefinition(def);
           }
         }
       }
@@ -864,7 +1082,7 @@ export function executeWorldEditCommand(
           const b = nextBlocks[k];
           if (b) {
             copied.push({
-              ...b,
+              ...cloneBlock(b),
               position: {
                 x: x - bounds.minX,
                 y: y - bounds.minY,
@@ -872,7 +1090,7 @@ export function executeWorldEditCommand(
               },
             });
             const def = state.customBlocks[b.blockDefId];
-            if (def) customMap[def.id] = def;
+            if (def) customMap[def.id] = cloneDefinition(def);
             delete nextBlocks[k];
           }
         }
@@ -915,7 +1133,7 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'set' || cmd === 'fill') {
-    const blockArg = (args[0] || '').toLowerCase();
+    const blockArg = args[0] || '';
     if (!blockArg) {
       return {
         nextState: state,
@@ -924,7 +1142,7 @@ export function executeWorldEditCommand(
         affectedCount: 0,
       };
     }
-    const isAir = blockArg === 'air' || blockArg === '0' || blockArg === 'none';
+    const isAir = ['air','0','none'].includes(blockArg.toLowerCase());
     const def = isAir ? null : resolveBlockAlias(blockArg, state.customBlocks);
     if (!isAir && !def) {
       return {
@@ -948,7 +1166,7 @@ export function executeWorldEditCommand(
             }
           } else if (def) {
             nextBlocks[k] = {
-              id: `blk_${x}_${y}_${z}`,
+              id: placementIdentity(coordKey(x, y, z)),
               blockDefId: def.id,
               position: { x, y, z },
               rotation: 0,
@@ -982,7 +1200,7 @@ export function executeWorldEditCommand(
     const hasTwo = rawArgs.length >= 2;
     const fromDef = hasTwo ? resolveBlockAlias(rawArgs[0], state.customBlocks) : null;
     const toArg = hasTwo ? rawArgs[1] : rawArgs[0];
-    const toIsAir = toArg === 'air' || toArg === '0' || toArg === 'none';
+    const toIsAir = ['air','0','none'].includes(toArg.toLowerCase());
     const toDef = toIsAir ? null : resolveBlockAlias(toArg, state.customBlocks);
 
     if (hasTwo && !fromDef) {
@@ -1060,7 +1278,7 @@ export function executeWorldEditCommand(
           if (isPerimeter) {
             const k = coordKey(x, y, z);
             nextBlocks[k] = {
-              id: `blk_${x}_${y}_${z}`,
+              id: placementIdentity(coordKey(x, y, z)),
               blockDefId: def.id,
               position: { x, y, z },
               rotation: 0,
@@ -1105,7 +1323,7 @@ export function executeWorldEditCommand(
           if (isShell) {
             const k = coordKey(x, y, z);
             nextBlocks[k] = {
-              id: `blk_${x}_${y}_${z}`,
+              id: placementIdentity(coordKey(x, y, z)),
               blockDefId: def.id,
               position: { x, y, z },
               rotation: 0,
@@ -1147,21 +1365,35 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'stack') {
-    const repeatCount = Math.min(12, Math.max(1, parseInt(args[0] || '1', 10) || 1));
+    const repeatCount = parseBoundedInteger(args[0], 1, 12);
+    if (repeatCount === null) return rejectCommand(state, 'Stack count must be a whole number from 1 to 12.');
     const dirVec = parseDirectionVector(args[1]);
-    const withUndo = pushUndoSnapshot(state, `//stack ${repeatCount} ${args[1] || 'up'}`);
-    const nextBlocks = { ...withUndo.blocks };
+    if (!dirVec) return rejectCommand(state, `Unknown direction "${args[1]}".`);
+    const workError = getCellCountError([dims.volume, repeatCount + 1]);
+    const destinationError = getGridCoordError({
+      x: (dirVec.x < 0 ? bounds.minX : bounds.maxX) + dirVec.x * dims.lx * repeatCount,
+      y: (dirVec.y < 0 ? bounds.minY : bounds.maxY) + dirVec.y * dims.ly * repeatCount,
+      z: (dirVec.z < 0 ? bounds.minZ : bounds.maxZ) + dirVec.z * dims.lz * repeatCount,
+    });
+    if (workError || destinationError) return rejectCommand(state, (workError || destinationError)!);
     const sourceBlocks: PlacedBlock[] = [];
 
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
       for (let y = bounds.minY; y <= bounds.maxY; y++) {
         for (let z = bounds.minZ; z <= bounds.maxZ; z++) {
           const b = state.blocks[coordKey(x, y, z)];
-          if (b) sourceBlocks.push(b);
+          if (b) {
+            if (getGridCoordError(b.position) || b.position.x !== x || b.position.y !== y || b.position.z !== z) {
+              return rejectCommand(state, 'Selection contains a block with invalid or inconsistent coordinates.');
+            }
+            sourceBlocks.push(b);
+          }
         }
       }
     }
 
+    const withUndo = pushUndoSnapshot(state, `//stack ${repeatCount} ${args[1] || 'up'}`);
+    const nextBlocks = { ...withUndo.blocks };
     let placed = 0;
     for (let step = 1; step <= repeatCount; step++) {
       const ox = dirVec.x * dims.lx * step;
@@ -1173,8 +1405,8 @@ export function executeWorldEditCommand(
         const tz = b.position.z + oz;
         const k = coordKey(tx, ty, tz);
         nextBlocks[k] = {
-          ...b,
-          id: `blk_${tx}_${ty}_${tz}`,
+          ...cloneBlock(b),
+          id: placementIdentity(coordKey(tx, ty, tz)),
           position: { x: tx, y: ty, z: tz },
         };
         placed++;
@@ -1190,24 +1422,34 @@ export function executeWorldEditCommand(
   }
 
   if (cmd === 'move') {
-    const dist = Math.min(24, Math.max(1, parseInt(args[0] || '1', 10) || 1));
+    const dist = parseBoundedInteger(args[0], 1, 24);
+    if (dist === null) return rejectCommand(state, 'Move distance must be a whole number from 1 to 24.');
     const dirVec = parseDirectionVector(args[1]);
-    const withUndo = pushUndoSnapshot(state, `//move ${dist} ${args[1] || 'up'}`);
-    const nextBlocks = { ...withUndo.blocks };
+    if (!dirVec) return rejectCommand(state, `Unknown direction "${args[1]}".`);
+    const destinationError = getSelectionVolumeError(
+      { x: state.pos1.x + dirVec.x * dist, y: state.pos1.y + dirVec.y * dist, z: state.pos1.z + dirVec.z * dist },
+      { x: state.pos2.x + dirVec.x * dist, y: state.pos2.y + dirVec.y * dist, z: state.pos2.z + dirVec.z * dist });
+    if (destinationError) return rejectCommand(state, destinationError);
     const sourceBlocks: PlacedBlock[] = [];
 
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
       for (let y = bounds.minY; y <= bounds.maxY; y++) {
         for (let z = bounds.minZ; z <= bounds.maxZ; z++) {
           const k = coordKey(x, y, z);
-          if (nextBlocks[k]) {
-            sourceBlocks.push(nextBlocks[k]);
-            delete nextBlocks[k];
+          const b = state.blocks[k];
+          if (b) {
+            if (getGridCoordError(b.position) || b.position.x !== x || b.position.y !== y || b.position.z !== z) {
+              return rejectCommand(state, 'Selection contains a block with invalid or inconsistent coordinates.');
+            }
+            sourceBlocks.push(b);
           }
         }
       }
     }
 
+    const withUndo = pushUndoSnapshot(state, `//move ${dist} ${args[1] || 'up'}`);
+    const nextBlocks = { ...withUndo.blocks };
+    for (const b of sourceBlocks) delete nextBlocks[coordKey(b.position.x, b.position.y, b.position.z)];
     const ox = dirVec.x * dist;
     const oy = dirVec.y * dist;
     const oz = dirVec.z * dist;
@@ -1216,8 +1458,8 @@ export function executeWorldEditCommand(
       const ty = b.position.y + oy;
       const tz = b.position.z + oz;
       nextBlocks[coordKey(tx, ty, tz)] = {
-        ...b,
-        id: `blk_${tx}_${ty}_${tz}`,
+        ...cloneBlock(b),
+        id: b.id,
         position: { x: tx, y: ty, z: tz },
       };
     }
@@ -1252,7 +1494,9 @@ export function createBlueprintFromSelection(
   isPublic = false
 ): BlueprintPrefab | null {
   if (!state.pos1 || !state.pos2) return null;
+  if (getSelectionVolumeError(state.pos1, state.pos2)) return null;
   const bounds = getSelectionBounds(state.pos1, state.pos2);
+  const selected: { block: PlacedBlock; x: number; y: number; z: number }[] = [];
   const relativeBlocks: PlacedBlock[] = [];
   const referencedDefs: Record<string, CustomBlockDefinition> = {};
 
@@ -1260,28 +1504,24 @@ export function createBlueprintFromSelection(
     for (let y = bounds.minY; y <= bounds.maxY; y++) {
       for (let z = bounds.minZ; z <= bounds.maxZ; z++) {
         const b = state.blocks[coordKey(x, y, z)];
-        if (b) {
-          relativeBlocks.push({
-            ...b,
-            position: {
-              x: x - bounds.minX,
-              y: y - bounds.minY,
-              z: z - bounds.minZ,
-            },
-          });
-          const def = state.customBlocks[b.blockDefId];
-          if (def) {
-            referencedDefs[def.id] = def;
-          }
-        }
+        if (b) selected.push({ block: b, x, y, z });
       }
     }
   }
 
-  if (relativeBlocks.length === 0) return null;
+  if (!selected.length || placementPayloadError(selected.map(item => item.block), [], state.customBlocks)) return null;
+  for (const { block: b, x, y, z } of selected) {
+    if (getGridCoordError(b.position) || b.position.x !== x || b.position.y !== y || b.position.z !== z) return null;
+    const definition = state.customBlocks[b.blockDefId];
+    relativeBlocks.push({
+      ...cloneBlock(b),
+      position: { x: x - bounds.minX, y: y - bounds.minY, z: z - bounds.minZ },
+    });
+    referencedDefs[definition.id] = cloneDefinition(definition);
+  }
 
   const dims = getSelectionDimensions(state.pos1, state.pos2);
-  return {
+  const blueprint: BlueprintPrefab = {
     id: `bp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name: name.trim() || 'Untitled Structure',
     description: description.trim() || 'Saved structure blueprint',
@@ -1294,16 +1534,19 @@ export function createBlueprintFromSelection(
     customBlockDefs: Object.values(referencedDefs),
     createdAt: new Date().toISOString(),
   };
+  return blueprintPayloadError(blueprint, {}) ? null : blueprint;
 }
 
 export function createBlueprintFromCustomBlock(
   blockDef: CustomBlockDefinition,
-  description = 'Custom designed Lego block',
+  description = 'Custom designed interlocking stud block',
   authorId = 'local_builder',
   authorName = 'Local Builder',
   isPublic = false
 ): BlueprintPrefab {
-  return {
+  const definitionError = validateBlueprintDefinitionMerge({}, [blockDef]);
+  if (definitionError) throw new Error(definitionError);
+  const blueprint: BlueprintPrefab = {
     id: `bp_block_${blockDef.id}`,
     name: blockDef.name,
     description,
@@ -1324,9 +1567,12 @@ export function createBlueprintFromCustomBlock(
         rotation: 0,
       },
     ],
-    customBlockDefs: [blockDef],
+    customBlockDefs: [cloneDefinition(blockDef)],
     createdAt: new Date().toISOString(),
   };
+  const error = blueprintPayloadError(blueprint, {});
+  if (error) throw new Error(error);
+  return blueprint;
 }
 
 export function rotateRelativeCoord(
@@ -1351,13 +1597,11 @@ export function stampBlueprintIntoWorld(
   anchor: GridCoord,
   rotation: 0 | 90 | 180 | 270 = 0
 ): WorldEditEngineState {
-  const withUndo = pushUndoSnapshot(state, `Stamp Blueprint: ${blueprint.name}`);
-  const nextBlocks = { ...withUndo.blocks };
-  const nextCustom = { ...withUndo.customBlocks };
-
-  for (const def of blueprint.customBlockDefs) {
-    nextCustom[def.id] = def;
-  }
+  if (validateBlueprintPlacement(state, blueprint, anchor, rotation)) return state;
+  const placementIdentity = createPlacementIdentity(state.blocks);
+  const nextBlocks = { ...state.blocks };
+  const nextCustom = mergePlacementDefinitions(state.customBlocks, blueprint.customBlockDefs);
+  let changedBlocks = false;
 
   for (const b of blueprint.blocks) {
     const rotPos = rotateRelativeCoord(b.position, rotation);
@@ -1366,14 +1610,16 @@ export function stampBlueprintIntoWorld(
     const tz = anchor.z + rotPos.z;
     const combinedRot = (((b.rotation + rotation) % 360) as 0 | 90 | 180 | 270) || 0;
     const k = coordKey(tx, ty, tz);
-    nextBlocks[k] = {
-      ...b,
-      id: `blk_${tx}_${ty}_${tz}`,
+    const placed: PlacedBlock = {
+      ...cloneBlock(b),
+      id: placementIdentity(k),
       position: { x: tx, y: ty, z: tz },
       rotation: combinedRot,
     };
+    if (!samePlacementContent(state.blocks[k], placed)) { nextBlocks[k] = placed; changedBlocks = true; }
   }
-
+  if (!changedBlocks && sameBlueprintData(nextCustom, state.customBlocks)) return state;
+  const withUndo = pushUndoSnapshot(state, `Stamp Blueprint: ${blueprint.name}`);
   return {
     ...withUndo,
     blocks: nextBlocks,
@@ -1386,8 +1632,9 @@ export function loadBlueprintIntoNewWorld(
   blueprint: BlueprintPrefab,
   includeBasePlatform = true
 ): WorldEditEngineState {
-  const withUndo = pushUndoSnapshot(state, `Load Blueprint World: ${blueprint.name}`);
+  if (validateBlueprintLoad(state, blueprint, includeBasePlatform)) return state;
   const baseBlocks: Record<string, PlacedBlock> = {};
+  const placementIdentity = createPlacementIdentity(state.blocks);
 
   if (includeBasePlatform) {
     const padX = Math.max(4, Math.ceil(blueprint.size.lx / 2) + 2);
@@ -1395,7 +1642,7 @@ export function loadBlueprintIntoNewWorld(
     for (let x = -padX; x <= padX; x++) {
       for (let z = -padZ; z <= padZ; z++) {
         baseBlocks[coordKey(x, 0, z)] = {
-          id: `blk_${x}_0_${z}`,
+          id: placementIdentity(coordKey(x, 0, z)),
           blockDefId: 'grass_brick',
           position: { x, y: 0, z },
           rotation: 0,
@@ -1404,10 +1651,7 @@ export function loadBlueprintIntoNewWorld(
     }
   }
 
-  const nextCustom = { ...withUndo.customBlocks };
-  for (const def of blueprint.customBlockDefs) {
-    nextCustom[def.id] = def;
-  }
+  const nextCustom = mergePlacementDefinitions(state.customBlocks, blueprint.customBlockDefs);
 
   const offsetX = -Math.floor(blueprint.size.lx / 2);
   const offsetZ = -Math.floor(blueprint.size.lz / 2);
@@ -1417,22 +1661,23 @@ export function loadBlueprintIntoNewWorld(
     const ty = 1 + b.position.y;
     const tz = offsetZ + b.position.z;
     baseBlocks[coordKey(tx, ty, tz)] = {
-      ...b,
-      id: `blk_${tx}_${ty}_${tz}`,
+      ...cloneBlock(b),
+      id: placementIdentity(coordKey(tx, ty, tz)),
       position: { x: tx, y: ty, z: tz },
     };
   }
 
+  const pos1 = { x: offsetX, y: 1, z: offsetZ };
+  const pos2 = {
+      x: offsetX + Math.max(0, Math.ceil(blueprint.size.lx) - 1),
+      y: 1 + Math.max(0, Math.ceil(blueprint.size.ly) - 1),
+      z: offsetZ + Math.max(0, Math.ceil(blueprint.size.lz) - 1),
+  };
+  for (const [key, block] of Object.entries(baseBlocks)) if (samePlacementContent(state.blocks[key], block)) baseBlocks[key] = state.blocks[key];
+  if (sameBlueprintData(state.blocks, baseBlocks) && sameBlueprintData(state.customBlocks, nextCustom) && sameBlueprintData(state.pos1, pos1) && sameBlueprintData(state.pos2, pos2)) return state;
+  const withUndo = pushUndoSnapshot(state, `Load Blueprint World: ${blueprint.name}`);
   return {
-    ...withUndo,
-    blocks: baseBlocks,
-    customBlocks: nextCustom,
-    pos1: { x: offsetX, y: 1, z: offsetZ },
-    pos2: {
-      x: offsetX + Math.max(0, blueprint.size.lx - 1),
-      y: 1 + Math.max(0, blueprint.size.ly - 1),
-      z: offsetZ + Math.max(0, blueprint.size.lz - 1),
-    },
+    ...withUndo, blocks: baseBlocks, customBlocks: nextCustom, pos1, pos2,
   };
 }
 
@@ -1510,7 +1755,7 @@ export const STARTER_STRUCTURE_BLUEPRINTS: BlueprintPrefab[] = [
   },
   {
     id: 'bp_starter_cottage',
-    name: 'Lego Homestead Cabin',
+    name: 'Timber Homestead Cabin',
     description: 'Cozy oak and masonry starter shelter with sloped blue roof tiles and glass windows.',
     authorId: 'system',
     authorName: 'BrickForge Studio',

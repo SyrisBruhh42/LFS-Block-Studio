@@ -170,7 +170,7 @@ export const MASTERY_RANKS: MasteryRankDefinition[] = [
     title: 'Apprentice Mason',
     minXp: 0,
     badgeHex: '#94A3B8',
-    perkDescription: 'Core Skyblock workbench, 47-tile CTM & 3D Volume Brushes',
+    perkDescription: 'Core 3D voxel workbench, 47-tile CTM & 3D Volume Brushes',
   },
   {
     level: 2,
@@ -209,9 +209,9 @@ export const ARCHITECTURAL_CONTRACTS: ArchitecturalContract[] = [
     category: 'Foundation',
     difficulty: 'Apprentice',
     description:
-      'Construct a grounded multi-material shelter or plaza spanning at least 8 studs wide with 3 distinct block materials.',
+      'Construct a grounded multi-material shelter or plaza spanning at least 8 studs wide with pitched roof slopes and 3 distinct block materials.',
     architecturalTip:
-      'Use //pos1 and //pos2 with //walls cobble_brick to raise perimeter walls in seconds.',
+      'Use //pos1 and //pos2 with //walls cobble_brick to raise perimeter walls, then crown with Slate Roof Stairs.',
     xpReward: 150,
     recommendedBlocks: ['cobble_brick', 'oak_plank', 'roof_slope_blue'],
     requirements: {
@@ -219,6 +219,7 @@ export const ARCHITECTURAL_CONTRACTS: ArchitecturalContract[] = [
       minHeight: 4,
       minFootprintSpan: 8,
       minDistinctBlockTypes: 3,
+      requireRoofOrSlope: true,
     },
   },
   {
@@ -282,7 +283,7 @@ export const ARCHITECTURAL_CONTRACTS: ArchitecturalContract[] = [
   },
   {
     id: 'contract_grand_sky_citadel',
-    title: '05. Grand Skyblock Citadel',
+    title: '05. Grand Studio Citadel',
     category: 'Masterwork',
     difficulty: 'Grand Master',
     description:
@@ -548,6 +549,81 @@ export function getDailyBuildPromptForDate(dateStr?: string): DailyBuildPrompt {
   return DAILY_BUILD_PROMPTS[hash % DAILY_BUILD_PROMPTS.length];
 }
 
+/**
+ * Evaluates and updates the builder's daily streak across UTC calendar days (`YYYY-MM-DD`).
+ * - Same UTC day (`diffDays === 0`): preserves current `streakDays` (min 1).
+ * - Next consecutive UTC day (`diffDays === 1`): increments `streakDays + 1`.
+ * - Missed day(s) (`diffDays > 1`) or non-chronological date: resets `streakDays` to `1`.
+ */
+export function computeUpdatedBuildStreak(
+  lastBuildDate: string | null | undefined,
+  currentStreakDays: number,
+  todayDateStr?: string
+): {
+  streakDays: number;
+  lastBuildDate: string;
+  incremented: boolean;
+  reset: boolean;
+} {
+  const today = (todayDateStr || new Date().toISOString().slice(0, 10)).slice(
+    0,
+    10
+  );
+  const safeCurrent =
+    typeof currentStreakDays === 'number' &&
+    Number.isFinite(currentStreakDays) &&
+    currentStreakDays >= 1
+      ? Math.floor(currentStreakDays)
+      : 1;
+
+  if (!lastBuildDate || typeof lastBuildDate !== 'string') {
+    return {
+      streakDays: 1,
+      lastBuildDate: today,
+      incremented: false,
+      reset: true,
+    };
+  }
+
+  const prevClean = lastBuildDate.slice(0, 10);
+  if (prevClean === today) {
+    return {
+      streakDays: safeCurrent,
+      lastBuildDate: today,
+      incremented: false,
+      reset: false,
+    };
+  }
+
+  const prevMs = Date.parse(`${prevClean}T00:00:00.000Z`);
+  const todayMs = Date.parse(`${today}T00:00:00.000Z`);
+  if (!Number.isFinite(prevMs) || !Number.isFinite(todayMs)) {
+    return {
+      streakDays: 1,
+      lastBuildDate: today,
+      incremented: false,
+      reset: true,
+    };
+  }
+
+  const diffDays = Math.round((todayMs - prevMs) / 86_400_000);
+  if (diffDays === 1) {
+    return {
+      streakDays: safeCurrent + 1,
+      lastBuildDate: today,
+      incremented: true,
+      reset: false,
+    };
+  }
+
+  return {
+    streakDays: 1,
+    lastBuildDate: today,
+    incremented: false,
+    reset: true,
+  };
+}
+
 // ============================================================================
 // PROCEDURAL STARTER ISLAND BIOME & TERRAIN TEMPLATES
 // ============================================================================
@@ -573,12 +649,12 @@ export interface ProceduralBiomeTemplate {
 export const PROCEDURAL_BIOME_TEMPLATES: ProceduralBiomeTemplate[] = [
   {
     id: 'floating_skyblock',
-    name: 'Classic Floating Skyblock',
+    name: 'Classic Floating Terrace',
     subtitle: 'Layered turf, tapered stone underside, oak tree & lantern',
-    badge: 'Skyblock',
+    badge: 'Terrace',
     accentHex: '#10B981',
     description:
-      'Organic floating island with a tapered cobblestone under-cliff, lush turf meadow, timber oak tree, and starter beacon.',
+      'Organic terraced foundation plot with a tapered cobblestone under-cliff, lush turf meadow, timber oak tree, and starter beacon.',
     recommendedAtmosphere: 'studio_noon',
   },
   {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getStudioOfflineClient } from './studioOfflineClient';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -10,12 +11,10 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function registerStudioServiceWorker(): void {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Service worker registration is non-fatal in preview frames
-    });
-  });
+  if (typeof window === 'undefined') return;
+  const start = () => { void getStudioOfflineClient().start(); };
+  if (document.readyState === 'complete') start();
+  else window.addEventListener('load', start, { once: true });
 }
 
 export function useOnlineStatus(): boolean {

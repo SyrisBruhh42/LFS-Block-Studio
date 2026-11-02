@@ -1,0 +1,13 @@
+{"name":"native recipe focus, editing, preview and complete review download preserve the build, history and canvas","ok":true,"reviewHash":"d0488e5a079bbecce649e21f23060b5e85862e377a7da4454887358b251d0665","exactChangedCells":27}
+{"name":"changed-cell paging, filtering and resolved trace expose exact before/after data without executing it","ok":true}
+{"name":"Apply commits complete recipe cells, revealed chunks, selection and clipboard as one Undo and Redo","ok":true,"fullAuthoredHash":"632934c489e95172850092aa66b96ae1152e52df85033b44f82993112ca0f967","oneRecipeUndo":true,"clipboardExercisedByActualPaste":true}
+{"name":"an identical recipe keeps stable cell identities, source content and pending Redo","ok":true}
+{"name":"a failed later command exposes no partial live changes and retains the editable script","ok":true}
+{"name":"Cancel and editing during cooperative preparation retain commands and never publish a partial step","ok":true}
+{"name":"Escape retains an unfinished draft, revokes Apply and requires an explicit preset replacement","ok":true}
+{"name":"the existing HUD macro entry opens the review workspace without immediately changing the build","ok":true,"entry":"existing Room Shell HUD slot"}
+{"name":"activation through the public project-file route cancels the old review while retaining its commands","ok":true}
+{"name":"shared Oasis preferences and native keyboard reflow preserve source at 320 CSS pixels and 200 percent text","ok":true,"viewportCssPixels":320,"textPercent":200}
+{"name":"new command placements avoid moved coordinate IDs, and a command move retains the inspected cell identity","ok":true}
+{"name":"locked recipes reject an unsupported intermediate step and apply mapped output with unchanged policy","ok":true,"nativeQualification":"NOT_RUN — skipped by user"}
+{"name":"the complete accepted recipe project and policy survive explicit Save and reopening","ok":true,"authoredHash":"ccf156e4a44e3e1557e4b1c6f126557104750f6cc8b8dbd8ca914836349d44cd"}

@@ -1,0 +1,12 @@
+{
+  "topic_id": "help.adopted.lfs-block-studio",
+  "title": "How to Use Lfs Block Studio",
+  "flesch_kincaid_grade": 7.4,
+  "summary": "Lfs Block Studio runs safely inside your Oasis workspace. Press Shift+Tab any time to open chat, saves, or co-op hosting.",
+  "zt6_error_template": {
+    "what_happened": "Lfs Block Studio hit a temporary local issue.",
+    "why_it_happened": "A local file or sandbox resource was busy.",
+    "how_to_fix": "Click Retry or restore your last Time-Machine save slot.",
+    "diagnostic_code": "OASIS-ADOPT-LFS-BLOCK-ST-001"
+  }
+}

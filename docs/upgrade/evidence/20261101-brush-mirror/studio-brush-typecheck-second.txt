@@ -1,0 +1,1 @@
+src/lib/studioBrushEdit.test.ts(69,30): error TS2739: Type '{ coordKeyStr: string; patternKey: string; placedAt: number; expiresAt: number; }' is missing the following properties from type 'LingerWatchedBlockEntry': position, blockDefId, objectClassId

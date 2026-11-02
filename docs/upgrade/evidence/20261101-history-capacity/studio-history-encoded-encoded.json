@@ -1,0 +1,114 @@
+{
+  "startedAt": "2026-11-01T19:59:42.340Z",
+  "origin": "http://127.0.0.1:4173",
+  "browser": "156.0.8078.79",
+  "results": [
+    {
+      "name": "legacy string candidate remains readable, promotable and exactly preserved",
+      "ok": true
+    },
+    {
+      "name": "large candidate selects UTF-8 canonical bytes while preserving document and damaged original code units",
+      "ok": true
+    },
+    {
+      "name": "readback verification accepts exact encoded bytes, not byte-array object identity",
+      "ok": true
+    },
+    {
+      "name": "unknown encoding, invalid UTF-8, wrong representation and oversized bytes stay unactivatable and recoverable",
+      "ok": true
+    },
+    {
+      "name": "changed encoded document after readback rejects final activation without changing the active project",
+      "ok": true
+    },
+    {
+      "name": "changed encoded original after readback rejects final activation without changing the active project",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "blockedRequests": [],
+  "loadedModules": [
+    {
+      "path": "/src/lib/studioEncodedCandidate.browser-tests.ts",
+      "status": 200,
+      "sha256": "cf3bab01848c8642f82b0ae55e622bb65e9bfb0566a91385dc7482a93522a3a2"
+    },
+    {
+      "path": "/src/lib/studioDocumentStore.ts?t=1793562952357",
+      "status": 200,
+      "sha256": "f4769978b5cec2c4ea7bba66d4355873079c3836a7a5308eeecdb9f33e754254"
+    },
+    {
+      "path": "/src/lib/studioDocument.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "dda6773f4662f6f19994111fd1f9abad5cae08ab4bd94a75c00d921cefe9ba17"
+    },
+    {
+      "path": "/src/lib/studioDocument.test-fixtures.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "09ca42cc022d7a5227b0be8a991372cfe2c988a8285601e52de6e3e3daed9a5b"
+    },
+    {
+      "path": "/src/lib/studioTargetPolicy.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "42d6e572ec07b35f920dcd87a9946efb2f1f3f0943e4c405d3ebe6cc087e56bf"
+    },
+    {
+      "path": "/src/engine/javaCellMapping.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "808786764d411a533f470b5c4a86b2702abb24a9d9fb3e716b01dac87a298ef3"
+    },
+    {
+      "path": "/src/engine/chunkAndPatternEngine.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "8d6ffc8e15acbbfec7b4d1cf6c5131c8073e01a236b76bad0f9a9f6d36b64d09"
+    },
+    {
+      "path": "/src/engine/worldEditEngine.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "002003bca81ce0556a044ad62fb753e5504c7e97ccb93d5efe68bfdc7cc3d4a4"
+    },
+    {
+      "path": "/src/engine/javaProfile.ts",
+      "status": 200,
+      "sha256": "41683a8cf0c649d869b0a5fb25bb72f0dcd932e8d1d45a77a43d9127d4f28211"
+    },
+    {
+      "path": "/src/engine/blueprintDefinitionSafety.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "3391c2d2292475e03dcdd68ea6653f46fc328049f570b610cfda23c3658f3ecd"
+    }
+  ],
+  "sourceBefore": {
+    "src/lib/studioEncodedCandidate.browser-tests.ts": "6be28a56c5b2a1fa4dcf085ad754839b1d54252ab2b27afdde7f4195c1c74965",
+    "src/lib/studioDocumentStore.ts": "2e1ce28397b06a57844d7522e217a46358380d46d3aa8fc59dd654f31c293fe5",
+    "src/lib/studioDocument.ts": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioDocument.test-fixtures.ts": "b443dd45050b278c3d598b0c2898b3df931fa3582618cd38c61b29f4dc6d3971",
+    "src/engine/javaCellMapping.ts": "0faac1c2b3ce40b11ccb8076e35c0b93b65a4bd96444800c4f27beb4f4a2f285",
+    "src/engine/javaProfile.ts": "9e7a8f0cf27292f78d0dd5a8357d6f4449b188008e61ac133c1e3f267490ff73",
+    "src/engine/worldEditEngine.ts": "f5f367f049f3fc60e6e08830de36c04416d1c63eafa654b8cc3b8ffdaa7ea7ae",
+    "src/engine/chunkAndPatternEngine.ts": "1daefbd3337699b23985de168fa8da69358dc713ecd30bd527502b7f43593f8b"
+  },
+  "sourceAfter": {
+    "src/lib/studioEncodedCandidate.browser-tests.ts": "6be28a56c5b2a1fa4dcf085ad754839b1d54252ab2b27afdde7f4195c1c74965",
+    "src/lib/studioDocumentStore.ts": "2e1ce28397b06a57844d7522e217a46358380d46d3aa8fc59dd654f31c293fe5",
+    "src/lib/studioDocument.ts": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioDocument.test-fixtures.ts": "b443dd45050b278c3d598b0c2898b3df931fa3582618cd38c61b29f4dc6d3971",
+    "src/engine/javaCellMapping.ts": "0faac1c2b3ce40b11ccb8076e35c0b93b65a4bd96444800c4f27beb4f4a2f285",
+    "src/engine/javaProfile.ts": "9e7a8f0cf27292f78d0dd5a8357d6f4449b188008e61ac133c1e3f267490ff73",
+    "src/engine/worldEditEngine.ts": "f5f367f049f3fc60e6e08830de36c04416d1c63eafa654b8cc3b8ffdaa7ea7ae",
+    "src/engine/chunkAndPatternEngine.ts": "1daefbd3337699b23985de168fa8da69358dc713ecd30bd527502b7f43593f8b"
+  },
+  "sourceStable": true,
+  "limitations": [
+    "Real Chromium IndexedDB encoded-candidate readback, final-activation conflicts, raw byte/text rescue and disposable unique databases.",
+    "No application UI, controller/hook, cross-browser, hardware, provider, native Minecraft, release or deployment qualification.",
+    "Single-record IndexedDB cloning is browser-owned; application parsing/envelope output and key pages are bounded. No retention deletion."
+  ],
+  "finishedAt": "2026-11-01T19:59:47.894Z"
+}

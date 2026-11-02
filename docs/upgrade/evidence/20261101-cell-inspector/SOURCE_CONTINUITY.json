@@ -1,0 +1,50 @@
+{
+  "predecessor": {
+    "file": "CURRENT_SOURCE.zip",
+    "bytes": 1723142,
+    "sha256": "be406e0ec5507fef8dde4208f0e95efff612245983f2f5e26fbcd60b505c5b81"
+  },
+  "files": [
+    {
+      "path": "package.json",
+      "previousSha256": "09ae7dc2a4b6fdce2eaa2e6294018d3531eb41ce9985edd0ece771225891411f",
+      "currentSha256": "09ae7dc2a4b6fdce2eaa2e6294018d3531eb41ce9985edd0ece771225891411f"
+    },
+    {
+      "path": "bun.lock",
+      "previousSha256": "de882debfd4b89ab420350860848f647c1edc67a8c730a2c95e126e7648dc96d",
+      "currentSha256": "de882debfd4b89ab420350860848f647c1edc67a8c730a2c95e126e7648dc96d"
+    },
+    {
+      "path": "src/lib/studioDocument.ts",
+      "previousSha256": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+      "currentSha256": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2"
+    },
+    {
+      "path": "src/lib/studioEditorSession.ts",
+      "previousSha256": "64136600930c0d89cafc917f4fa505ece583d052d8737fe0628c980d9bbdc424",
+      "currentSha256": "64136600930c0d89cafc917f4fa505ece583d052d8737fe0628c980d9bbdc424"
+    },
+    {
+      "path": "src/lib/studioDocumentStore.ts",
+      "previousSha256": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+      "currentSha256": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070"
+    },
+    {
+      "path": "src/lib/useStudioPersistence.ts",
+      "previousSha256": "31007579f3b2cb4c29472d555654e6ba2d89b9e66351527fed4f22c8e26b466f",
+      "currentSha256": "31007579f3b2cb4c29472d555654e6ba2d89b9e66351527fed4f22c8e26b466f"
+    },
+    {
+      "path": "src/resources/oasis/lds-tokens.css",
+      "previousSha256": "e82f6916c2f21fb698619210eac64bdce0540114f6e0b387f84a8e26b3afffef",
+      "currentSha256": "e82f6916c2f21fb698619210eac64bdce0540114f6e0b387f84a8e26b3afffef"
+    },
+    {
+      "path": "src/resources/oasis/SolarpunkIcon.tsx",
+      "previousSha256": "3e38767e2540eeb0c33d59f71ae7f0c04579a1d4e75979e05a05e5cfb3115699",
+      "currentSha256": "3e38767e2540eeb0c33d59f71ae7f0c04579a1d4e75979e05a05e5cfb3115699"
+    }
+  ],
+  "scope": "Exact primary source continuity, not runtime or transitive dependency qualification."
+}

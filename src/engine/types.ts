@@ -140,6 +140,13 @@ export interface SelectionBounds {
 export interface WorldStateSnapshot {
   blocks: Record<string, PlacedBlock>;
   label: string;
+  // Optional only to read legacy, blocks-only history. New snapshots capture the
+  // complete authored engine domain; history stacks themselves are not nested.
+  customBlocks?: Record<string, CustomBlockDefinition>;
+  pos1?: GridCoord | null;
+  pos2?: GridCoord | null;
+  clipboard?: PlacedBlock[];
+  clipboardCustomDefs?: CustomBlockDefinition[];
 }
 
 export interface WorldEditEngineState {
@@ -446,11 +453,11 @@ export interface OpenSourceMarketBlock {
   blockDef: CustomBlockDefinition;
   creatorPackId: OpenSourceCreatorPackId;
   creatorName: string;
-  license: 'CC0 1.0 Public Domain' | 'CC-BY 4.0 Open Source';
+  license: 'CC0 1.0 Public Domain' | 'CC-BY 4.0 Open Source' | 'Unverified local preset';
   category: MarketBlockCategory;
   tags: string[];
-  downloadsCount: number;
-  rating: number; // 4.5..5.0
+  downloadsCount?: number;
+  rating?: number;
   description: string;
 }
 
@@ -516,6 +523,6 @@ export interface SavedStudioProject {
   blocks: Record<string, PlacedBlock>;
   customBlocks: CustomBlockDefinition[];
   chunkConfig: WorldChunkConfig;
+  /** Versioned payload is validated at the document boundary before opening. */
+  completeDocument?: unknown;
 }
-
-

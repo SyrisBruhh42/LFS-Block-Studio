@@ -1,0 +1,165 @@
+TAP version 13
+# Subtest: session starts nonwritable with fresh identity, immutable snapshots and bound subscription methods
+ok 1 - session starts nonwritable with fresh identity, immutable snapshots and bound subscription methods
+  ---
+  duration_ms: 16.508102
+  ...
+# Subtest: constructor rejects invalid documents and invalid history budgets
+ok 2 - constructor rejects invalid documents and invalid history budgets
+  ---
+  duration_ms: 4.43217
+  ...
+# Subtest: composite setters publish once and undo/redo the complete authored domain and workspace
+ok 3 - composite setters publish once and undo/redo the complete authored domain and workspace
+  ---
+  duration_ms: 12.568679
+  ...
+# Subtest: nested transactions safely join one batch and validate only the final composite state
+ok 4 - nested transactions safely join one batch and validate only the final composite state
+  ---
+  duration_ms: 6.153353
+  ...
+# Subtest: final validation, exceptions and ignored nested rejection roll back all setters and effects
+ok 5 - final validation, exceptions and ignored nested rejection roll back all setters and effects
+  ---
+  duration_ms: 7.744824
+  ...
+# Subtest: no-op preserves snapshot identity, redo, live revision and suppresses queued effects
+ok 6 - no-op preserves snapshot identity, redo, live revision and suppresses queued effects
+  ---
+  duration_ms: 7.552912
+  ...
+# Subtest: post-commit effects see accepted state, failures do not undo it and remaining effects run
+ok 7 - post-commit effects see accepted state, failures do not undo it and remaining effects run
+  ---
+  duration_ms: 4.538342
+  ...
+# Subtest: reentrant mutations in subscribers and commit effects are rejected without recursive publish
+ok 8 - reentrant mutations in subscribers and commit effects are rejected without recursive publish
+  ---
+  duration_ms: 4.48084
+  ...
+# Subtest: updater reentry poisons the whole batch while legitimate nested transaction callbacks remain allowed
+ok 9 - updater reentry poisons the whole batch while legitimate nested transaction callbacks remain allowed
+  ---
+  duration_ms: 2.398092
+  ...
+# Subtest: declared async callbacks and async setters reject before invocation
+ok 10 - declared async callbacks and async setters reject before invocation
+  ---
+  duration_ms: 2.19441
+  ...
+# Subtest: returned Promise and descriptor-only thenable detection reject the synchronous draft without invoking then
+ok 11 - returned Promise and descriptor-only thenable detection reject the synchronous draft without invoking then
+  ---
+  duration_ms: 1.584212
+  ...
+# Subtest: mutable aliases are copied and frozen internally without freezing caller-owned data
+ok 12 - mutable aliases are copied and frozen internally without freezing caller-owned data
+  ---
+  duration_ms: 4.975987
+  ...
+# Subtest: fractional Freeform anchors and workspace-only history preserve document identity
+ok 13 - fractional Freeform anchors and workspace-only history preserve document identity
+  ---
+  duration_ms: 5.899689
+  ...
+# Subtest: workspace rejects invalid positions, missing definitions, duplicate anchors and malformed blocks atomically
+ok 14 - workspace rejects invalid positions, missing definitions, duplicate anchors and malformed blocks atomically
+  ---
+  duration_ms: 23.324434
+  ...
+# Subtest: clipboard definitions survive removal of a current-world definition and complete undo
+ok 15 - clipboard definitions survive removal of a current-world definition and complete undo
+  ---
+  duration_ms: 6.044771
+  ...
+# Subtest: accessors and unknown fields reject without invocation; legacy engine stacks are discarded without traversal
+ok 16 - accessors and unknown fields reject without invocation; legacy engine stacks are discarded without traversal
+  ---
+  duration_ms: 4.141675
+  ...
+# Subtest: tokens guard every identity dimension and reject edit-undo ABA even when content matches
+ok 17 - tokens guard every identity dimension and reject edit-undo ABA even when content matches
+  ---
+  duration_ms: 6.063992
+  ...
+# Subtest: exclusive handles block normal writes and preserve nonwritable state on release
+ok 18 - exclusive handles block normal writes and preserve nonwritable state on release
+  ---
+  duration_ms: 1.659763
+  ...
+# Subtest: verified installation validates first, rotates session, clears full history/workspace and retains lock
+ok 19 - verified installation validates first, rotates session, clears full history/workspace and retains lock
+  ---
+  duration_ms: 6.294155
+  ...
+# Subtest: authority changes, install and exclusion acquisition inside a batch abort the batch
+ok 20 - authority changes, install and exclusion acquisition inside a batch abort the batch
+  ---
+  duration_ms: 5.017288
+  ...
+# Subtest: combined history count bounds undo and redo and new edits clear only redo
+ok 21 - combined history count bounds undo and redo and new edits clear only redo
+  ---
+  duration_ms: 14.764939
+  ...
+# Subtest: byte budget retains both directions once; exact-fit Undo/Redo works and oversized changes reject atomically
+ok 22 - byte budget retains both directions once; exact-fit Undo/Redo works and oversized changes reject atomically
+  ---
+  duration_ms: 10.036265
+  ...
+# Subtest: byte accounting includes UTF-8 workspace payload and oldest frames are evicted within capacity
+ok 23 - byte accounting includes UTF-8 workspace payload and oldest frames are evicted within capacity
+  ---
+  duration_ms: 10.875636
+  ...
+# Subtest: optional metadata absence is restored exactly through full history
+ok 24 - optional metadata absence is restored exactly through full history
+  ---
+  duration_ms: 4.607692
+  ...
+# Subtest: durable acknowledgement preserves later authored edits, workspace, history and the live token
+ok 25 - durable acknowledgement preserves later authored edits, workspace, history and the live token
+  ---
+  duration_ms: 9.333976
+  ...
+# Subtest: save acknowledgement after undo does not change redo and survives exact-fit history budgets
+ok 26 - save acknowledgement after undo does not change redo and survives exact-fit history budgets
+  ---
+  duration_ms: 7.757384
+  ...
+# Subtest: durable receipts reject foreign sessions, future edit counters, regressions and conflicts without changing history
+ok 27 - durable receipts reject foreign sessions, future edit counters, regressions and conflicts without changing history
+  ---
+  duration_ms: 12.317957
+  ...
+# Subtest: trusted durable receipts may arrive while nonwritable or excluded, but cannot reenter an edit batch
+ok 28 - trusted durable receipts may arrive while nonwritable or excluded, but cannot reenter an edit batch
+  ---
+  duration_ms: 2.874719
+  ...
+# Subtest: native rejected Promises are drained after rejecting the batch, without invoking thenable getters
+ok 29 - native rejected Promises are drained after rejecting the batch, without invoking thenable getters
+  ---
+  duration_ms: 8.746048
+  ...
+# Subtest: malformed identity accessors and additional undefined fields cannot bypass token shape checks
+ok 30 - malformed identity accessors and additional undefined fields cannot bypass token shape checks
+  ---
+  duration_ms: 5.889049
+  ...
+# Subtest: clipboard count limits reject before visiting oversized array entries
+ok 31 - clipboard count limits reject before visiting oversized array entries
+  ---
+  duration_ms: 2.328671
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 233.358457

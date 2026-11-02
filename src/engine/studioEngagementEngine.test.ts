@@ -56,15 +56,45 @@ test('Procedural biome generator produces valid worlds for all 6 templates', () 
 
 test('Architectural contract evaluator accurately scores progress and completion', () => {
   const init = createInitialEngineState();
-  const c1 = ARCHITECTURAL_CONTRACTS[0]; // minBlocks: 60, minHeight: 4, minFootprintSpan: 8, minDistinctBlockTypes: 3
+  const c1 = ARCHITECTURAL_CONTRACTS[0]; // minBlocks: 60, minHeight: 4, minFootprintSpan: 8, minDistinctBlockTypes: 3, requireRoofOrSlope: true
 
-  // Starter skyblock already has >60 blocks, height >=4, span >=8, and 4 block types
-  const res = evaluateContractProgress(c1, init.blocks, init.customBlocks);
+  // Untouched starter skyblock requires at least one roof/slope block to complete Homestead Foundation
+  const untouchedRes = evaluateContractProgress(c1, init.blocks, init.customBlocks);
+  assert.equal(untouchedRes.isCompleted, false);
+
+  const blocksWithRoof: Record<string, PlacedBlock> = {
+    ...init.blocks,
+    [coordKey(0, 6, 0)]: {
+      id: 'b_roof_test_0',
+      blockDefId: 'roof_slope_blue',
+      position: { x: 0, y: 6, z: 0 },
+      rotation: 0,
+    },
+    [coordKey(1, 6, 0)]: {
+      id: 'b_roof_test_1',
+      blockDefId: 'roof_slope_blue',
+      position: { x: 1, y: 6, z: 0 },
+      rotation: 0,
+    },
+    [coordKey(2, 6, 0)]: {
+      id: 'b_roof_test_2',
+      blockDefId: 'roof_slope_blue',
+      position: { x: 2, y: 6, z: 0 },
+      rotation: 0,
+    },
+    [coordKey(3, 6, 0)]: {
+      id: 'b_roof_test_3',
+      blockDefId: 'roof_slope_blue',
+      position: { x: 3, y: 6, z: 0 },
+      rotation: 0,
+    },
+  };
+  const res = evaluateContractProgress(c1, blocksWithRoof, init.customBlocks);
   assert.equal(res.isCompleted, true);
   assert.equal(res.overallProgressPercent, 100);
 
   // All contracts evaluation returns all 5 contract entries
-  const all = evaluateAllContracts(init.blocks, init.customBlocks);
+  const all = evaluateAllContracts(blocksWithRoof, init.customBlocks);
   assert.equal(Object.keys(all).length, ARCHITECTURAL_CONTRACTS.length);
 });
 

@@ -386,7 +386,7 @@ export const PaintToolboxSidebar: React.FC<PaintToolboxSidebarProps> = ({
             className="w-full mb-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Store className="w-3.5 h-3.5" />
-            <span>Browse CC0 Block Market (+21)</span>
+            <span>Browse local block catalogue</span>
           </button>
         )}
 

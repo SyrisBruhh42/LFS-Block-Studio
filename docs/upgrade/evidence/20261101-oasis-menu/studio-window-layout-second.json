@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-11-01T18:41:25.615Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "4d29a8fd79374da4d8a0c93e40658d2b4b99a144952d06c66d12af27ee55eef9"
+  },
+  "results": [],
+  "pageErrors": [],
+  "limitations": [
+    "Mounted real window/HUD components and real mouse/keyboard tasks; selected cancellation/secondary-pointer events are synthetic. No physical touch/pen, assistive-technology or full accessibility acceptance.",
+    "App project/history/export invariants are qualified separately on a frozen application build. No provider requests or normal browser/user storage."
+  ],
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n520 !== 590\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:60:136\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at process.processImmediate (node:internal/timers:459:9)\n    at process.callbackTrampoline (node:internal/async_hooks:130:17)\n    at async run (file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:54:60)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:56:2",
+  "sourceAfter": {
+    "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "4d29a8fd79374da4d8a0c93e40658d2b4b99a144952d06c66d12af27ee55eef9"
+  },
+  "sourceStable": true,
+  "finishedAt": "2026-11-01T18:41:26.089Z",
+  "ok": false
+}

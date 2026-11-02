@@ -1,0 +1,76 @@
+{
+  "startedAt": "2026-11-01T21:52:05.560Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-C8K-Zt4e.js",
+    "http://127.0.0.1:4174/assets/index-B86ezzgp.css"
+  ],
+  "results": [
+    {
+      "name": "valid visible blueprint import adds only a private library item and retains exact original",
+      "ok": true,
+      "blueprintId": "blueprint-8a3d4737-ab08-4f70-8cdb-8013a24ca27e",
+      "sourceHash": "1093ca51906912854f74998e18b40e19b77b593f4fa29134015cbafcf03b27c4",
+      "candidateId": "candidate-2172bc7f-75b8-4090-ab78-5c0667c8da17",
+      "activeDocumentId": "project-dc276395-01ef-476a-8f6a-197499be32a2"
+    },
+    {
+      "name": "one Undo removes imported library item without affecting original or shared definitions",
+      "ok": true,
+      "originalRetained": true
+    },
+    {
+      "name": "Redo, explicit save and reload preserve imported library and unchanged world",
+      "ok": true,
+      "documentHash": "005cd148240f356473e92dce0c07d010c10e34061f7dee16d354bc2f67483e2c",
+      "revision": 1
+    },
+    {
+      "name": "invalid import (duplicate definition IDs) leaves complete document, history and storage unchanged",
+      "ok": true,
+      "sourceHash": "973d36c25834249d9bba1a45bb0e222a6ee87491c4b9ffccf0585b2e2f32022c",
+      "unchangedDocumentHash": "005cd148240f356473e92dce0c07d010c10e34061f7dee16d354bc2f67483e2c"
+    },
+    {
+      "name": "invalid import (duplicate placement IDs) leaves complete document, history and storage unchanged",
+      "ok": true,
+      "sourceHash": "31e51fe5160c66f25f5423a9df369078b74c68755e8736abfefcfaeb0835186a",
+      "unchangedDocumentHash": "005cd148240f356473e92dce0c07d010c10e34061f7dee16d354bc2f67483e2c"
+    },
+    {
+      "name": "invalid import (duplicate JSON keys) leaves complete document, history and storage unchanged",
+      "ok": true,
+      "sourceHash": "58f947ca2fcdb2aea42aa60f138751cac79edba322085e86964f02753977a5bd",
+      "unchangedDocumentHash": "005cd148240f356473e92dce0c07d010c10e34061f7dee16d354bc2f67483e2c"
+    },
+    {
+      "name": "invalid import (unknown top-level field) leaves complete document, history and storage unchanged",
+      "ok": true,
+      "sourceHash": "f7270626f46e23c8ad49df9a8c5d88a9a37f7875450cf73d4e9f7823f79eb843",
+      "unchangedDocumentHash": "005cd148240f356473e92dce0c07d010c10e34061f7dee16d354bc2f67483e2c"
+    },
+    {
+      "name": "invalid import (unknown nested definition field) leaves complete document, history and storage unchanged",
+      "ok": true,
+      "sourceHash": "e2c1350fa53058c87c5d2485ab037713d595e67333af43ccef20de1103d335f2",
+      "unchangedDocumentHash": "005cd148240f356473e92dce0c07d010c10e34061f7dee16d354bc2f67483e2c"
+    },
+    {
+      "name": "no uncaught App exceptions or React update errors",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "reactErrors": [],
+  "blockedRequests": [],
+  "limitations": [
+    "Disposable desktop Chromium, software WebGL and actual App UI. No hardware, assistive technology, multi-browser or native-game qualification.",
+    "All external/API traffic is blocked. These checks exercise local blueprint import, preservation and history, not cloud fetch/publication.",
+    "Complete live document comparison uses the product backup download; its generated savedAt is excluded. Durable documents, active tokens and recovery candidates are compared without exclusions."
+  ],
+  "initialDocumentHash": "9e41881183239ff640782009b238a268e7279e910d5074080f44a626465b603b",
+  "sourceHash": "1093ca51906912854f74998e18b40e19b77b593f4fa29134015cbafcf03b27c4",
+  "finishedAt": "2026-11-01T21:52:38.168Z",
+  "ok": true
+}

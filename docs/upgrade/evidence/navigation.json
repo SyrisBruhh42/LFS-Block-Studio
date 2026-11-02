@@ -1,0 +1,94 @@
+{
+  "startedAt": "2026-11-01T14:21:49.622Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-D_RgE7YS.js",
+    "http://127.0.0.1:4174/assets/index-DZmKhezt.css"
+  ],
+  "results": [
+    {
+      "name": "Orbit/Fly/C/F/Home and legacy ribbon labels share one mode",
+      "ok": true,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5"
+    },
+    {
+      "name": "temporary Alt look restores the orthographic camera after flight movement",
+      "ok": true,
+      "referenceCameraHash": "cfb3358ae6657765a63c46e65cf68a6421ad17376f29fc1d3384db97214194e8",
+      "restoredCameraHash": "6ab2d437bda3d68f8af10d2b6a7820ac6dc75a10939813b9122f012856d6f5fd",
+      "maxCameraMatrixDifference": 3.552713612626052e-15,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5"
+    },
+    {
+      "name": "ordinary navigation cancels temporary look; stale and coalesced releases are harmless",
+      "ok": true,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5"
+    },
+    {
+      "name": "Pan, frame/view/home/previous actions preserve authored content",
+      "ok": true,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5"
+    },
+    {
+      "name": "native Tab traverses controls without accepting ghosts or changing camera",
+      "ok": true,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5"
+    },
+    {
+      "name": "project dialog text/shortcuts and command drops cannot fly or mutate authored content",
+      "ok": true,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5",
+      "dropFixture": "synthetic command drop while actual project dialog is open"
+    },
+    {
+      "name": "hotkey capture preserves Tab, stops for composition and does not survive close",
+      "ok": true,
+      "authoredHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5"
+    }
+  ],
+  "pageErrors": [],
+  "blockedExternalOrigins": [],
+  "limitations": [
+    "Disposable desktop Chromium context with software WebGL; no native touch, pen, trackpad, gamepad, screen-reader or OS shortcut qualification.",
+    "Composition and coalesced Alt events include synthetic DOM fixtures, not a real IME device.",
+    "Camera matrices are observed through pass-through WebGL uniform instrumentation; no production source/test seam is added.",
+    "External requests and service workers are blocked; cloud/provider behavior is not exercised."
+  ],
+  "cameraMatrixAbsoluteTolerance": 0.000001,
+  "initialDocumentHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5",
+  "finalDocumentHash": "41219d9abb5704853d2f94d40f50b2c8f1277906dd47c2a1975698fc0d5396f5",
+  "finishedAt": "2026-11-01T14:22:12.050Z",
+  "ok": true,
+  "evidenceState": "PASS_LOCAL_DISPOSABLE_CHROMIUM_NAVIGATION_CHECKS_ONLY",
+  "harness": {
+    "path": "scripts/qa/navigation.mjs",
+    "sha256": "d3560e1d63d658707087e33ed65f48c973b5ec217e0cf1f9cb96e063c7b0e0ed"
+  },
+  "frozenBuild": {
+    "baseCommit": "f2de5949594202e57fda9dc38cea7bf3634825ab",
+    "note": "Uncommitted local upgrade build; exact served asset URLs above bind this receipt. Later isolated export edits are not represented by this navigation run."
+  },
+  "priorAttempt": {
+    "startedAt": "2026-11-01T14:18:12.649Z",
+    "finishedAt": "2026-11-01T14:18:38.673Z",
+    "ok": false,
+    "browser": "156.0.8078.79",
+    "assets": [
+      "http://127.0.0.1:4174/assets/index-D_RgE7YS.js",
+      "http://127.0.0.1:4174/assets/index-DZmKhezt.css"
+    ],
+    "passedChecks": 6,
+    "failedChecks": [
+      {
+        "name": "temporary Alt look returns the exact orthographic camera after flight movement",
+        "ok": false,
+        "error": "Alt release did not restore the exact original view and projection\n+ actual - expected\n... Skipped lines\n\n  {\n    projectionMatrix: [\n      0.08100426942110062,\n      0,\n      0,\n...\n      -0,\n+     -4.440892098500626e-16,\n-     -6.661338147750939e-16,\n      1,\n      0,\n      0,\n      -1,\n+     -4.440892098500626e-16,\n-     -6.661338147750939e-16,\n      0,\n      0,\n+     -9.446001313496814e-15,\n-     -3.5108611456019555e-15,\n      -26.729496002197266,\n      1\n    ]\n  }\n"
+      }
+    ],
+    "initialDocumentHash": "9b35d78fd7dc13d1689aa86e6b61b9302a11611aba1d82a4482a62f4653b131a",
+    "finalDocumentHash": "9b35d78fd7dc13d1689aa86e6b61b9302a11611aba1d82a4482a62f4653b131a",
+    "rawReceipt": "/tmp/lfs-navigation-initial-results.json"
+  },
+  "harnessCorrection": "Replaced exact binary equality of rendered camera matrices with a declared absolute tolerance of 1e-6, checking all 32 finite view/projection entries. The initial failure was a maximum approximately 5.94e-15 matrix delta; no application source changed for this correction. Authored-document comparisons remain exact deep equality. Each disposable context creates its own baseline document, so cross-run document hashes are not expected to match."
+}

@@ -23,62 +23,64 @@ export interface CreatorPackMeta {
   id: OpenSourceCreatorPackId;
   name: string;
   author: string;
-  license: 'CC0 1.0 Public Domain' | 'CC-BY 4.0 Open Source';
+  license: 'CC0 1.0 Public Domain' | 'CC-BY 4.0 Open Source' | 'Unverified local preset';
   badgeColor: string;
   description: string;
   sourceUrlLabel: string;
 }
 
+// Historical provider-like IDs remain stable for saved-project references. These
+// are local procedural definitions (CC0 built-in procedural studio packs).
 export const OPEN_SOURCE_CREATOR_PACKS: CreatorPackMeta[] = [
   {
     id: 'polyhaven_cc0',
-    name: 'Poly Haven CC0 Architectural',
-    author: 'Poly Haven Community',
+    name: 'Masonry collection',
+    author: 'LFS Studio CC0 Collection',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-amber-300 border-amber-500/40 bg-amber-500/10',
     description:
-      'Photogrammetry-derived masonry, basalt ashlar, weathered castle limestone, and Roman travertine.',
-    sourceUrlLabel: 'polyhaven.com (CC0)',
+      'Procedural masonry, basalt, limestone and column styles.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'kenney_voxel_cc0',
-    name: 'Kenney Voxel Pack CC0',
-    author: 'Kenney.nl Open Assets',
+    name: 'Voxel basics',
+    author: 'LFS Studio CC0 Collection',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10',
     description:
       'Clean, high-readability architectural timber, desert adobe, glacial ice, and modular terrain.',
-    sourceUrlLabel: 'kenney.nl (CC0)',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'ambientcg_pbr',
-    name: 'AmbientCG PBR Surfaces',
-    author: 'Lennart Demes (ambientCG)',
+    name: 'Metal and glass',
+    author: 'LFS Studio CC0 Collection',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-sky-300 border-sky-500/40 bg-sky-500/10',
     description:
       'Physically-based brushed metals, oxidized copper, Nero marble, and industrial riveted steel.',
-    sourceUrlLabel: 'ambientcg.com (CC0)',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'opengameart_pixel',
-    name: 'OpenGameArt Pixel-Art HD',
-    author: 'OGA CC0 Contributors',
+    name: 'Pixel and glow',
+    author: 'LFS Studio CC0 Collection',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-violet-300 border-violet-500/40 bg-violet-500/10',
     description:
-      '64×64 hand-crafted pixel-art runestones, prismarine, magma conduits, and emissive crystals.',
-    sourceUrlLabel: 'opengameart.org (CC0)',
+      'Procedural pixel-style runestones, magma and emissive crystal shapes.',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
   {
     id: 'lfs_architectural',
-    name: 'LFS Studio Master Trim Pack',
-    author: 'LFS Block Studio Core',
+    name: 'Architectural details',
+    author: 'LFS Block Studio Core Team',
     license: 'CC0 1.0 Public Domain',
     badgeColor: 'text-rose-300 border-rose-500/40 bg-rose-500/10',
     description:
       'Vaulted arches, mansard roof slopes, Tudor half-timber framing, and warm shoji lanterns.',
-    sourceUrlLabel: 'LFS Built-In CC0',
+    sourceUrlLabel: 'Built-in Procedural Studio Pack (CC0)',
   },
 ];
 
@@ -86,12 +88,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   // 1. Poly Haven CC0 Architectural
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['stone', 'basalt', 'dark', 'castle', 'ashlar'],
-    downloadsCount: 18420,
-    rating: 4.9,
     description: 'Dense volcanic basalt ashlar blocks with fine chiselled mortar seams.',
     blockDef: {
       id: 'ph_basalt_ashlar',
@@ -109,12 +109,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['limestone', 'warm', 'citadel', 'wall'],
-    downloadsCount: 15310,
-    rating: 4.9,
     description: 'Sun-bleached Mediterranean castle limestone with organic warm variation.',
     blockDef: {
       id: 'ph_castle_limestone',
@@ -132,12 +130,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['column', 'roman', 'travertine', 'pillar'],
-    downloadsCount: 12890,
-    rating: 4.8,
     description: 'Fluted classical travertine marble column for porticos and colonnades.',
     blockDef: {
       id: 'ph_travertine_column',
@@ -155,12 +151,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'roofing_trim',
     tags: ['terracotta', 'roof', 'slope', 'shingle'],
-    downloadsCount: 16200,
-    rating: 4.9,
     description: 'Kiln-fired Tuscan terracotta clay roof tiles on a 45° architectural pitch.',
     blockDef: {
       id: 'ph_terracotta_slope',
@@ -178,12 +172,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['brick', 'industrial', 'kiln', 'wall'],
-    downloadsCount: 14120,
-    rating: 4.8,
     description: 'Reclaimed heritage red clay brickwork with recessed lime mortar.',
     blockDef: {
       id: 'ph_heritage_brick',
@@ -201,12 +193,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'polyhaven_cc0',
-    creatorName: 'Poly Haven Community',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'nature_terrain',
     tags: ['moss', 'cobble', 'ruins', 'dungeon'],
-    downloadsCount: 19400,
-    rating: 5.0,
     description: 'Ancient fieldstone overgrown with damp highland moss in the crevices.',
     blockDef: {
       id: 'ph_mossy_fieldstone',
@@ -226,12 +216,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   // 2. Kenney Voxel Pack CC0
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'timber',
     tags: ['birch', 'wood', 'plank', 'floor', 'nordic'],
-    downloadsCount: 21500,
-    rating: 4.9,
     description: 'Light Scandinavian birch floorboards with tongue-and-groove joinery.',
     blockDef: {
       id: 'kn_birch_plank',
@@ -249,12 +237,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'timber',
     tags: ['spruce', 'dark', 'timber', 'beam'],
-    downloadsCount: 17850,
-    rating: 4.9,
     description: 'Heavy Alpine dark spruce structural timber for beams and log cabins.',
     blockDef: {
       id: 'kn_alpine_spruce',
@@ -272,12 +258,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['adobe', 'sandstone', 'desert', 'mesa'],
-    downloadsCount: 13400,
-    rating: 4.8,
     description: 'Sun-baked desert adobe plaster with warm ochre mineral pigment.',
     blockDef: {
       id: 'kn_desert_adobe',
@@ -295,12 +279,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'glass_neon',
     tags: ['ice', 'glacier', 'translucent', 'frost'],
-    downloadsCount: 14900,
-    rating: 4.9,
     description: 'Translucent packed glacial ice with internal frost refraction.',
     blockDef: {
       id: 'kn_glacial_ice',
@@ -318,12 +300,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'kenney_voxel_cc0',
-    creatorName: 'Kenney.nl Open Assets',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'nature_terrain',
     tags: ['foliage', 'autumn', 'leaves', 'hedge'],
-    downloadsCount: 16100,
-    rating: 4.8,
     description: 'Crisp amber-gold autumn maple canopy block for trees and garden hedges.',
     blockDef: {
       id: 'kn_autumn_canopy',
@@ -343,12 +323,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   // 3. AmbientCG PBR Surfaces
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'metals',
     tags: ['copper', 'patina', 'verdigris', 'dome'],
-    downloadsCount: 20100,
-    rating: 5.0,
     description: 'Weathered architectural copper sheet with turquoise verdigris patina.',
     blockDef: {
       id: 'acg_oxidized_copper',
@@ -366,12 +344,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'metals',
     tags: ['bronze', 'gold', 'trim', 'gilded'],
-    downloadsCount: 18750,
-    rating: 4.9,
     description: 'Brushed architectural bronze alloy with warm specular highlights.',
     blockDef: {
       id: 'acg_gilded_bronze',
@@ -389,12 +365,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['marble', 'black', 'luxury', 'polished'],
-    downloadsCount: 16800,
-    rating: 4.9,
     description: 'Polished Nero Marquina black marble slab with subtle white calcite veining.',
     blockDef: {
       id: 'acg_nero_marble',
@@ -412,12 +386,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'ambientcg_pbr',
-    creatorName: 'Lennart Demes (ambientCG)',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'metals',
     tags: ['steel', 'industrial', 'dark', 'factory'],
-    downloadsCount: 15200,
-    rating: 4.8,
     description: 'Heavy-gauge gunmetal structural steel plate with riveted seams.',
     blockDef: {
       id: 'acg_riveted_steel',
@@ -437,12 +409,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   // 4. OpenGameArt Pixel-Art HD
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'glass_neon',
     tags: ['runestone', 'magic', 'emissive', 'cyan'],
-    downloadsCount: 24300,
-    rating: 5.0,
     description: 'Carved obelisk stone inlaid with glowing cyan arcane glyphs.',
     blockDef: {
       id: 'oga_arcane_runestone',
@@ -460,12 +430,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'masonry',
     tags: ['prismarine', 'ocean', 'temple', 'teal'],
-    downloadsCount: 19100,
-    rating: 4.9,
     description: 'Deep-sea crystalline prismarine masonry with iridescent seafoam mortar.',
     blockDef: {
       id: 'oga_sea_prismarine',
@@ -483,12 +451,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'glass_neon',
     tags: ['magma', 'lava', 'ember', 'glow'],
-    downloadsCount: 22150,
-    rating: 4.9,
     description: 'Cracked obsidian crust radiating molten amber-orange geothermal light.',
     blockDef: {
       id: 'oga_magma_conduit',
@@ -506,12 +472,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'opengameart_pixel',
-    creatorName: 'OGA CC0 Contributors',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'glass_neon',
     tags: ['cyberpunk', 'neon', 'magenta', 'synth'],
-    downloadsCount: 17600,
-    rating: 4.8,
     description: 'High-luminance magenta synthwave light panel for futuristic builds.',
     blockDef: {
       id: 'oga_cyber_magenta',
@@ -531,12 +495,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   // 5. LFS Studio Master Trim Pack
   {
     creatorPackId: 'lfs_architectural',
-    creatorName: 'LFS Block Studio Core',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'roofing_trim',
     tags: ['arch', 'gothic', 'vault', 'window'],
-    downloadsCount: 26400,
-    rating: 5.0,
     description: 'Carved stone Gothic pointed arch for cathedral windows and vaulted halls.',
     blockDef: {
       id: 'lfs_gothic_arch',
@@ -554,12 +516,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'lfs_architectural',
-    creatorName: 'LFS Block Studio Core',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'roofing_trim',
     tags: ['slate', 'mansard', 'roof', 'slope'],
-    downloadsCount: 21900,
-    rating: 4.9,
     description: 'Chateau dark slate mansard roof slope with overlapping shingle courses.',
     blockDef: {
       id: 'lfs_slate_mansard',
@@ -577,12 +537,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'lfs_architectural',
-    creatorName: 'LFS Block Studio Core',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'timber',
     tags: ['tudor', 'plaster', 'cottage', 'wall'],
-    downloadsCount: 19800,
-    rating: 4.9,
     description: 'Cream lime-washed wattle-and-daub plaster framed with dark oak timber.',
     blockDef: {
       id: 'lfs_tudor_plaster',
@@ -600,12 +558,10 @@ export const OPEN_SOURCE_MARKET_CATALOG: OpenSourceMarketBlock[] = [
   },
   {
     creatorPackId: 'lfs_architectural',
-    creatorName: 'LFS Block Studio Core',
-    license: 'CC0 1.0 Public Domain',
+    creatorName: 'Local studio preset',
+    license: 'Unverified local preset',
     category: 'glass_neon',
     tags: ['shoji', 'lantern', 'warm', 'japanese'],
-    downloadsCount: 23100,
-    rating: 5.0,
     description: 'Warm cedar-framed rice paper lantern emitting a soft golden interior glow.',
     blockDef: {
       id: 'lfs_shoji_lantern',
@@ -629,7 +585,7 @@ export const DEFAULT_COMMAND_MACRO_LOOPS: CommandMacroLoop[] = [
     name: 'Extrude Tower Story',
     description:
       'Builds perimeter walls in active block and stacks selection upward by 3 floors.',
-    commands: ['//walls cobble_brick', '//stack 2 up'],
+    commands: ['//walls {active}', '//stack 2 up'],
     iterations: 1,
     intervalMs: 0,
     iconColor: '#F59E0B',
@@ -639,16 +595,16 @@ export const DEFAULT_COMMAND_MACRO_LOOPS: CommandMacroLoop[] = [
     name: 'Fill & Hollow Room Shell',
     description:
       'Fills the Pos1–Pos2 bounding box with the active material, then hollows out the interior.',
-    commands: ['//set cobble_brick', '//hollow'],
+    commands: ['//set {active}', '//hollow'],
     iterations: 1,
     intervalMs: 0,
     iconColor: '#06B6D4',
   },
   {
     id: 'macro_step_roof',
-    name: 'Step-In Pyramid Layer',
+    name: 'Stack Perimeter Layers',
     description:
-      'Builds perimeter walls, raises selection +1 up, and contracts inward (repeat for stepped roofs).',
+      'Builds two oak-plank perimeter layers, raising the selection one block after each layer.',
     commands: ['//walls oak_plank', '//shift 1 up'],
     iterations: 2,
     intervalMs: 250,
@@ -756,7 +712,7 @@ export function resetEntireWorldToTemplate(
         pos1: null,
         pos2: null,
       },
-      summary: `Reset entire world to Starter Skyblock Island (${Object.keys(fresh.blocks).length} blocks).`,
+      summary: `Reset entire world to Starter Architectural Plot (${Object.keys(fresh.blocks).length} blocks).`,
     };
   }
 
@@ -803,19 +759,39 @@ export function resetEntireWorldToTemplate(
     0,
     0,
     styleMap[templateId],
-    chunkSize
+    chunkSize,
+    { skipUndoSnapshot: true }
   );
 
   // If cyber_grid, tint the plaza into sleek titanium & neon corners
   if (templateId === 'cyber_grid') {
     const cyberBlocks: Record<string, PlacedBlock> = {};
     for (const [k, blk] of Object.entries(expanded.nextState.blocks)) {
-      const isCorner =
-        Math.abs(blk.position.x) === 5 && Math.abs(blk.position.z) === 5;
-      cyberBlocks[k] = {
-        ...blk,
-        blockDefId: isCorner ? 'neon_beacon' : 'titanium_panel',
-      };
+      if (blk.position.y === 1) {
+        cyberBlocks[k] = {
+          ...blk,
+          blockDefId: 'neon_beacon',
+        };
+      } else {
+        const isBorder =
+          blk.position.x === -5 ||
+          blk.position.x === 6 ||
+          blk.position.z === -5 ||
+          blk.position.z === 6;
+        const isCenter =
+          blk.position.x >= -1 &&
+          blk.position.x <= 2 &&
+          blk.position.z >= -1 &&
+          blk.position.z <= 2;
+        cyberBlocks[k] = {
+          ...blk,
+          blockDefId: isBorder
+            ? 'obsidian_tile'
+            : isCenter
+              ? 'neon_beacon'
+              : 'titanium_panel',
+        };
+      }
     }
     return {
       nextState: {
@@ -887,7 +863,8 @@ export function resetSpecificChunkInWorld(
     cx,
     cz,
     action,
-    chunkSize
+    chunkSize,
+    { skipUndoSnapshot: true }
   );
 
   return {

@@ -1,0 +1,84 @@
+{
+  "startedAt": "2026-11-01T18:57:22.587Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "../../src/components/DraggableWindow.tsx": "a0318b2c11220bf57ca8a73b5068dca8cc8d84c1cd43ad980f5152c20e652c38",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/components/StudioJavaExportModal.tsx": "6d19892ba43708ad6adf023d7866e8ac246e20fb4ffcdf849878f32a466043f5",
+    "../../src/components/StudioJavaExportModal.css": "304ce02ff73f7db8b0bbb73ea7ed3010bdbc5fb1e25ebb04b9da4ccdfe37f51c",
+    "../../src/components/SchematicExportModal.tsx": "910700d37fee8ebefd37d99195a9eebf21e213ba5831be0d4c02d390be3be3de",
+    "../../src/lib/studioJavaExport.ts": "0979ced5c3fb8282be15a115c293951c4867f0c5f88004858621623997cef7f6",
+    "./java-export-ui.mjs": "ec8e7848657aeaa2d529302abbeadcfa86eb2977ebbb78387e2b8ebe7c592599"
+  },
+  "results": [
+    {
+      "name": "explicit anchor and acknowledgement are required; reviewed mappings are readonly",
+      "ok": true
+    },
+    {
+      "name": "rapid duplicate submits call the producer once and downloads retain exact reviewed identity",
+      "ok": true
+    },
+    {
+      "name": "editing the draft cancels pending work and late success cannot erase the new settings",
+      "ok": true
+    },
+    {
+      "name": "old completion cannot clear a newer pending export",
+      "ok": true
+    },
+    {
+      "name": "closing and reopening rotates export generation; dismissed completion downloads nothing",
+      "ok": true
+    },
+    {
+      "name": "source change aborts and invalidates pending export while preserving chosen settings",
+      "ok": true
+    },
+    {
+      "name": "live session getter prevents submission even before React receives changed props",
+      "ok": true
+    },
+    {
+      "name": "Cancel releases the pending producer; late success and rejection cannot publish",
+      "ok": true
+    },
+    {
+      "name": "encode failure retains reviewed inputs for explicit retry",
+      "ok": true
+    },
+    {
+      "name": "prepared report cannot download after the actual source changes without a render",
+      "ok": true
+    },
+    {
+      "name": "25 reviewed material mappings page without changing approval or the prepared scope",
+      "ok": true
+    },
+    {
+      "name": "unmount aborts work and the old producer cannot start a download",
+      "ok": true
+    },
+    {
+      "name": "wrapper offers heuristic drafts only while Java is unlocked and immediately removes them on lock",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Mounted components and controlled encode completion in disposable Chromium. Generated Blob downloads observed; no OS file saving, provider or native game operation.",
+    "App/download semantic qualification has a separate runner. Not full accessibility, other browsers, hardware or release acceptance."
+  ],
+  "sourceAfter": {
+    "../../src/components/DraggableWindow.tsx": "a0318b2c11220bf57ca8a73b5068dca8cc8d84c1cd43ad980f5152c20e652c38",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/components/StudioJavaExportModal.tsx": "6d19892ba43708ad6adf023d7866e8ac246e20fb4ffcdf849878f32a466043f5",
+    "../../src/components/StudioJavaExportModal.css": "304ce02ff73f7db8b0bbb73ea7ed3010bdbc5fb1e25ebb04b9da4ccdfe37f51c",
+    "../../src/components/SchematicExportModal.tsx": "910700d37fee8ebefd37d99195a9eebf21e213ba5831be0d4c02d390be3be3de",
+    "../../src/lib/studioJavaExport.ts": "0979ced5c3fb8282be15a115c293951c4867f0c5f88004858621623997cef7f6",
+    "./java-export-ui.mjs": "ec8e7848657aeaa2d529302abbeadcfa86eb2977ebbb78387e2b8ebe7c592599"
+  },
+  "sourceStable": true,
+  "finishedAt": "2026-11-01T18:57:32.315Z",
+  "ok": true
+}

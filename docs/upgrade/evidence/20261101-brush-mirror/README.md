@@ -1,0 +1,11 @@
+# Brush/mirror and numeric-tool evidence
+
+Final candidate: index-DnOzWERi.js / index-D3u5_oEE.css. Domain292 / 26 files and type/build pass. Eleven actual App lanes pass 93 named cases: brush13, tool-form keyboard/reflow2, authority8, Java 10, compatibility15, navigation9, menu 9, resources9, catalogue6, recovery8, capacity4. Each final lane actually ran on this bundle. SCOPE_LEDGER.json identifies receipts. Counts do not complete G2/G4 or P0–P8.
+
+The before-fix engine fixture reproduces repeated identical brush ID/history churn. The first proposal fixture assumed uncentered chunks and omitted required watch fields; these observer/type failures are retained with corrections. Compatibility's first Dn run stopped because a summary selector matched the new nested disclosure too; the direct-child selector correction is QA-only, and its failed receipt remains. C6 initial brush13 and intermediate builds keep their own identity.
+
+Final brush13 covers complete cells/chunks/history, overlap/IDs/usage/learning/no-op/Redo, exact negative layers, late extent rejection, dirty preference conflicts, exact/invalid pivots, actual browser mouse placement and late release across an actual project restore, locked Java mirrors and save/reload. Form2 checks native Tab order and focused control visibility/source preservation at 1600 and 390 CSS pixels. The desktop/narrow screenshots were visually inspected. This is not whole-app accessibility, physical/coarse/assistive or browser/OS-zoom acceptance.
+
+The prior Ca backend/component107 lane was not rerun this slice; primary persistence files remain byte-identical, but transitive engine/fixture code changed. Its receipts remain in the older folder and are not promoted to Dn. Final actual App recovery8 and capacity4 independently exercise the final candidate's save/copy/conflict/negative-source and 20 MiB/near32 MiB paths.
+
+Native Minecraft/WorldEdit remains NOT_RUN — skipped by user. Future directional profiles, arbitrary custom-geometry reflection, continuous whole-stroke grouping, all-route G2, measured scale, providers, offline/update/rollback and release remain open. No user profile, provider call, native installation, pruning, commit, push, merge or publication occurred.

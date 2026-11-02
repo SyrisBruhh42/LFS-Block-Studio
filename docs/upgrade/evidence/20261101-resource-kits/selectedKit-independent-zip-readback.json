@@ -1,0 +1,760 @@
+{
+  "manifest": {
+    "id": "kit-6689f2a8-7f52-492e-8420-6446e0402d13",
+    "name": "Pocket Garden Travel Kit",
+    "description": "",
+    "author": "Local Kit Author",
+    "license": "MIT",
+    "sourceUrl": "",
+    "format": "lfs-studio-kit",
+    "version": 1,
+    "units": "studio-studs-plates",
+    "axes": "x-right-y-up-z-forward",
+    "files": [
+      {
+        "path": "resources.json",
+        "bytes": 10129,
+        "sha256": "bd2fb7a217d6a7b45f4514f04ec980e595e3e40c3f7cbd835bfff96f2577e66c"
+      },
+      {
+        "path": "LICENSE.txt",
+        "bytes": 1086,
+        "sha256": "1b9d5576b25869c9375f1e751f79dd0279bccc0b44ff7752eeb4b406834b05b2"
+      },
+      {
+        "path": "NOTICES.txt",
+        "bytes": 56,
+        "sha256": "4234cf8f9c295cc0ca72e3eca6b0ec0be49b5d6b5b2fefefb5a00ef5e8e5b30a"
+      }
+    ]
+  },
+  "resources": {
+    "format": "lfs-studio-kit-resources",
+    "version": 1,
+    "definitions": [
+      {
+        "id": "courtyard_v1_clay",
+        "name": "Courtyard terracotta",
+        "shape": "cube",
+        "width": 1,
+        "depth": 1,
+        "heightPlates": 3,
+        "color": "#C77557",
+        "texturePattern": "smooth_abs",
+        "materialFinish": "matte",
+        "hasStuds": false,
+        "isCustom": true
+      },
+      {
+        "id": "courtyard_v1_cream",
+        "name": "Courtyard cream",
+        "shape": "cube",
+        "width": 1,
+        "depth": 1,
+        "heightPlates": 3,
+        "color": "#F2E6C9",
+        "texturePattern": "smooth_abs",
+        "materialFinish": "matte",
+        "hasStuds": false,
+        "isCustom": true
+      },
+      {
+        "id": "courtyard_v1_moss",
+        "name": "Courtyard moss",
+        "shape": "cube",
+        "width": 1,
+        "depth": 1,
+        "heightPlates": 3,
+        "color": "#6D8859",
+        "texturePattern": "smooth_abs",
+        "materialFinish": "matte",
+        "hasStuds": false,
+        "isCustom": true
+      },
+      {
+        "id": "courtyard_v1_wood",
+        "name": "Courtyard warm wood",
+        "shape": "cube",
+        "width": 1,
+        "depth": 1,
+        "heightPlates": 3,
+        "color": "#AF8A5E",
+        "texturePattern": "wood_grain",
+        "materialFinish": "satin",
+        "hasStuds": false,
+        "isCustom": true
+      }
+    ],
+    "blueprints": [
+      {
+        "id": "courtyard_v1_garden",
+        "name": "Pocket garden",
+        "description": "A terracotta planter with a small block canopy. Combine copies to make a courtyard.",
+        "authorId": "lfs-block-studio",
+        "authorName": "LFS Block Studio contributors",
+        "blueprintType": "structure_blueprint",
+        "isPublic": false,
+        "createdAt": "2026-11-01T00:00:00.000Z",
+        "size": {
+          "lx": 5,
+          "ly": 5,
+          "lz": 5
+        },
+        "blocks": [
+          {
+            "id": "garden_cell_0",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_1",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_2",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_3",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 0,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_4",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_5",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 0,
+              "y": 1,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_6",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_7",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 0,
+              "y": 1,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_8",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_9",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 0,
+              "y": 1,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_10",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_11",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_12",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 1,
+              "y": 0,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_13",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_14",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 1,
+              "y": 0,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_15",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_16",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 1,
+              "y": 0,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_17",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_18",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 1,
+              "y": 0,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_19",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_20",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 2,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_21",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 2,
+              "y": 1,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_22",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 2,
+              "y": 0,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_23",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_24",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 2,
+              "y": 0,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_25",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 1,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_26",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 2,
+              "y": 0,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_27",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 1,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_28",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 2,
+              "y": 0,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_29",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 2,
+              "y": 1,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_30",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 3,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_31",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 3,
+              "y": 1,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_32",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 3,
+              "y": 0,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_33",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 3,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_34",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 3,
+              "y": 0,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_35",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 3,
+              "y": 1,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_36",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 3,
+              "y": 0,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_37",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 3,
+              "y": 1,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_38",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 3,
+              "y": 0,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_39",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 3,
+              "y": 1,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_40",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 4,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_41",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 4,
+              "y": 1,
+              "z": 0
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_42",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 4,
+              "y": 0,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_43",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 4,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_44",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 4,
+              "y": 0,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_45",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 4,
+              "y": 1,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_46",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 4,
+              "y": 0,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_47",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 4,
+              "y": 1,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_48",
+            "blockDefId": "courtyard_v1_clay",
+            "position": {
+              "x": 4,
+              "y": 0,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_49",
+            "blockDefId": "courtyard_v1_cream",
+            "position": {
+              "x": 4,
+              "y": 1,
+              "z": 4
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_50",
+            "blockDefId": "courtyard_v1_wood",
+            "position": {
+              "x": 2,
+              "y": 2,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_51",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 3,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_52",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 1,
+              "y": 3,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_53",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 3,
+              "y": 3,
+              "z": 2
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_54",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 3,
+              "z": 1
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_55",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 3,
+              "z": 3
+            },
+            "rotation": 0
+          },
+          {
+            "id": "garden_cell_56",
+            "blockDefId": "courtyard_v1_moss",
+            "position": {
+              "x": 2,
+              "y": 4,
+              "z": 2
+            },
+            "rotation": 0
+          }
+        ],
+        "customBlockDefs": [
+          {
+            "id": "courtyard_v1_cream",
+            "name": "Courtyard cream",
+            "shape": "cube",
+            "width": 1,
+            "depth": 1,
+            "heightPlates": 3,
+            "color": "#F2E6C9",
+            "texturePattern": "smooth_abs",
+            "materialFinish": "matte",
+            "hasStuds": false,
+            "isCustom": true
+          },
+          {
+            "id": "courtyard_v1_moss",
+            "name": "Courtyard moss",
+            "shape": "cube",
+            "width": 1,
+            "depth": 1,
+            "heightPlates": 3,
+            "color": "#6D8859",
+            "texturePattern": "smooth_abs",
+            "materialFinish": "matte",
+            "hasStuds": false,
+            "isCustom": true
+          },
+          {
+            "id": "courtyard_v1_clay",
+            "name": "Courtyard terracotta",
+            "shape": "cube",
+            "width": 1,
+            "depth": 1,
+            "heightPlates": 3,
+            "color": "#C77557",
+            "texturePattern": "smooth_abs",
+            "materialFinish": "matte",
+            "hasStuds": false,
+            "isCustom": true
+          },
+          {
+            "id": "courtyard_v1_wood",
+            "name": "Courtyard warm wood",
+            "shape": "cube",
+            "width": 1,
+            "depth": 1,
+            "heightPlates": 3,
+            "color": "#AF8A5E",
+            "texturePattern": "wood_grain",
+            "materialFinish": "satin",
+            "hasStuds": false,
+            "isCustom": true
+          }
+        ]
+      }
+    ],
+    "provenance": [
+      {
+        "archiveSha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82",
+        "name": "Courtyard starter",
+        "author": "LFS Block Studio contributors",
+        "license": "MIT",
+        "sourceUrl": "",
+        "licenseText": "MIT License\n\nCopyright (c) 2026 LFS Block Studio contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notices": "Courtyard starter, version 1\nOriginal block palette and structures created for LFS Block Studio.\nSix block-native materials and three independent blueprints. No external meshes,\nimages, fonts, scripts, textures or network resources are included. Textures use\nthe application's existing procedural material names. Project units: X/Z studs,\nY brick-height coordinates; definition height is expressed in plates (3 per unit).\nAll source cells are unrotated unit cubes. This is a Freeform creative kit;\nit has no Minecraft mapping or native schematic qualification.\nThe MIT license applies to this kit's original data. It does not relicense the\napplication, Oasis styling/icons, game assets or unrelated project resources.\n",
+        "definitionIds": [
+          "courtyard_v1_cream",
+          "courtyard_v1_moss",
+          "courtyard_v1_clay",
+          "courtyard_v1_wood"
+        ],
+        "blueprintIds": [
+          "courtyard_v1_garden"
+        ]
+      }
+    ]
+  },
+  "licenseText": "MIT License\n\nCopyright (c) 2026 LFS Block Studio contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "notices": "Selected pocket garden; original source notice retained.",
+  "archiveSha256": "37da7458a31d755e92628cdc88329e66ce4bead6796f07351f05754dc202440b",
+  "archiveBytes": 12302,
+  "entryMethods": [
+    0
+  ],
+  "scope": "Independent actual ZIP bytes/CRC/hash/reference readback only; no legal ownership, native, UI or release acceptance."
+}

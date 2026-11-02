@@ -1,0 +1,14 @@
+{"name":"native recipe focus, editing, preview and complete review download preserve the build, history and canvas","ok":true,"reviewHash":"d06302d7624972e0382a5cda3277f12af4349131c091cdf00bf0e62819ab21d2","exactChangedCells":27}
+{"name":"changed-cell paging, filtering and resolved trace expose exact before/after data without executing it","ok":true}
+{"name":"Apply commits complete recipe cells, revealed chunks, selection and clipboard as one Undo and Redo","ok":true,"fullAuthoredHash":"37ac9b2e8e66589dd260bffa6c4e8509925449b56008efbf1746359fc83abb95","oneRecipeUndo":true,"clipboardExercisedByActualPaste":true}
+{"name":"an identical recipe keeps stable cell identities, source content and pending Redo","ok":true}
+{"name":"a failed later command exposes no partial live changes and retains the editable script","ok":true}
+{"name":"Cancel and editing during cooperative preparation retain commands and never publish a partial step","ok":true}
+{"name":"Escape retains an unfinished draft, revokes Apply and requires an explicit preset replacement","ok":true}
+{"name":"the existing HUD macro entry opens the review workspace without immediately changing the build","ok":true,"entry":"existing Room Shell HUD slot"}
+{"name":"activation through the public project-file route cancels the old review while retaining its commands","ok":true}
+{"name":"shared Oasis preferences and native keyboard reflow preserve source at 320 CSS pixels and 200 percent text","ok":true,"viewportCssPixels":320,"textPercent":200}
+{"name":"new command placements avoid moved coordinate IDs, and a command move retains the inspected cell identity","ok":true}
+{"name":"chosen blocks retain exact case-sensitive or reserved IDs through preview and Apply","ok":true,"references":["@Unit","@air"]}
+{"name":"locked recipes reject an unsupported intermediate step and apply mapped output with unchanged policy","ok":true,"nativeQualification":"NOT_RUN — skipped by user"}
+{"name":"the complete accepted recipe project and policy survive explicit Save and reopening","ok":true,"authoredHash":"b9a5aeb5b506eca5b951aae643695e94dfc0a088da03fbb2a6339130636d5f1a"}

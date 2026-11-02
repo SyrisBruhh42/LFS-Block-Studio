@@ -1,0 +1,5 @@
+src/lib/studioRecoveryUi.browser-tests.tsx(124,92): error TS1005: ':' expected.
+src/lib/studioRecoveryUi.browser-tests.tsx(124,103): error TS1005: '{' expected.
+src/lib/studioRecoveryUi.browser-tests.tsx(139,4): error TS1128: Declaration or statement expected.
+src/lib/studioRecoveryUi.browser-tests.tsx(140,82): error TS1005: ';' expected.
+src/lib/studioRecoveryUi.browser-tests.tsx(153,1): error TS1109: Expression expected.

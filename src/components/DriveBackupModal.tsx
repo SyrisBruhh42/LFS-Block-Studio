@@ -41,9 +41,9 @@ interface DriveBackupModalProps {
   lastAutosaveTime: string | null;
   lastDriveSyncTime: string | null;
   localSnapshots: LocalAutosaveSnapshot[];
-  onTriggerManualSaveNow: () => void;
+  onTriggerManualSaveNow: () => Promise<boolean>;
   onBuildCurrentBackupPayload: () => BrickForgeProjectBackup;
-  onRestoreFromBackup: (backup: BrickForgeProjectBackup, sourceLabel: string) => void;
+  onRestoreFromBackup: (backup: BrickForgeProjectBackup, sourceLabel: string) => Promise<boolean>;
   onDriveSynced: (timestampIso: string) => void;
 }
 
@@ -231,7 +231,9 @@ export const DriveBackupModal: React.FC<DriveBackupModalProps> = ({
       const token = await ensureToken();
       if (!token) return;
       const backup = await downloadDriveBackupFile(token, file.id);
-      onRestoreFromBackup(backup, `Google Drive (${file.name})`);
+      if (!await onRestoreFromBackup(backup, `Google Drive (${file.name})`)) {
+        throw new Error('The backup was not restored. Check the recovery notice; your current work has been retained.');
+      }
       setStatusBanner({
         text: `Restored project "${backup.worldName}" (${backup.blockCount} blocks) from Google Drive!`,
         type: 'success',
@@ -348,7 +350,7 @@ export const DriveBackupModal: React.FC<DriveBackupModalProps> = ({
                     Automatic Project Autosave Engine
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Automatically saves blocks, custom blocks, blueprints, and hotkeys on edits and scheduled intervals
+                    Saves the complete project locally after edits and on scheduled intervals. Download a project copy for an independent backup.
                   </p>
                 </div>
               </div>
@@ -356,12 +358,15 @@ export const DriveBackupModal: React.FC<DriveBackupModalProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    onTriggerManualSaveNow();
+                  disabled={isMutating}
+                  onClick={async () => {
+                    setIsMutating(true);
+                    const saved = await onTriggerManualSaveNow();
                     setStatusBanner({
-                      text: 'Project saved to local recovery storage!',
-                      type: 'success',
+                      text: saved ? 'Project saved to local recovery storage.' : 'Save failed. Your unsaved work is still open; use the recovery notice.',
+                      type: saved ? 'success' : 'error',
                     });
+                    setIsMutating(false);
                   }}
                   className="px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold flex items-center gap-1.5"
                 >
@@ -404,16 +409,7 @@ export const DriveBackupModal: React.FC<DriveBackupModalProps> = ({
                 </select>
               </div>
 
-              <label className="flex items-center gap-2.5 text-xs text-slate-200 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoDriveBackupEnabled}
-                  onChange={(e) => onToggleAutoDriveBackup(e.target.checked)}
-                />
-                <span className="font-medium">
-                  Auto-Backup to Google Drive on Interval
-                </span>
-              </label>
+              <p className="text-xs text-slate-300">Google Drive uploads require the explicit backup buttons below.</p>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400 pt-1">
@@ -458,15 +454,18 @@ export const DriveBackupModal: React.FC<DriveBackupModalProps> = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          onRestoreFromBackup(
+                        disabled={isMutating}
+                        onClick={async () => {
+                          setIsMutating(true);
+                          const restored = await onRestoreFromBackup(
                             snap.backup,
                             `Local Snapshot (${new Date(snap.savedAt).toLocaleTimeString()})`
                           );
                           setStatusBanner({
-                            text: `Restored snapshot from ${new Date(snap.savedAt).toLocaleTimeString()}!`,
-                            type: 'success',
+                            text: restored ? `Restored snapshot from ${new Date(snap.savedAt).toLocaleTimeString()}.` : 'Restore stopped. Check the recovery notice.',
+                            type: restored ? 'success' : 'error',
                           });
+                          setIsMutating(false);
                         }}
                         className="px-2.5 py-1 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-200 text-xs font-medium flex items-center gap-1 shrink-0 transition-colors"
                       >

@@ -1,0 +1,48 @@
+{
+  "testedAt": "2026-11-01T17:02:50.965Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "src/lib/studioRecoveryUi.browser-tests.tsx": "139bc8b9138f2e2c6404e0a5ac65cdfa9c116edf46123c73f72d2336c9e1abc6",
+    "src/lib/useStudioPersistence.ts": "f0b6e32b10a40a13453743ff5245eb383f6b0bf4f74753e81142723ccc8b5055",
+    "src/lib/studioDocumentStore.ts": "9d0cbb7d61244e61c0a89704e715878ed30e57fd4797efe00883afda54dd1bd6",
+    "src/components/StudioRecoveryPanel.tsx": "a5639104300e3ddc68761546f26bf5d8fca06823ced79e6ff68a67f1eaf031b0",
+    "src/lib/studioDocument.ts": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c"
+  },
+  "sourceAfter": {
+    "src/lib/studioRecoveryUi.browser-tests.tsx": "139bc8b9138f2e2c6404e0a5ac65cdfa9c116edf46123c73f72d2336c9e1abc6",
+    "src/lib/useStudioPersistence.ts": "f0b6e32b10a40a13453743ff5245eb383f6b0bf4f74753e81142723ccc8b5055",
+    "src/lib/studioDocumentStore.ts": "9d0cbb7d61244e61c0a89704e715878ed30e57fd4797efe00883afda54dd1bd6",
+    "src/components/StudioRecoveryPanel.tsx": "a5639104300e3ddc68761546f26bf5d8fca06823ced79e6ff68a67f1eaf031b0",
+    "src/lib/studioDocument.ts": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c"
+  },
+  "sourceStable": true,
+  "results": [
+    {
+      "name": "failed future-schema hydration exposes raw download without activation or writes",
+      "ok": true
+    },
+    {
+      "name": "failed hydration can independently download preserved candidate originals including BOM and whitespace",
+      "ok": true
+    },
+    {
+      "name": "mounted recovery browses127 candidates with bounded pages and reversible navigation",
+      "ok": true
+    },
+    {
+      "name": "mounted recovery distinguishes unavailable reads from an empty list and can retry",
+      "ok": true
+    },
+    {
+      "name": "damaged surrogate text cannot be downloaded lossily and has a lossless envelope alternative",
+      "ok": true
+    }
+  ],
+  "limitations": [
+    "Mounted React hook and recovery panel in disposable Chromium; all API/external requests blocked.",
+    "Download bytes captured from the generated Blob; OS file save interaction is not qualified.",
+    "Not full App, cross-browser, assistive technology, provider, hardware or deployment qualification."
+  ]
+}

@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: four mirrored brushes commit complete cells/chunks as one history step with exact Undo and Redo
+ok 1 - four mirrored brushes commit complete cells/chunks as one history step with exact Undo and Redo
+  ---
+  duration_ms: 17.918582
+  ...
+# Subtest: overlapping mirrors count unique final cells and repeat without identity/history/Redo churn
+ok 2 - overlapping mirrors count unique final cells and repeat without identity/history/Redo churn
+  ---
+  duration_ms: 11.815211
+  ...
+# Subtest: brush erase exposes actual removed cells once, including non-center linger-watch cells
+ok 3 - brush erase exposes actual removed cells once, including non-center linger-watch cells
+  ---
+  duration_ms: 5.644507
+  ...
+# Subtest: final mirrored extent failure leaves document/workspace/token/history/effects unchanged
+ok 4 - final mirrored extent failure leaves document/workspace/token/history/effects unchanged
+  ---
+  duration_ms: 1.042914
+  ...
+# Subtest: negative brush coordinates retain every in-bounds layer without a hidden floor clip
+ok 5 - negative brush coordinates retain every in-bounds layer without a hidden floor clip
+  ---
+  duration_ms: 1.936176
+  ...
+# Subtest: whole and half-cell reflection is exact and other pivots reject without rounding
+ok 6 - whole and half-cell reflection is exact and other pivots reject without rounding
+  ---
+  duration_ms: 1.605811
+  ...
+# Subtest: Freeform retains reflected rotations while the exact locked directionless profile keeps rotation zero
+ok 7 - Freeform retains reflected rotations while the exact locked directionless profile keeps rotation zero
+  ---
+  duration_ms: 13.919329
+  ...
+# Subtest: locked unmapped, scaled and rotated proposals reject atomically without effects or policy changes
+ok 8 - locked unmapped, scaled and rotated proposals reject atomically without effects or policy changes
+  ---
+  duration_ms: 11.05959
+  ...
+# Subtest: all brush shapes, hollow and empty-only flags preserve exact cell sets and erase no-ops
+ok 9 - all brush shapes, hollow and empty-only flags preserve exact cell sets and erase no-ops
+  ---
+  duration_ms: 14.397715
+  ...
+# Subtest: radius-zero placement and erasure share mirrored cells without legacy engine snapshots
+ok 10 - radius-zero placement and erasure share mirrored cells without legacy engine snapshots
+  ---
+  duration_ms: 2.113759
+  ...
+# Subtest: cached source tokens reject after edit-to-Undo ABA and project replacement before preparation
+ok 11 - cached source tokens reject after edit-to-Undo ABA and project replacement before preparation
+  ---
+  duration_ms: 2.491554
+  ...
+# Subtest: invalid brush/mirror/mode inputs reject before any history or feedback is published
+ok 12 - invalid brush/mirror/mode inputs reject before any history or feedback is published
+  ---
+  duration_ms: 5.096939
+  ...
+# Subtest: a final history-capacity rejection rolls back staged cells and chunk visibility together
+ok 13 - a final history-capacity rejection rolls back staged cells and chunk visibility together
+  ---
+  duration_ms: 2.142049
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 101.177172

@@ -17,7 +17,9 @@ import {
   WalkabilityAuditReport,
   WorkspacePersonaId,
 } from './types';
-import { coordKey, getSelectionBounds } from './worldEditEngine';
+import {
+  ENGINE_EDIT_LIMITS, coordKey, getGridCoordError, getSelectionBounds, getSelectionVolumeError,
+} from './worldEditEngine';
 import {
   DEFAULT_SMART_PATTERN_CONFIG,
   predictBlockAttributesOnPlacement,
@@ -39,7 +41,7 @@ export const DEFAULT_SPATIAL_COPILOT_CONFIG: SpatialCopilotConfig = {
   autoPersonaAdapting: false,
   workspacePersona: 'auto',
   pixel8ProGpuGovernor: true,
-  showWalkabilityOverlays: false,
+  showWalkabilityOverlays: true,
   adaptiveLearningEnabled: true,
   lingerTrackingWindowSec: 45,
   targetObjectClass: 'auto_detect',
@@ -156,16 +158,22 @@ export function computeTextureCohesionAffinity(
   const patA = defA.texturePattern;
   const patB = defB.texturePattern;
 
+  const isCobble = (p?: string) => p === 'cobble' || p === 'cobblestone';
+  const isWood = (p?: string) => p === 'wood_plank' || p === 'oak_planks' || p === 'wood_grain';
+  const isBrickOrRoof = (p?: string) =>
+    p === 'brick' || p === 'roof_tiles' || p === 'brick_masonry' || p === 'brick_mortar';
+
   if (patA === patB) {
     patternPairBonus = 0.9;
   } else if (
-    (patA === 'cobble' && patB === 'wood_plank') ||
-    (patA === 'wood_plank' && patB === 'cobble') ||
-    (patA === 'brick' && patB === 'roof_tiles') ||
-    (patA === 'roof_tiles' && patB === 'brick') ||
-    (patA === 'wood_plank' && patB === 'roof_tiles') ||
-    (patA === 'roof_tiles' && patB === 'wood_plank') ||
-    (defA.materialFinish === 'glass' || defB.materialFinish === 'glass')
+    (isCobble(patA) && isWood(patB)) ||
+    (isWood(patA) && isCobble(patB)) ||
+    (isBrickOrRoof(patA) && isWood(patB)) ||
+    (isWood(patA) && isBrickOrRoof(patB)) ||
+    (isCobble(patA) && isBrickOrRoof(patB)) ||
+    (isBrickOrRoof(patA) && isCobble(patB)) ||
+    defA.materialFinish === 'glass' ||
+    defB.materialFinish === 'glass'
   ) {
     patternPairBonus = 0.85;
   }
@@ -243,8 +251,8 @@ export function createInitialAdaptivePatternArchive(): AdaptivePatternArchiveSta
     patterns: patternsMap,
     lingerWatchList: [],
     totalLearnedTransitions: seedPatterns.length,
-    totalAcceptedGhosts: 4,
-    totalLingerSurvivals: 4,
+    totalAcceptedGhosts: 0,
+    totalLingerSurvivals: 0,
     totalLingerRemovals: 0,
     objectClassScores: {
       house_dwelling: 4,
@@ -647,10 +655,21 @@ export function detectArchitecturalObjectClass(params: {
 
       const def = customBlocks[b.blockDefId];
       if (def?.shape === 'slope') slopeCount++;
-      if (def?.texturePattern === 'wood_plank') timberCount++;
+      if (
+        def?.texturePattern === 'wood_plank' ||
+        def?.texturePattern === 'oak_planks' ||
+        def?.texturePattern === 'wood_grain'
+      )
+        timberCount++;
       if (def?.materialFinish === 'glass' || def?.materialFinish === 'neon')
         glassOrLightCount++;
-      if (def?.texturePattern === 'cobble' || def?.texturePattern === 'brick')
+      if (
+        def?.texturePattern === 'cobble' ||
+        def?.texturePattern === 'brick' ||
+        def?.texturePattern === 'cobblestone' ||
+        def?.texturePattern === 'brick_masonry' ||
+        def?.texturePattern === 'brick_mortar'
+      )
         stoneCount++;
     }
   }
@@ -739,6 +758,29 @@ export function computeMirroredRotation(
   return r;
 }
 
+export function getSymmetryTargetsError(
+  coord: GridCoord, rotation: 0 | 90 | 180 | 270, symmetry: SymmetryConfig
+): string | null {
+  const coordinateError = getGridCoordError(coord);
+  if (coordinateError) return coordinateError;
+  if (![0, 90, 180, 270].includes(rotation)) return 'Symmetry rotation must be a quarter turn.';
+  if (!symmetry || !['off', 'mirror_x', 'mirror_z', 'quad_xz'].includes(symmetry.mode) ||
+      ![symmetry.pivotX, symmetry.pivotZ].every(value => Number.isFinite(value) && Math.abs(value) <= ENGINE_EDIT_LIMITS.maxAbsCoordinate)) {
+    return 'Symmetry mode or pivot is invalid.';
+  }
+  if (symmetry.mode === 'mirror_x' || symmetry.mode === 'quad_xz') {
+    if (!Number.isSafeInteger(2 * symmetry.pivotX)) return 'An X mirror pivot must be a whole or half cell; reflection is never rounded.';
+    const error = getGridCoordError({ ...coord, x: 2 * symmetry.pivotX - coord.x });
+    if (error) return error;
+  }
+  if (symmetry.mode === 'mirror_z' || symmetry.mode === 'quad_xz') {
+    if (!Number.isSafeInteger(2 * symmetry.pivotZ)) return 'A Z mirror pivot must be a whole or half cell; reflection is never rounded.';
+    const error = getGridCoordError({ ...coord, z: 2 * symmetry.pivotZ - coord.z });
+    if (error) return error;
+  }
+  return null;
+}
+
 /**
  * Given a target coordinate and rotation, returns all deduplicated coordinates
  * produced by the active SymmetryConfig (1 for off, up to 2 for mirror_x/z, up to 4 for quad_xz).
@@ -748,14 +790,15 @@ export function computeSymmetryTargets(
   rotation: 0 | 90 | 180 | 270,
   symmetry: SymmetryConfig
 ): MirroredPlacementTarget[] {
+  if (getSymmetryTargetsError(coord, rotation, symmetry)) return [];
   const results: MirroredPlacementTarget[] = [
     { coord: { ...coord }, rotation, isPrimary: true },
   ];
   if (symmetry.mode === 'off') return results;
 
   const seen = new Set<string>([coordKey(coord.x, coord.y, coord.z)]);
-  const mirrorXVal = Math.round(2 * symmetry.pivotX - coord.x);
-  const mirrorZVal = Math.round(2 * symmetry.pivotZ - coord.z);
+  const mirrorXVal = 2 * symmetry.pivotX - coord.x;
+  const mirrorZVal = 2 * symmetry.pivotZ - coord.z;
 
   const pushUnique = (
     x: number,
@@ -919,7 +962,7 @@ export function detectWorldSymmetry(
  *  3. Architectural Object Class Synthesis (House gable roof slopes, Watchtower battlements, Bridge side rails, Pavilion colonnades)
  *  4. Smart Connected-Neighbor Texture & Color Harmony Matching
  */
-export function predictNextBlocksCopilot(params: {
+export interface CopilotPredictionParams {
   hoveredCoord: GridCoord;
   activeBlockId: string;
   placementRotation: 0 | 90 | 180 | 270;
@@ -932,7 +975,47 @@ export function predictNextBlocksCopilot(params: {
   patternConfig?: SmartPatternVariationConfig;
   connectedTextureGhostMatch?: boolean;
   nowMs?: number;
-}): CopilotPredictedBlock[] {
+}
+
+export function getCopilotPredictionError(params: CopilotPredictionParams): string | null {
+  const coordinateError = getGridCoordError(params.hoveredCoord);
+  if (coordinateError) return coordinateError;
+  const count = params.maxPredictions === undefined ? 4 : params.maxPredictions;
+  if (!Number.isSafeInteger(count) || count < 0 || count > ENGINE_EDIT_LIMITS.maxOperationCells) {
+    return `Prediction count must be a whole number from 0 to ${ENGINE_EDIT_LIMITS.maxOperationCells}.`;
+  }
+  if (![0, 90, 180, 270].includes(params.placementRotation)) return 'Prediction rotation must be a quarter turn.';
+  if (!Array.isArray(params.recentPlacements) || params.recentPlacements.length > ENGINE_EDIT_LIMITS.maxOperationCells) {
+    return 'Prediction placement history exceeds the work budget.';
+  }
+  // Only these history entries are consumed by the predictor.
+  for (const entry of params.recentPlacements.slice(-2)) {
+    if (!entry || getGridCoordError(entry.coord) || ![0, 90, 180, 270].includes(entry.rotation)) {
+      return 'Prediction history contains invalid coordinates or rotation.';
+    }
+  }
+  if (params.nowMs !== undefined && !Number.isFinite(params.nowMs)) return 'Prediction time must be finite.';
+  if (params.archive) {
+    if (!params.archive.patterns || typeof params.archive.patterns !== 'object') return 'Prediction archive is invalid.';
+    let count = 0;
+    for (const key in params.archive.patterns) {
+      if (!Object.hasOwn(params.archive.patterns, key)) continue;
+      if (++count > ENGINE_EDIT_LIMITS.maxOperationCells) return 'Prediction archive exceeds the work budget.';
+      const pattern = params.archive.patterns[key];
+      if (!pattern || getGridCoordError(pattern.offset) || !pattern.lastAreaCentroid ||
+          ![pattern.lastAreaCentroid.x, pattern.lastAreaCentroid.y, pattern.lastAreaCentroid.z,
+            pattern.lastTimestamp, pattern.confidenceWeight, pattern.occurrences,
+            pattern.lingerSurvivedCount, pattern.textureCohesionScore].every(Number.isFinite) ||
+          ![0, 90, 180, 270].includes(pattern.rotationDelta)) {
+        return 'Prediction archive contains invalid coordinates or numeric values.';
+      }
+    }
+  }
+  return null;
+}
+
+export function predictNextBlocksCopilot(params: CopilotPredictionParams): CopilotPredictedBlock[] {
+  if (getCopilotPredictionError(params)) return [];
   const {
     hoveredCoord,
     activeBlockId,
@@ -949,6 +1032,9 @@ export function predictNextBlocksCopilot(params: {
   } = params;
 
   const predictions: CopilotPredictedBlock[] = [];
+  const validPredictions = () => predictions.filter(prediction =>
+    !getGridCoordError(prediction.position) && [0, 90, 180, 270].includes(prediction.rotation)
+  ).slice(0, maxPredictions);
   const activeDef = customBlocks[activeBlockId];
   if (!activeDef) return predictions;
 
@@ -1078,7 +1164,7 @@ export function predictNextBlocksCopilot(params: {
           }
 
           if (predictions.length > 0) {
-            return predictions.slice(0, maxPredictions);
+            return validPredictions();
           }
         }
       }
@@ -1167,7 +1253,7 @@ export function predictNextBlocksCopilot(params: {
             );
           }
           if (predictions.length > 0) {
-            return predictions;
+            return validPredictions();
           }
         }
       }
@@ -1204,7 +1290,7 @@ export function predictNextBlocksCopilot(params: {
           );
         }
       }
-      if (predictions.length > 0) return predictions;
+      if (predictions.length > 0) return validPredictions();
     }
   } else if (objClassId === 'watchtower_spire' && hoveredCoord.y >= 2) {
     // Suggest vertical column stacking or alternating crenellations at top
@@ -1228,7 +1314,7 @@ export function predictNextBlocksCopilot(params: {
           );
         }
       }
-      if (predictions.length > 0) return predictions;
+      if (predictions.length > 0) return validPredictions();
     }
   }
 
@@ -1278,11 +1364,11 @@ export function predictNextBlocksCopilot(params: {
           );
         }
       }
-      if (predictions.length > 0) return predictions;
+      if (predictions.length > 0) return validPredictions();
     }
   }
 
-  return predictions;
+  return validPredictions();
 }
 
 /**
@@ -1299,6 +1385,7 @@ export function analyzeSelectionMorphology(
   recommendations: SelectionCommandRecommendation[];
 } | null {
   if (!pos1 || !pos2) return null;
+  if (getSelectionVolumeError(pos1, pos2)) return null;
 
   const b = getSelectionBounds(pos1, pos2);
   const lx = b.maxX - b.minX + 1;
@@ -1427,14 +1514,36 @@ export function analyzeSelectionMorphology(
   return {
     morphologyLabel,
     occupancyRatio,
-    recommendations,
+    recommendations: recommendations.filter(recommendation =>
+      !getCommandPreviewError(pos1, pos2, recommendation.previewMode)),
   };
 }
 
 /**
- * Computes capped 3D ghost preview coordinates (max 140 meshes for 120fps Pixel 8 Pro rendering)
+ * Computes capped 3D ghost preview coordinates (140 meshes by default)
  * for a previewed WorldEdit command before the user commits it.
  */
+export function getCommandPreviewError(
+  pos1: GridCoord | null, pos2: GridCoord | null,
+  previewMode: 'set' | 'walls' | 'hollow' | 'stack_up' | 'clear' | null,
+  maxGhostBlocks = 140
+): string | null {
+  if (!Number.isSafeInteger(maxGhostBlocks) || maxGhostBlocks < 0 || maxGhostBlocks > ENGINE_EDIT_LIMITS.maxOperationCells) {
+    return `Preview count must be a whole number from 0 to ${ENGINE_EDIT_LIMITS.maxOperationCells}.`;
+  }
+  if (!pos1 || !pos2 || !previewMode) return null;
+  if (!['set', 'walls', 'hollow', 'stack_up', 'clear'].includes(previewMode)) return 'Unknown command preview mode.';
+  const selectionError = getSelectionVolumeError(pos1, pos2);
+  if (selectionError) return selectionError;
+  if (previewMode === 'stack_up') {
+    const bounds = getSelectionBounds(pos1, pos2);
+    return getSelectionVolumeError(
+      { x: bounds.minX, y: bounds.minY, z: bounds.minZ },
+      { x: bounds.maxX, y: bounds.maxY + bounds.maxY - bounds.minY + 1, z: bounds.maxZ });
+  }
+  return null;
+}
+
 export function computeCommandPreviewCoords(
   pos1: GridCoord | null,
   pos2: GridCoord | null,
@@ -1443,6 +1552,7 @@ export function computeCommandPreviewCoords(
   maxGhostBlocks = 140
 ): GridCoord[] {
   if (!pos1 || !pos2 || !previewMode) return [];
+  if (getCommandPreviewError(pos1, pos2, previewMode, maxGhostBlocks)) return [];
   const b = getSelectionBounds(pos1, pos2);
   const coords: GridCoord[] = [];
 
@@ -1493,10 +1603,35 @@ export function computeCommandPreviewCoords(
 /**
  * Walkability, Headroom & Lighting Ergonomics Auditor (< 1.2ms on Pixel 8 Pro).
  */
+export function getWalkabilityAuditError(
+  blocks: Record<string, PlacedBlock>, customBlocks: Record<string, CustomBlockDefinition>
+): string | null {
+  let blockCount = 0;
+  let lightCount = 0;
+  for (const key in blocks) {
+    if (!Object.hasOwn(blocks, key)) continue;
+    if (++blockCount > ENGINE_EDIT_LIMITS.maxOperationCells) return 'Walkability audit exceeds the block work budget.';
+    const block = blocks[key];
+    if (!block || getGridCoordError(block.position)) return 'Walkability audit contains invalid block coordinates.';
+    if (block.blockDefId === 'voxel_lantern' || block.blockDefId === 'neon_beacon' ||
+        customBlocks[block.blockDefId]?.materialFinish === 'neon') lightCount++;
+  }
+  const sampleCount = Math.ceil(blockCount / Math.max(1, Math.floor(blockCount / 600)));
+  if (sampleCount > 0 && lightCount > Math.floor(ENGINE_EDIT_LIMITS.maxOperationCells / sampleCount)) {
+    return 'Walkability lighting comparisons exceed the work budget.';
+  }
+  return null;
+}
+
 export function auditWorldWalkability(
   blocks: Record<string, PlacedBlock>,
   customBlocks: Record<string, CustomBlockDefinition>
 ): WalkabilityAuditReport {
+  const error = getWalkabilityAuditError(blocks, customBlocks);
+  if (error) return {
+    walkableCount: 0, headroomConflictCoords: [], darkInteriorCoords: [], steepDropCoords: [],
+    accessibilityScore: 0, summary: `Audit unavailable: ${error}`, executionMs: 0,
+  };
   const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
   const blockList = Object.values(blocks);
@@ -1547,6 +1682,29 @@ export function auditWorldWalkability(
           darkInteriorCoords.push({ x, y: y + 1, z });
         }
       }
+
+      // Check for unguarded steep drops (elevated ledge y >= 3 with no neighbor block at y or y+1 and a drop >= 3 blocks)
+      if (y >= 3 && steepDropCoords.length < 24) {
+        const dirs: [number, number][] = [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ];
+        for (const [dx, dz] of dirs) {
+          const nx = x + dx;
+          const nz = z + dz;
+          const hasGuardrail =
+            Boolean(blocks[coordKey(nx, y, nz)]) ||
+            Boolean(blocks[coordKey(nx, y + 1, nz)]) ||
+            Boolean(blocks[coordKey(nx, y - 1, nz)]) ||
+            Boolean(blocks[coordKey(nx, y - 2, nz)]);
+          if (!hasGuardrail) {
+            steepDropCoords.push({ x, y: y + 1, z });
+            break;
+          }
+        }
+      }
     } else if (!above1 && above2 && headroomConflictCoords.length < 24) {
       const hasWalkableNeighbor =
         (!blocks[coordKey(x + 1, y + 1, z)] &&
@@ -1569,17 +1727,21 @@ export function auditWorldWalkability(
   }
 
   const penalty =
-    headroomConflictCoords.length * 6 + darkInteriorCoords.length * 3;
+    headroomConflictCoords.length * 6 +
+    darkInteriorCoords.length * 3 +
+    Math.min(18, steepDropCoords.length * 2);
   const accessibilityScore =
-    walkableCount === 0 ? 50 : Math.max(25, Math.min(100, 100 - penalty));
+    walkableCount === 0 ? 0 : Math.max(25, Math.min(100, 100 - penalty));
 
   const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const executionMs = Number(Math.max(0.05, t1 - t0).toFixed(2));
 
   const summary =
-    headroomConflictCoords.length === 0 && darkInteriorCoords.length === 0
-      ? `100% Playtest Ready (${walkableCount} walkable nodes, 0 headroom blocks)`
-      : `${walkableCount} walkable nodes • ${headroomConflictCoords.length} headroom pinch${headroomConflictCoords.length === 1 ? '' : 'es'} • ${darkInteriorCoords.length} dark interior spot${darkInteriorCoords.length === 1 ? '' : 's'}`;
+    walkableCount === 0
+      ? '0 walkable nodes (empty world)'
+      : headroomConflictCoords.length === 0 && darkInteriorCoords.length === 0
+        ? `100% Playtest Ready (${walkableCount} walkable nodes, 0 headroom blocks)`
+        : `${walkableCount} walkable nodes • ${headroomConflictCoords.length} headroom pinch${headroomConflictCoords.length === 1 ? '' : 'es'} • ${darkInteriorCoords.length} dark interior spot${darkInteriorCoords.length === 1 ? '' : 's'}`;
 
   return {
     walkableCount,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   BlueprintPrefab,
   GridCoord,
@@ -35,9 +35,9 @@ interface BlueprintsModalProps {
   ) => boolean;
   onEquipBlueprintStamp: (blueprint: BlueprintPrefab) => void;
   onPlaceBlueprintAtPos1: (blueprint: BlueprintPrefab) => void;
-  onLoadBlueprintIntoNewWorld: (blueprint: BlueprintPrefab) => void;
+  onLoadBlueprintIntoNewWorld: (blueprint: BlueprintPrefab) => Promise<boolean>;
   onDeleteBlueprint: (blueprintId: string) => void;
-  onImportBlueprintJson: (rawJson: string) => boolean;
+  onImportBlueprintJson: (rawJson: string) => boolean | Promise<boolean>;
   onRefreshCloudBlueprints: () => void;
   isLoadingCloud: boolean;
 }
@@ -70,6 +70,57 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
     text: string;
   } | null>(null);
   const [importText, setImportText] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFeedback, setImportFeedback] = useState<
+    { type: 'error'; text: string } | { type: 'success'; submittedText: string } | null
+  >(null);
+  const importPending = useRef<{ generation: number; text: string } | null>(null);
+  const importGeneration = useRef(0);
+  const importMounted = useRef(false);
+  const currentImportDraft = useRef({ text: importText, tab: activeTab });
+  useLayoutEffect(() => {
+    importMounted.current = true;
+    return () => { importMounted.current = false; importGeneration.current++; };
+  }, []);
+  useLayoutEffect(() => {
+    importGeneration.current++;
+    setImportFeedback(null);
+    return () => { importGeneration.current++; };
+  }, [isOpen]);
+  useLayoutEffect(() => { currentImportDraft.current = { text: importText, tab: activeTab }; }, [importText, activeTab]);
+  const [loadingBlueprintId, setLoadingBlueprintId] = useState<string | null>(null);
+  const loadPending = useRef(false);
+  const loadGeneration = useRef(0);
+  useEffect(() => {
+    if (!isOpen) { loadGeneration.current++; loadPending.current = false; setLoadingBlueprintId(null); }
+    return () => { loadGeneration.current++; };
+  }, [isOpen]);
+  const closeLibrary = () => {
+    importGeneration.current++;
+    setImportFeedback(null);
+    loadGeneration.current++;
+    loadPending.current = false;
+    setLoadingBlueprintId(null);
+    onClose();
+  };
+
+  const handleLoadWorld = async (blueprint: BlueprintPrefab) => {
+    if (loadPending.current) return;
+    loadPending.current = true;
+    setLoadingBlueprintId(blueprint.id);
+    setFormFeedback(null);
+    const generation = ++loadGeneration.current;
+    try {
+      const loaded = await onLoadBlueprintIntoNewWorld(blueprint);
+      if (generation !== loadGeneration.current) return;
+      if (loaded === true) closeLibrary();
+      else setFormFeedback({ type: 'error', text: 'The blueprint was not loaded. Your current build and library are unchanged. Check the project notice before retrying.' });
+    } catch (error) {
+      if (generation === loadGeneration.current) setFormFeedback({ type: 'error', text: error instanceof Error ? error.message : 'The blueprint was not loaded. Keep this library open and retry.' });
+    } finally {
+      if (generation === loadGeneration.current) { loadPending.current = false; setLoadingBlueprintId(null); }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -134,28 +185,46 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
     setActiveTab('structures');
   };
 
-  const handleImportSubmit = (e: React.FormEvent) => {
+  const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (importPending.current) return;
     if (!importText.trim()) {
-      setFormFeedback({
+      setImportFeedback({
         type: 'error',
         text: 'Paste a valid BrickForge Blueprint JSON string first.',
       });
       return;
     }
-    const ok = onImportBlueprintJson(importText);
-    if (ok) {
-      setImportText('');
-      setFormFeedback({
-        type: 'success',
-        text: 'Imported blueprint into your library!',
-      });
-      setActiveTab('all');
-    } else {
-      setFormFeedback({
-        type: 'error',
-        text: 'Invalid Blueprint JSON format.',
-      });
+    const submission = { generation: importGeneration.current, text: importText };
+    importPending.current = submission;
+    setIsImporting(true);
+    setFormFeedback(null);
+    setImportFeedback(null);
+    try {
+      const imported = await onImportBlueprintJson(submission.text);
+      if (!importMounted.current || submission.generation !== importGeneration.current) return;
+      if (imported === true) {
+        // A late success must not clear newer text or pull the user out of another tab.
+        if (currentImportDraft.current.text === submission.text && currentImportDraft.current.tab === 'import_json') {
+          setImportText('');
+          setFormFeedback({ type: 'success', text: 'Imported blueprint into your library!' });
+          setActiveTab('all');
+        } else {
+          setImportFeedback({ type: 'success', submittedText: submission.text });
+        }
+      } else {
+        setImportFeedback({ type: 'error', text: 'The blueprint was not imported. Your pasted text is still here. Check the project notice before retrying.' });
+      }
+    } catch (error) {
+      if (importMounted.current && submission.generation === importGeneration.current) {
+        setImportFeedback({ type: 'error', text: error instanceof Error ? error.message : 'The blueprint was not imported. Your pasted text is still here; please retry.' });
+      }
+    } finally {
+      // Closing does not cancel the operation or release its duplicate-submit guard.
+      if (importPending.current === submission) {
+        importPending.current = null;
+        if (importMounted.current) setIsImporting(false);
+      }
     }
   };
 
@@ -163,7 +232,7 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
     <DraggableWindow
       windowId="blueprints_window"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={closeLibrary}
       title="Blueprints Library & Structure Prefabs"
       subtitle="Save selected 3D buildings as reusable blueprints, stamp structures, or load into a new world"
       icon={<Layers className="w-4 h-4 text-amber-400" />}
@@ -269,7 +338,7 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
         <div className="p-6 flex-1 min-h-0 overflow-y-auto">
           {formFeedback && (
             <div
-              role="status"
+              role={formFeedback.type === 'error' ? 'alert' : 'status'}
               className={`mb-4 px-4 py-2.5 rounded-lg text-xs font-medium border ${
                 formFeedback.type === 'error'
                   ? 'bg-rose-950/60 border-rose-800 text-rose-300'
@@ -278,6 +347,14 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
             >
               {formFeedback.text}
             </div>
+          )}
+          {activeTab === 'import_json' && importFeedback && (
+            <p role={importFeedback.type === 'error' ? 'alert' : 'status'} className="mb-4 text-xs text-slate-200">
+              {importFeedback.type === 'error' ? importFeedback.text
+                : importFeedback.submittedText === importText
+                  ? 'The submitted blueprint was imported. This import draft remains available.'
+                  : 'The submitted blueprint was imported. Newer pasted text has not been imported and is still here.'}
+            </p>
           )}
 
           {activeTab === 'save_new' ? (
@@ -400,19 +477,27 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
                 </p>
               </div>
               <textarea
+                aria-label="Blueprint JSON"
                 rows={6}
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder='{"name":"My Tower","blueprintType":"structure_blueprint","size":{"lx":3,"ly":4,"lz":3},"blocks":[...]}'
                 className="w-full p-3 text-xs font-mono rounded-lg bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500"
               />
+              {isImporting && (
+                <p role="status" className="text-xs text-slate-300">
+                  Importing the submitted text. You can keep editing; closing this window does not cancel the import.
+                </p>
+              )}
               <div className="flex justify-end gap-2">
                 <button
                   type="submit"
+                  disabled={isImporting}
+                  aria-busy={isImporting}
                   className="px-5 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-1.5"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Import Blueprint</span>
+                  <span>{isImporting ? 'Importing blueprint…' : 'Import Blueprint'}</span>
                 </button>
               </div>
             </form>
@@ -463,7 +548,7 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
                       type="button"
                       onClick={() => {
                         onEquipBlueprintStamp(bp);
-                        onClose();
+                        closeLibrary();
                       }}
                       className="px-3 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
                     >
@@ -475,7 +560,7 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
                       type="button"
                       onClick={() => {
                         onPlaceBlueprintAtPos1(bp);
-                        onClose();
+                        closeLibrary();
                       }}
                       className="px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 transition-colors whitespace-nowrap shrink-0"
                     >
@@ -484,13 +569,12 @@ export const BlueprintsModal: React.FC<BlueprintsModalProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => {
-                        onLoadBlueprintIntoNewWorld(bp);
-                        onClose();
-                      }}
+                      onClick={() => { void handleLoadWorld(bp); }}
+                      disabled={loadingBlueprintId !== null}
+                      aria-busy={loadingBlueprintId === bp.id}
                       className="px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 transition-colors whitespace-nowrap shrink-0"
                     >
-                      Load in New World
+                      {loadingBlueprintId === bp.id ? 'Loading blueprint…' : 'Load in New World'}
                     </button>
                   </div>
                 </div>

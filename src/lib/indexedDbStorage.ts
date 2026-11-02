@@ -41,43 +41,52 @@ export const DEFAULT_USER_PROGRESS_STATE: StudioUserProgressState = {
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 
 function openStudioDb(): Promise<IDBDatabase | null> {
-  if (typeof window === 'undefined' || !('indexedDB' in window)) {
-    return Promise.resolve(null);
-  }
+  if (typeof window === 'undefined' || !('indexedDB' in window)) return Promise.resolve(null);
   if (dbPromise) return dbPromise;
-
-  dbPromise = new Promise((resolve) => {
+  const opening = new Promise<IDBDatabase | null>((resolve) => {
+    let settled = false;
+    const unavailable = () => { if (!settled) { settled = true; resolve(null); } };
     try {
       const req = window.indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(STORE_KV)) {
-          db.createObjectStore(STORE_KV);
-        }
+        if (!req.result.objectStoreNames.contains(STORE_KV)) req.result.createObjectStore(STORE_KV);
       };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
-    } catch {
-      resolve(null);
-    }
+      req.onsuccess = () => {
+        const db = req.result;
+        if (settled) { db.close(); return; }
+        settled = true;
+        db.onversionchange = () => { db.close(); if (dbPromise === opening) dbPromise = null; };
+        db.onclose = () => { if (dbPromise === opening) dbPromise = null; };
+        resolve(db);
+      };
+      req.onerror = unavailable;
+      req.onblocked = unavailable;
+    } catch { unavailable(); }
   });
-  return dbPromise;
+  dbPromise = opening;
+  void opening.then(db => { if (!db && dbPromise === opening) dbPromise = null; });
+  return opening;
+}
+
+/** Missing key returns null; unavailable/failed/aborted reads reject, never masquerade as an empty project. */
+export async function idbGetStrict<T>(key: string): Promise<T | null> {
+  const db = await openStudioDb();
+  if (!db) throw new DOMException('Legacy browser storage could not be opened.', 'InvalidStateError');
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(STORE_KV, 'readonly');
+      const req = tx.objectStore(STORE_KV).get(key);
+      let value: T | null = null;
+      req.onsuccess = () => { value = (req.result as T) ?? null; };
+      tx.oncomplete = () => resolve(value);
+      tx.onabort = () => reject(tx.error ?? new DOMException('Legacy read aborted.', 'AbortError'));
+      tx.onerror = () => { /* Default IndexedDB error propagation aborts the transaction. */ };
+    } catch (error) { reject(error); }
+  });
 }
 
 export async function idbGet<T>(key: string): Promise<T | null> {
-  const db = await openStudioDb();
-  if (!db) return null;
-  return new Promise((resolve) => {
-    try {
-      const tx = db.transaction(STORE_KV, 'readonly');
-      const store = tx.objectStore(STORE_KV);
-      const req = store.get(key);
-      req.onsuccess = () => resolve((req.result as T) ?? null);
-      req.onerror = () => resolve(null);
-    } catch {
-      resolve(null);
-    }
-  });
+  try { return await idbGetStrict<T>(key); } catch { return null; }
 }
 
 export async function idbSet<T>(key: string, value: T): Promise<boolean> {
@@ -86,13 +95,11 @@ export async function idbSet<T>(key: string, value: T): Promise<boolean> {
   return new Promise((resolve) => {
     try {
       const tx = db.transaction(STORE_KV, 'readwrite');
-      const store = tx.objectStore(STORE_KV);
-      const req = store.put(value, key);
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => resolve(false);
-    } catch {
-      resolve(false);
-    }
+      tx.oncomplete = () => resolve(true);
+      tx.onabort = () => resolve(false);
+      tx.onerror = () => { /* A failed request aborts; never acknowledge request success alone. */ };
+      tx.objectStore(STORE_KV).put(value, key);
+    } catch { resolve(false); }
   });
 }
 
@@ -102,13 +109,11 @@ export async function idbClearAll(): Promise<boolean> {
   return new Promise((resolve) => {
     try {
       const tx = db.transaction(STORE_KV, 'readwrite');
-      const store = tx.objectStore(STORE_KV);
-      const req = store.clear();
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => resolve(false);
-    } catch {
-      resolve(false);
-    }
+      tx.oncomplete = () => resolve(true);
+      tx.onabort = () => resolve(false);
+      tx.onerror = () => { /* Settle only when the transaction commits or aborts. */ };
+      tx.objectStore(STORE_KV).clear();
+    } catch { resolve(false); }
   });
 }
 
@@ -209,46 +214,34 @@ export async function hydrateAndMigrateStudioStorage(legacyKeys: {
 }
 
 export interface StorageQuotaEstimate {
-  usageBytes: number;
-  quotaBytes: number;
+  usageBytes: number | null;
+  quotaBytes: number | null;
   usageFormatted: string;
   quotaFormatted: string;
   engineLabel: string;
 }
 
-function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0.2 MB';
+function formatBytes(bytes: number | null): string {
+  if (bytes === null) return 'Unavailable';
+  if (bytes === 0) return '0 B';
   const mb = bytes / (1024 * 1024);
   if (mb < 1024) return `${mb.toFixed(1)} MB`;
   return `${(mb / 1024).toFixed(2)} GB`;
 }
 
 export async function estimateStudioStorageQuota(): Promise<StorageQuotaEstimate> {
+  let usageBytes: number | null = null;
+  let quotaBytes: number | null = null;
   try {
-    if (
-      typeof navigator !== 'undefined' &&
-      navigator.storage &&
-      typeof navigator.storage.estimate === 'function'
-    ) {
+    if (typeof navigator !== 'undefined' && typeof navigator.storage?.estimate === 'function') {
       const est = await navigator.storage.estimate();
-      const usageBytes = est.usage || 256 * 1024;
-      const quotaBytes = est.quota || 1024 * 1024 * 1024;
-      return {
-        usageBytes,
-        quotaBytes,
-        usageFormatted: formatBytes(usageBytes),
-        quotaFormatted: formatBytes(quotaBytes),
-        engineLabel: 'IndexedDB High-Capacity Engine (lfs_studio_db)',
-      };
+      if (typeof est.usage === 'number' && Number.isFinite(est.usage) && est.usage >= 0) usageBytes = est.usage;
+      if (typeof est.quota === 'number' && Number.isFinite(est.quota) && est.quota >= 0) quotaBytes = est.quota;
     }
-  } catch {
-    // Fallback below
-  }
+  } catch { /* An unavailable estimate is unknown, never an invented capacity. */ }
   return {
-    usageBytes: 512 * 1024,
-    quotaBytes: 512 * 1024 * 1024,
-    usageFormatted: '0.5 MB',
-    quotaFormatted: '512.0 MB',
-    engineLabel: 'IndexedDB High-Capacity Engine (lfs_studio_db)',
+    usageBytes, quotaBytes,
+    usageFormatted: formatBytes(usageBytes), quotaFormatted: formatBytes(quotaBytes),
+    engineLabel: usageBytes === null && quotaBytes === null ? 'Browser storage estimate unavailable' : 'Browser origin storage (estimate)',
   };
 }

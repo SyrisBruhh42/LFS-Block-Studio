@@ -1,0 +1,15 @@
+{
+  "schema": "antigravity-prov-attestation-v2",
+  "cryptosuite": "eddsa-jcs-2022",
+  "project_id": "lfs-block-studio",
+  "stamped_at_utc": "2026-11-02T01:49:44Z",
+  "bom_sha256": "11e42357a01810c2dfe98db85573dcc4272e448f41ea6884cf7093cf4796626a",
+  "fre_902_13_14_compliant": true,
+  "sanitization_summary": {
+    "quarantined_git_dirs": [],
+    "secrets_scrubbed": 4,
+    "cdns_rewritten": 0,
+    "emojis_escaped": 81,
+    "home_paths_scrubbed": 129
+  }
+}

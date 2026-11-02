@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
@@ -22,7 +22,7 @@ interface BlockWorkshopModalProps {
     blockDef: CustomBlockDefinition,
     saveAsPublicBlueprint: boolean,
     description: string
-  ) => void;
+  ) => Promise<boolean>;
   initialBlock?: CustomBlockDefinition | null;
 }
 
@@ -136,6 +136,28 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
   );
   const [publishPublic, setPublishPublic] = useState<boolean>(true);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<{ name: string; fingerprint: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const savePending = useRef<{ generation: number; fingerprint: string } | null>(null);
+  const saveGeneration = useRef(0);
+  const isMounted = useRef(false);
+  useLayoutEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; saveGeneration.current++; };
+  }, []);
+  useLayoutEffect(() => {
+    saveGeneration.current++;
+    setValidationError(null);
+    setSaveNotice(null);
+    return () => { saveGeneration.current++; };
+  }, [isOpen]);
+  const closeWorkshop = () => {
+    // Closing does not cancel the submitted operation or permit a duplicate save.
+    saveGeneration.current++;
+    setValidationError(null);
+    setSaveNotice(null);
+    onClose();
+  };
 
   // Micro-voxel 8x8x8 state
   const [voxels, setVoxels] = useState<MicroVoxel[]>(() => {
@@ -157,6 +179,17 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
   const [voxelTool, setVoxelTool] = useState<'draw' | 'erase'>('draw');
   const [mirrorX, setMirrorX] = useState<boolean>(true);
   const [mirrorZ, setMirrorZ] = useState<boolean>(true);
+
+  // Compare complete authoring values, not a counter maintained by input handlers.
+  // Retain inactive geometry/voxel fields too: switching modes must not hide edits.
+  // Preview quality, turntable, brush/tool and layer choices are not authored data.
+  const draftFingerprint = JSON.stringify({
+    name, description, shape, width, depth, heightPlates, color, texturePattern,
+    materialFinish, hasStuds, publishPublic,
+    voxels: [...voxels].sort((a, b) => a.x - b.x || a.y - b.y || a.z - b.z),
+  });
+  const currentDraftFingerprint = useRef(draftFingerprint);
+  useLayoutEffect(() => { currentDraftFingerprint.current = draftFingerprint; }, [draftFingerprint]);
 
   const previewMountRef = useRef<HTMLDivElement | null>(null);
   const previewSceneRef = useRef<{
@@ -403,8 +436,9 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
     setVoxels((prev) => prev.filter((v) => v.y !== activeLayerY));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savePending.current) return;
     const trimmed = name.trim();
     if (!trimmed) {
       setValidationError('Please enter a name for your custom block.');
@@ -415,6 +449,7 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
       return;
     }
     setValidationError(null);
+    setSaveNotice(null);
 
     const slug = trimmed
       .toLowerCase()
@@ -434,12 +469,29 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
       texturePattern,
       materialFinish,
       hasStuds: shape === 'tile' ? false : hasStuds,
-      voxels: shape === 'micro_voxel' ? voxels : undefined,
+      voxels: shape === 'micro_voxel' ? voxels.map(voxel => ({ ...voxel })) : undefined,
       isCustom: true,
     };
 
-    onSaveCustomBlock(newDef, publishPublic, description);
-    onClose();
+    const submission = { generation: saveGeneration.current, fingerprint: draftFingerprint };
+    savePending.current = submission;
+    setIsSaving(true);
+    try {
+      const saved = await onSaveCustomBlock(newDef, publishPublic, description);
+      if (!isMounted.current || submission.generation !== saveGeneration.current) return;
+      if (saved === true) {
+        if (submission.fingerprint === currentDraftFingerprint.current) closeWorkshop();
+        else setSaveNotice({ name: trimmed, fingerprint: submission.fingerprint });
+      }
+      else setValidationError('The block was not saved. Your design is still here. Check the project notice, then retry.');
+    } catch (error) {
+      if (isMounted.current && submission.generation === saveGeneration.current) setValidationError(error instanceof Error ? error.message : 'The block was not saved. Your design is still here; please retry.');
+    } finally {
+      if (savePending.current === submission) {
+        savePending.current = null;
+        if (isMounted.current) setIsSaving(false);
+      }
+    }
   };
 
   const rotateTurntable = (deltaRad: number) => {
@@ -453,7 +505,7 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
     <DraggableWindow
       windowId="block_workshop_window"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={closeWorkshop}
       title="Custom Block & Connected Mega-Spritemap Workshop"
       subtitle="Preview 2×2 connected spritemap seams, Shift+Scroll resize, or sculpt 8×8×8 micro-voxels"
       icon={<Sparkles className="w-4 h-4 text-amber-400" />}
@@ -637,6 +689,19 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
               {validationError && (
                 <p role="alert" className="text-xs font-medium text-rose-400">
                   {validationError}
+                </p>
+              )}
+              {saveNotice && (
+                <p role="status" className="text-xs font-medium text-emerald-300">
+                  Saved the submitted version of “{saveNotice.name}”.{' '}
+                  {saveNotice.fingerprint === draftFingerprint
+                    ? 'Your current draft matches that saved version.'
+                    : 'Newer edits are still unsaved; your current draft remains open.'}
+                </p>
+              )}
+              {isSaving && (
+                <p role="status" className="text-xs text-slate-300">
+                  Saving the submitted version. You can keep editing; another save is available when this one finishes.
                 </p>
               )}
             </div>
@@ -1013,17 +1078,19 @@ export const BlockWorkshopModal: React.FC<BlockWorkshopModalProps> = ({
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={closeWorkshop}
                 className="px-4 py-2.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors whitespace-nowrap shrink-0"
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                disabled={isSaving}
+                aria-busy={isSaving}
                 className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
               >
                 <Check className="w-4 h-4" />
-                <span>Save Custom Block Blueprint</span>
+                <span>{isSaving ? 'Saving block…' : 'Save Custom Block Blueprint'}</span>
               </button>
             </div>
           </div>

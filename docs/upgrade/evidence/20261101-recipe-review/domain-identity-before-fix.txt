@@ -1,0 +1,156 @@
+TAP version 13
+# Subtest: complete recipe review is detached, exact, chunk-aware and commits one full document/workspace Undo
+ok 1 - complete recipe review is detached, exact, chunk-aware and commits one full document/workspace Undo
+  ---
+  duration_ms: 26.501221
+  ...
+# Subtest: unchanged final cells keep original IDs and preserve source, history and pending Redo
+ok 2 - unchanged final cells keep original IDs and preserve source, history and pending Redo
+  ---
+  duration_ms: 4.233927
+  ...
+# Subtest: an updated cell reports appearance loss and exact before/after rather than a net block count
+ok 3 - an updated cell reports appearance loss and exact before/after rather than a net block count
+  ---
+  duration_ms: 3.082617
+  ...
+# Subtest: removed cells, selection-only and clipboard-only recipes expose their independent effects
+ok 4 - removed cells, selection-only and clipboard-only recipes expose their independent effects
+  ---
+  duration_ms: 7.745097
+  ...
+# Subtest: material totals expose exact positive and negative changes including unchanged cells
+ok 5 - material totals expose exact positive and negative changes including unchanged cells
+  ---
+  duration_ms: 2.259969
+  ...
+# Subtest: explicit cursor is captured for omitted command coordinates and does not inherit a later hover
+ok 6 - explicit cursor is captured for omitted command coordinates and does not inherit a later hover
+  ---
+  duration_ms: 4.210457
+  ...
+# Subtest: partial errors, unknown commands and undo/redo leave all source and history unchanged
+ok 7 - partial errors, unknown commands and undo/redo leave all source and history unchanged
+  ---
+  duration_ms: 2.853195
+  ...
+# Subtest: the locked profile validates every intermediate command, not only a later repaired final result
+ok 8 - the locked profile validates every intermediate command, not only a later repaired final result
+  ---
+  duration_ms: 9.322771
+  ...
+# Subtest: invalid script, parameters, material and cursor reject without coercion or source mutation
+ok 9 - invalid script, parameters, material and cursor reject without coercion or source mutation
+  ---
+  duration_ms: 2.476222
+  ...
+# Subtest: draft and saved-macro admission reject getters, sparse arrays and unknown draft fields before reading them
+ok 10 - draft and saved-macro admission reject getters, sparse arrays and unknown draft fields before reading them
+  ---
+  duration_ms: 0.514135
+  ...
+# Subtest: the shared step validator rejects before any later command or progress and exposes no result
+ok 11 - the shared step validator rejects before any later command or progress and exposes no result
+  ---
+  duration_ms: 1.395142
+  ...
+# Subtest: a final history admission failure rolls back cells, selection, clipboard and chunks after review
+ok 12 - a final history admission failure rolls back cells, selection, clipboard and chunks after review
+  ---
+  duration_ms: 7.746228
+  ...
+# Subtest: model preview and Cancel are read-only and keep the commands for a fresh preview
+ok 13 - model preview and Cancel are read-only and keep the commands for a fresh preview
+  ---
+  duration_ms: 2.476991
+  ...
+# Subtest: model Apply executes once and old Apply callbacks cannot target a new review after close/reopen
+ok 14 - model Apply executes once and old Apply callbacks cannot target a new review after close/reopen
+  ---
+  duration_ms: 2.34298
+  ...
+# Subtest: dirty close/reopen and shelf replacement preserve drafts until replacement is explicit
+ok 15 - dirty close/reopen and shelf replacement preserve drafts until replacement is explicit
+  ---
+  duration_ms: 1.13414
+  ...
+# Subtest: intervening edits, selection changes, edit-to-Undo ABA and project activation revoke prepared Apply
+ok 16 - intervening edits, selection changes, edit-to-Undo ABA and project activation revoke prepared Apply
+  ---
+  duration_ms: 4.650731
+  ...
+# Subtest: Cancel during a cooperative delay prevents further steps and preserves all authored effects
+ok 17 - Cancel during a cooperative delay prevents further steps and preserves all authored effects
+  ---
+  duration_ms: 1.499263
+  ...
+# Subtest: editing while preparation is delayed cancels the old job and a cached draft callback cannot overwrite a new one
+ok 18 - editing while preparation is delayed cancels the old job and a cached draft callback cannot overwrite a new one
+  ---
+  duration_ms: 1.610314
+  ...
+# Subtest: a producer ignoring cancellation cannot publish late progress/results into a newer job or closed context
+ok 19 - a producer ignoring cancellation cannot publish late progress/results into a newer job or closed context
+  ---
+  duration_ms: 1.823295
+  ...
+# Subtest: source change cancels delayed preparation and unavailable write authority blocks Preview/Apply
+ok 20 - source change cancels delayed preparation and unavailable write authority blocks Preview/Apply
+  ---
+  duration_ms: 1.486422
+  ...
+# Subtest: recipes can build at a former coordinate without duplicating a cell ID moved by precise editing
+not ok 21 - recipes can build at a former coordinate without duplicating a cell ID moved by precise editing
+  ---
+  duration_ms: 1.495594
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:14775'
+  failureType: 'testCodeFailure'
+  error: 'Recipe command 1 of 1 was rejected: Duplicate block ID. No prepared edit was committed.'
+  code: 'command-failed'
+  name: 'StudioRecipeError'
+  stack: |-
+    prepareStudioRecipe (/home/joe/Projects/LFS-Block-Studio-upgrade/src/engine/studioRecipe.ts:124:27)
+    reviewStudioRecipe (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.ts:69:22)
+    review (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:22:49)
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:94:151)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: deleting and rebuilding an anchor creates a new identity while command moves preserve the moved identity
+not ok 22 - deleting and rebuilding an anchor creates a new identity while command moves preserve the moved identity
+  ---
+  duration_ms: 5.140035
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:15217'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected "actual" to be strictly unequal to:
+    
+    'blk_0_1_0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'blk_0_1_0'
+  actual: 'blk_0_1_0'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:97:303)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: pasting a clipboard definition reports its exact admitted library change and full Undo
+ok 23 - pasting a clipboard definition reports its exact admitted library change and full Undo
+  ---
+  duration_ms: 3.178618
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 21
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 107.375233

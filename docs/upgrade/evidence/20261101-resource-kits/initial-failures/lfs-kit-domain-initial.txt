@@ -1,0 +1,166 @@
+TAP version 13
+# Subtest: original MIT courtyard archive is self-contained: six definitions, three blueprints and exact file hashes
+ok 1 - original MIT courtyard archive is self-contained: six definitions, three blueprints and exact file hashes
+  ---
+  duration_ms: 30.471617
+  ...
+# Subtest: admitted kit data is immutable and original bytes survive callers mutating the exposed byte copy
+ok 2 - admitted kit data is immutable and original bytes survive callers mutating the exposed byte copy
+  ---
+  duration_ms: 16.914764
+  ...
+# Subtest: complete library import is detached, preserves unrelated fields and applies one full Undo/Redo
+ok 3 - complete library import is detached, preserves unrelated fields and applies one full Undo/Redo
+  ---
+  duration_ms: 23.685715
+  ...
+# Subtest: identical kit import is a true no-op that preserves source, IDs, history and pending Redo
+ok 4 - identical kit import is a true no-op that preserves source, IDs, history and pending Redo
+  ---
+  duration_ms: 39.935251
+  ...
+# Subtest: definition and blueprint collisions reject without overwriting even unused resources
+ok 5 - definition and blueprint collisions reject without overwriting even unused resources
+  ---
+  duration_ms: 7.721324
+  ...
+# Subtest: kit closure never inherits missing definitions from the active project or embedded conflicts
+ok 6 - kit closure never inherits missing definitions from the active project or embedded conflicts
+  ---
+  duration_ms: 12.701013
+  ...
+# Subtest: duplicate resource IDs and conflicting placement anchors reject before building a map
+ok 7 - duplicate resource IDs and conflicting placement anchors reject before building a map
+  ---
+  duration_ms: 8.820936
+  ...
+# Subtest: missing or unlisted files, unknown version, units and rights declaration fail closed
+ok 8 - missing or unlisted files, unknown version, units and rights declaration fail closed
+  ---
+  duration_ms: 14.17984
+  ...
+# Subtest: duplicate JSON keys including escaped unsafe keys are rejected, not normalized away
+ok 9 - duplicate JSON keys including escaped unsafe keys are rejected, not normalized away
+  ---
+  duration_ms: 8.442012
+  ...
+# Subtest: valid ZIP checksums do not excuse a mismatched SHA-256 manifest
+ok 10 - valid ZIP checksums do not excuse a mismatched SHA-256 manifest
+  ---
+  duration_ms: 4.908349
+  ...
+# Subtest: invalid UTF-8, oversized license text, public copies and excessive resource counts reject
+ok 11 - invalid UTF-8, oversized license text, public copies and excessive resource counts reject
+  ---
+  duration_ms: 53.294212
+  ...
+# Subtest: exporting raw license/notices never silently replaces malformed UTF-16
+not ok 12 - exporting raw license/notices never silently replaces malformed UTF-16
+  ---
+  duration_ms: 7.547731
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:1:10306'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:87:3)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: resource source URLs cannot contain credentials or executable/file protocols
+ok 13 - resource source URLs cannot contain credentials or executable/file protocols
+  ---
+  duration_ms: 1.171504
+  ...
+# Subtest: source recovery above 4 MiB restores exact bytes within its separate 6 MiB allowance
+ok 14 - source recovery above 4 MiB restores exact bytes within its separate 6 MiB allowance
+  ---
+  duration_ms: 772.61349
+  ...
+# Subtest: unknown source-envelope versions, corrupt base64, false sizes and noncanonical bits reject
+ok 15 - unknown source-envelope versions, corrupt base64, false sizes and noncanonical bits reject
+  ---
+  duration_ms: 19.792499
+  ...
+# Subtest: selective kit export includes embedded-only definitions and every reference without ambient dependencies
+ok 16 - selective kit export includes embedded-only definitions and every reference without ambient dependencies
+  ---
+  duration_ms: 3.32044
+  ...
+# Subtest: export refuses unresolved or conflicting shared/embedded definitions and missing selections
+ok 17 - export refuses unresolved or conflicting shared/embedded definitions and missing selections
+  ---
+  duration_ms: 3.144007
+  ...
+# Subtest: selective re-export carries full notices and merges scoped provenance without losing prior associations
+ok 18 - selective re-export carries full notices and merges scoped provenance without losing prior associations
+  ---
+  duration_ms: 17.845344
+  ...
+# Subtest: future provenance remains untouched and incompatible claimed source identity is rejected
+ok 19 - future provenance remains untouched and incompatible claimed source identity is rejected
+  ---
+  duration_ms: 7.722083
+  ...
+# Subtest: retained provenance ceiling rejects before losing records or importing resources
+ok 20 - retained provenance ceiling rejects before losing records or importing resources
+  ---
+  duration_ms: 3.990508
+  ...
+# Subtest: locked Java accepts unused Freeform kit resources while rejecting their unbound placement atomically
+not ok 21 - locked Java accepts unused Freeform kit resources while rejecting their unbound placement atomically
+  ---
+  duration_ms: 13.915577
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:1:15781'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /mapping|binding|mapped|unsupported/i. Input:
+    
+    'Error: Game compatibility lock: No explicit reviewed assignment exists for this definition.'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'Game compatibility lock: No explicit reviewed assignment exists for this definition.'
+  stack: |-
+    prepareStudioPrefabPlacement (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioPrefabPlacement.ts:28:26)
+    <anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:111)
+    getActual (node:assert:840:5)
+    Function.throws (node:assert:986:24)
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:98)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:98)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: prefab review adds/replaces exact cells, reveals destination chunks and undoes once
+ok 22 - prefab review adds/replaces exact cells, reveals destination chunks and undoes once
+  ---
+  duration_ms: 17.544651
+  ...
+# Subtest: prefab review preserves quarter turns and detects replacements, stale mixed sources and out-of-bounds drafts
+ok 23 - prefab review preserves quarter turns and detects replacements, stale mixed sources and out-of-bounds drafts
+  ---
+  duration_ms: 9.409393
+  ...
+# Subtest: archive admission is required before proposal creation; a forged typed object has no authority
+ok 24 - archive admission is required before proposal creation; a forged typed object has no authority
+  ---
+  duration_ms: 3.391632
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 22
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1109.4771

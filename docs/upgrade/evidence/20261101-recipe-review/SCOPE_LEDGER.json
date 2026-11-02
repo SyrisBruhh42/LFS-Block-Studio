@@ -1,0 +1,103 @@
+{
+  "recordedAtUTC": "2026-11-01T23:39:51.136268+00:00",
+  "candidate": {
+    "js": "index-DFll7Gh7.js",
+    "css": "index-BDAYFgj1.css",
+    "jsSha256": "3c818b4e3e8d9242d91d2eb22733c6fa00c68bd6633799a975b47410a2734ae5",
+    "cssSha256": "3b838e00373910bf66640ae4b0378ce8c04f816c90c96379e9b9b0501bc53aa8"
+  },
+  "domain": {
+    "passed": 343,
+    "files": 28,
+    "receipt": "contracts-final.txt"
+  },
+  "app": {
+    "recipes": {
+      "passed": 14,
+      "receipt": "app-recipes-final.json"
+    },
+    "menu": {
+      "passed": 9,
+      "receipt": "app-menu-final.json"
+    },
+    "authority": {
+      "passed": 8,
+      "receipt": "app-authority-final.json"
+    },
+    "navigation": {
+      "passed": 9,
+      "receipt": "app-navigation-final.json"
+    },
+    "java": {
+      "passed": 10,
+      "receipt": "app-java-final.json"
+    },
+    "compatibility": {
+      "passed": 15,
+      "receipt": "app-compatibility-final.json"
+    },
+    "resources": {
+      "passed": 9,
+      "receipt": "app-resources-final.json"
+    },
+    "catalogue": {
+      "passed": 6,
+      "receipt": "app-catalogue-final.json"
+    },
+    "brush": {
+      "passed": 13,
+      "receipt": "app-brush-final.json"
+    },
+    "options": {
+      "passed": 2,
+      "receipt": "app-options-final.json"
+    },
+    "properties": {
+      "passed": 10,
+      "receipt": "app-properties-final.json"
+    },
+    "recovery": {
+      "passed": 8,
+      "receipt": "app-recovery-final.json"
+    },
+    "capacity": {
+      "passed": 4,
+      "receipt": "app-capacity-final.json"
+    }
+  },
+  "backend": {
+    "encoded": {
+      "passed": 10,
+      "receipt": "backend-encoded-final.json"
+    },
+    "policy": {
+      "passed": 21,
+      "receipt": "backend-policy-final.json"
+    },
+    "raw-recovery": {
+      "passed": 22,
+      "receipt": "backend-raw-recovery-final.json"
+    },
+    "hook": {
+      "passed": 36,
+      "receipt": "backend-hook-final.json"
+    },
+    "recovery-ui": {
+      "passed": 7,
+      "receipt": "backend-recovery-ui-final.json"
+    },
+    "store": {
+      "passed": 11,
+      "receipt": "backend-store-final.json"
+    }
+  },
+  "appTotal": 117,
+  "backendTotal": 107,
+  "scope": "Disposable Chromium/software WebGL, actual UI/downloads/selected native Tab and controlled persistence fixtures only. External/API and service workers blocked. Native Minecraft/WorldEdit NOT_RUN \u2014 skipped by user. No full-shell/physical/assistive/performance/provider/release acceptance.",
+  "acceptedReview": {
+    "file": "accepted-review.json",
+    "bytes": 9524,
+    "sha256": "f3029e16dffc450a9810bcc66586874e70dcde21e65668f8efd87b0ed7e94628",
+    "scope": "Actual downloaded JSON bytes from the accepted preview; fixture compares its full patch against the subsequently downloaded authored project."
+  }
+}

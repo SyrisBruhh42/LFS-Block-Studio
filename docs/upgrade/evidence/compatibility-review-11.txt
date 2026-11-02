@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: explicit review binds unchanged unit geometry and exact appearance choices without mutating source
+ok 1 - explicit review binds unchanged unit geometry and exact appearance choices without mutating source
+  ---
+  duration_ms: 9.35083
+  ...
+# Subtest: missing choices are never inferred from appearance or names; empty palette cannot lock a blank project
+ok 2 - missing choices are never inferred from appearance or names; empty palette cannot lock a blank project
+  ---
+  duration_ms: 5.938126
+  ...
+# Subtest: unused Freeform resources can remain stored but placing one into the locked world fails atomically
+ok 3 - unused Freeform resources can remain stored but placing one into the locked world fails atomically
+  ---
+  duration_ms: 9.260449
+  ...
+# Subtest: unlock preserves exact stored assignments; same-state and remap requests require a new proposal or copy
+ok 4 - unlock preserves exact stored assignments; same-state and remap requests require a new proposal or copy
+  ---
+  duration_ms: 7.232113
+  ...
+# Subtest: unlocked definition edits invalidate old bindings and cannot be silently recaptured on relock
+ok 5 - unlocked definition edits invalidate old bindings and cannot be silently recaptured on relock
+  ---
+  duration_ms: 4.101483
+  ...
+# Subtest: unsupported geometry, orientation and instance appearance show bounded affected-instance issues
+ok 6 - unsupported geometry, orientation and instance appearance show bounded affected-instance issues
+  ---
+  duration_ms: 5.733304
+  ...
+# Subtest: invalid choice properties, duplicates, air and oversized lists reject before capture
+ok 7 - invalid choice properties, duplicates, air and oversized lists reject before capture
+  ---
+  duration_ms: 6.899068
+  ...
+# Subtest: choice and array accessors are rejected without executing them
+ok 8 - choice and array accessors are rejected without executing them
+  ---
+  duration_ms: 4.025332
+  ...
+# Subtest: only the captured immutable review at the exact live token can be applied
+ok 9 - only the captured immutable review at the exact live token can be applied
+  ---
+  duration_ms: 2.621914
+  ...
+# Subtest: definition presentation and eligible palette use exact bindings without changing stored unused resources
+ok 10 - definition presentation and eligible palette use exact bindings without changing stored unused resources
+  ---
+  duration_ms: 7.992693
+  ...
+# Subtest: many rejected placements truncate diagnostics and sampled IDs without producing partial approval
+ok 11 - many rejected placements truncate diagnostics and sampled IDs without producing partial approval
+  ---
+  duration_ms: 3.968141
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76.33297

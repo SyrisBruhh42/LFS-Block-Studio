@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: world review captures exact mappings, negative bounds, anchor, air and source identity without changing the document
+ok 1 - world review captures exact mappings, negative bounds, anchor, air and source identity without changing the document
+  ---
+  duration_ms: 10.31401
+  ...
+# Subtest: explicit selection normalizes corners, excludes only out-of-scope cells and keeps all selected air
+ok 2 - explicit selection normalizes corners, excludes only out-of-scope cells and keeps all selected air
+  ---
+  duration_ms: 4.501713
+  ...
+# Subtest: empty world requires explicit bounds while a reviewed empty selection is an air-only schematic
+ok 3 - empty world requires explicit bounds while a reviewed empty selection is an air-only schematic
+  ---
+  duration_ms: 5.475132
+  ...
+# Subtest: unlocked Java builds still reject incompatible included content and never infer replacement mappings
+ok 4 - unlocked Java builds still reject incompatible included content and never infer replacement mappings
+  ---
+  duration_ms: 10.41131
+  ...
+# Subtest: unknown/freeform policy, bad source identity and noncanonical tokens fail without a plan
+ok 5 - unknown/freeform policy, bad source identity and noncanonical tokens fail without a plan
+  ---
+  duration_ms: 17.164016
+  ...
+# Subtest: invalid anchors, missing/fractional selection, huge dense bounds and invalid names fail before encoding
+ok 6 - invalid anchors, missing/fractional selection, huge dense bounds and invalid names fail before encoding
+  ---
+  duration_ms: 20.012403
+  ...
+# Subtest: request accessors and unknown fields reject without evaluating the accessor
+ok 7 - request accessors and unknown fields reject without evaluating the accessor
+  ---
+  duration_ms: 1.515875
+  ...
+# Subtest: an immutable review survives caller mutations and encoding returns an immutable blob with matching SHA256 report
+ok 8 - an immutable review survives caller mutations and encoding returns an immutable blob with matching SHA256 report
+  ---
+  duration_ms: 18.747981
+  ...
+# Subtest: cloned/unreviewed plans and cancellation cannot produce an artifact
+ok 9 - cloned/unreviewed plans and cancellation cannot produce an artifact
+  ---
+  duration_ms: 5.438943
+  ...
+# Subtest: export review and encoding leave both actual editor history directions and authored data untouched
+ok 10 - export review and encoding leave both actual editor history directions and authored data untouched
+  ---
+  duration_ms: 19.229776
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 122.525563

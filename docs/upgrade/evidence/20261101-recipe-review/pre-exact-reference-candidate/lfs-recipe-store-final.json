@@ -1,0 +1,73 @@
+{
+  "testedAt": "2026-11-01T22:50:10.649Z",
+  "sourceBefore": {
+    "src/lib/studioDocumentStore.browser-tests.ts": "800d88e62fb40875b098dcf0681dd9ed96b8075596dfbe73bd944452e929b545",
+    "src/lib/studioDocumentStore.ts": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+    "src/lib/studioDocument.ts": "894c6db9a032fd8cccdee7f638c0bfc0c358fe001280a9aba56fdcdd7c980084",
+    "src/lib/studioId.ts": "ae5905b6b6d1613c578b7bcc575ae86c231c5891b9db4ffc882a75d4c748dd3f",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioEditorSession.ts": "477267b1e20845d851f22a1241b91296c057b2b8b4be5745423107aec5c482dc",
+    "src/engine/worldEditEngine.ts": "da812b1980a59943f991bffa5b43f6aa05e06bbae23188d73b487d79795aba16",
+    "src/engine/placementContent.ts": "7fca789e309f988b928ac9d4812855afbde8c6632bd3fa992b57e7ed0324f690"
+  },
+  "sourceAfter": {
+    "src/lib/studioDocumentStore.browser-tests.ts": "800d88e62fb40875b098dcf0681dd9ed96b8075596dfbe73bd944452e929b545",
+    "src/lib/studioDocumentStore.ts": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+    "src/lib/studioDocument.ts": "894c6db9a032fd8cccdee7f638c0bfc0c358fe001280a9aba56fdcdd7c980084",
+    "src/lib/studioId.ts": "ae5905b6b6d1613c578b7bcc575ae86c231c5891b9db4ffc882a75d4c748dd3f",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioEditorSession.ts": "477267b1e20845d851f22a1241b91296c057b2b8b4be5745423107aec5c482dc",
+    "src/engine/worldEditEngine.ts": "da812b1980a59943f991bffa5b43f6aa05e06bbae23188d73b487d79795aba16",
+    "src/engine/placementContent.ts": "7fca789e309f988b928ac9d4812855afbde8c6632bd3fa992b57e7ed0324f690"
+  },
+  "sourceStable": true,
+  "results": [
+    {
+      "name": "candidate readback preserves raw legacy sources and does not activate until promotion",
+      "ok": true
+    },
+    {
+      "name": "complete authored state saves and previous immutable revision remains recoverable",
+      "ok": true
+    },
+    {
+      "name": "competing tabs compare-and-swap; exactly one same-revision writer wins",
+      "ok": true
+    },
+    {
+      "name": "abort after write request success does not acknowledge save or move active pointer",
+      "ok": true
+    },
+    {
+      "name": "interrupted verification leaves staged candidate recoverable but non-activatable",
+      "ok": true
+    },
+    {
+      "name": "aborted activation is atomic and verified candidate can subsequently be promoted",
+      "ok": true
+    },
+    {
+      "name": "stale candidate cannot replace an intervening save; stale activation token cannot save into a new project",
+      "ok": true
+    },
+    {
+      "name": "injected quota failure remains explicit and retains previous active revision",
+      "ok": true
+    },
+    {
+      "name": "quota thrown inside a request callback aborts save and promotion without an uncaught exception",
+      "ok": true
+    },
+    {
+      "name": "versionchange closes cached connection and incompatible reopen fails instead of hanging",
+      "ok": true
+    },
+    {
+      "name": "legacy helpers distinguish missing/failed reads and wait for set/clear transaction completion",
+      "ok": true
+    }
+  ],
+  "limitations": [
+    "Disposable IndexedDB harness; external/API and service workers blocked. Not full App, provider, native, physical/assistive or performance acceptance."
+  ]
+}

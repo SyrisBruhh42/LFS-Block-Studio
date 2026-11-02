@@ -1,0 +1,99 @@
+{
+  "schema_version": "cp12",
+  "project_id": "lfs-block-studio",
+  "capsule_id": "lfs-block-studio",
+  "title": "Lfs Block Studio",
+  "entrypoint": "index.html",
+  "abac_action_id": "capsule.adopted.lfs-block-studio.launch",
+  "iframe_sandbox": "allow-scripts allow-pointer-lock",
+  "lds_theme_pack_support": [
+    "evergreen-dark",
+    "evergreen-light",
+    "high-contrast",
+    "calm",
+    "solarpunk-dawn",
+    "solarpunk-canopy",
+    "solarpunk-hearth-dusk"
+  ],
+  "comfort_overrides": {
+    "zt9_reduced_motion": true,
+    "zt9_audio_ducking": true,
+    "zt9_high_contrast_ready": true,
+    "calm_dnd_respect": true
+  },
+  "mod_tunables": [
+    {
+      "id": "simulation_rate",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.25,
+      "max": 4.0
+    },
+    {
+      "id": "ai_assist_level",
+      "type": "enum",
+      "default": "balanced",
+      "options": [
+        "off",
+        "balanced",
+        "proactive"
+      ]
+    },
+    {
+      "id": "autosave_interval_sec",
+      "type": "int",
+      "default": 300,
+      "min": 60,
+      "max": 1800
+    },
+    {
+      "id": "visual_shader_preset",
+      "type": "enum",
+      "default": "clean-pixel",
+      "options": [
+        "clean-pixel",
+        "crt-royale",
+        "e-ink-paper"
+      ]
+    }
+  ],
+  "help_topic_id": "help.adopted.lfs-block-studio",
+  "help_grade_level": 7.4,
+  "save_custody": {
+    "envelope_schema": "aegisEnvelopeV1",
+    "slot_ring_size": 20,
+    "table": "save_slot_ring_20"
+  },
+  "multiplayer": {
+    "dual_mode_host": [
+      "HOST_LOCAL_PC",
+      "LAUNCH_U2_HOSTING_SERVICE"
+    ],
+    "hoster_endpoint": "http://127.0.0.1:19448",
+    "multiplayer_bar_element": "oasis-multiplayer-bar"
+  },
+  "steam_overlay": {
+    "hotkey": "Shift+Tab",
+    "fallback_hotkey": "Ctrl+Shift+Tab",
+    "party_channel": "#party:lfs-block-studio:default",
+    "capsule_channel": "#capsule:lfs-block-studio"
+  },
+  "neural_spine": {
+    "endpoint": "http://127.0.0.1:19447/v1/neural/infer",
+    "privacy_ring": "RING_1_LOCAL_PINNED",
+    "taint_guard": "OasisAiTaintGuard"
+  },
+  "usb_guest_mode": {
+    "fat32_exfat_pragmas": "journal_mode=DELETE; synchronous=FULL; locking_mode=EXCLUSIVE;",
+    "posix_ext4_pragmas": "journal_mode=WAL; synchronous=NORMAL;"
+  },
+  "platform_compat": {
+    "linux_windows_parity": true,
+    "zero_hardcoded_home_paths": true
+  },
+  "gate09_readiness": {
+    "upstream_test_floor": 542,
+    "ratchet2_safe_external_bay": true,
+    "twelve_pillars_complete": true
+  }
+}

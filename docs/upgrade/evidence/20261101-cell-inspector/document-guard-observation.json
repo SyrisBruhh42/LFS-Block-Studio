@@ -1,0 +1,5 @@
+{
+  "status": "FAIL_DOCUMENT_STALENESS_GUARD_THEN_REPAIR",
+  "observation": "The first document update stopped before saving the delivery plan because its trailing Next work order still called the prior Dn 292/93 checkpoint final.",
+  "correction": "Rewrote that continuation around the verified current 312/103 candidate; retained historical receipts separately. No source package had been created."
+}

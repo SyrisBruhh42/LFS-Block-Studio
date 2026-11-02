@@ -1,0 +1,14 @@
+
+> react-example@0.0.0 build
+> vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 1729 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     1.73 kB │ gzip:   0.69 kB
+dist/assets/index-DZmKhezt.css     62.48 kB │ gzip:  10.92 kB
+dist/assets/index-DNKQ5Fht.js   1,982.67 kB │ gzip: 544.85 kB
+
+✓ built in 627ms

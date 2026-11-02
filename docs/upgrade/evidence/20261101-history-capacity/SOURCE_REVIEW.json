@@ -1,0 +1,155 @@
+{
+  "recordedAtUTC": "2026-11-01T20:36:39.541245+00:00",
+  "status": "SOURCE_REVIEW_AND_RECEIPT_READBACK_ONLY",
+  "predecessor": {
+    "file": "CURRENT_SOURCE.zip",
+    "bytes": 1063874,
+    "sha256": "a53cf8a4d3ded953f8ea854782d10a9347e91c9f3f4c647f75f0da90f409673f"
+  },
+  "currentCandidate": "index-Ca-k58z3.js / index-Bi0et0sU.css",
+  "reviewedProduction": [
+    "src/lib/studioHistoryDelta.ts",
+    "src/lib/studioEditorSession.ts",
+    "src/lib/studioDocumentStore.ts",
+    "src/lib/useStudioPersistence.ts",
+    "src/lib/legacyStudioImport.ts",
+    "src/App.tsx",
+    "src/components/StudioWorkspaceMenu.tsx",
+    "src/components/StudioWorkspaceMenu.css",
+    "src/components/StudioRecoveryPanel.tsx"
+  ],
+  "findings": [
+    {
+      "kind": "observed defect",
+      "description": "Historical same-fixture execution rejects a20 MiB rename under full snapshot history. Current reversible changes pass exact serialized Undo/Redo.",
+      "receipt": "studio-history-predecessor-comparison.json"
+    },
+    {
+      "kind": "observed defect",
+      "description": "Actual near-limit backup pretty output exceeds the32 MiB input allowance; compact download actually reopens.",
+      "receipt": "studio-history-capacity-ca.json"
+    },
+    {
+      "kind": "observed defect",
+      "description": "Actual near-limit candidate serialized-value limit preserves active project; conditional versioned UTF-8 canonical data avoids the named limit while preserving original strings.",
+      "receipt": "studio-history-capacity-near-full-observer.json"
+    },
+    {
+      "kind": "source-review hardening",
+      "description": "Final staged verification/promotion/policy checks now bound and directly compare originals and exact candidate state/identity; no serialization of a damaged original list. New controlled after-readback mutation fixtures reject.",
+      "receipt": "studio-history-encoded-ca.json; studio-history-policy-ca.json"
+    },
+    {
+      "kind": "remaining limits",
+      "description": "Full validation/cloning and browser-owned selected-record cloning remain. No heap/latency/quota/other-browser/older-app guarantee. No durable retention pruning or complete all-route G2 acceptance."
+    }
+  ],
+  "changedSourceAndQaSincePredecessor": [
+    {
+      "path": "src/App.tsx",
+      "sha256": "23b6bc32951d8680d4f1624111d15b4d629c7cc3e5381bb527f70b1ec6043640",
+      "new": false
+    },
+    {
+      "path": "src/components/StudioRecoveryPanel.tsx",
+      "sha256": "4f1f7a2db342fada077e3bbdd7847e5777484b97eeb531c99466c25bcc6b1ef5",
+      "new": false
+    },
+    {
+      "path": "src/components/StudioWorkspaceMenu.css",
+      "sha256": "69fd4e423d6a7f376b2ba3bc4de6cdd8975db13fbb665b6aae22091da973606a",
+      "new": false
+    },
+    {
+      "path": "src/components/StudioWorkspaceMenu.tsx",
+      "sha256": "52c6463da824fc21c758863f424fcbe05d77a7403ced0ac7e62d76357d09e2f0",
+      "new": false
+    },
+    {
+      "path": "src/lib/legacyStudioImport.ts",
+      "sha256": "4d0abba2dcf37a39dbfb397a87db4b29a4e037fc478c9dbb709b2ec7c399fc81",
+      "new": false
+    },
+    {
+      "path": "src/lib/studioDocumentStore.ts",
+      "sha256": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+      "new": false
+    },
+    {
+      "path": "src/lib/studioEditorSession.test.ts",
+      "sha256": "c7e2fecc1bcdaf4181685459012878a0732458b680996ae45165e0e8c72596e5",
+      "new": false
+    },
+    {
+      "path": "src/lib/studioEditorSession.ts",
+      "sha256": "64136600930c0d89cafc917f4fa505ece583d052d8737fe0628c980d9bbdc424",
+      "new": false
+    },
+    {
+      "path": "src/lib/studioEncodedCandidate.browser-tests.ts",
+      "sha256": "ee5ac697ad9d01bca1a5a4729c6de097c1d6bae2e2662484bc8b2d2107c62d81",
+      "new": true
+    },
+    {
+      "path": "src/lib/studioHistoryDelta.test.ts",
+      "sha256": "732b09f7981088c22255737d5e39cba50ae88b663800e11f6c80e7274e96f5fd",
+      "new": true
+    },
+    {
+      "path": "src/lib/studioHistoryDelta.ts",
+      "sha256": "9bbcd282f124eff09d391407c061a430c8c9665fdda32babb15c625d23fa13a6",
+      "new": true
+    },
+    {
+      "path": "src/lib/studioPolicyStore.browser-tests.ts",
+      "sha256": "df16cd70d7729dbe6aba495f285c2f88c4999dbb322485c14d0622da0115ba9a",
+      "new": false
+    },
+    {
+      "path": "src/lib/studioRecoveryUi.browser-tests.tsx",
+      "sha256": "91aab8297f3cebb9d3496aeb53032cc84fb57a61d6dc722d7c9fef2536693981",
+      "new": false
+    },
+    {
+      "path": "src/lib/useStudioPersistence.ts",
+      "sha256": "31007579f3b2cb4c29472d555654e6ba2d89b9e66351527fed4f22c8e26b466f",
+      "new": false
+    },
+    {
+      "path": "scripts/qa/README.md",
+      "sha256": "2bfa10157e9bec8e21880976d646a582cc8e2cd37760c2e481957f7d5471991d",
+      "new": false
+    },
+    {
+      "path": "scripts/qa/app-recovery.mjs",
+      "sha256": "3b749014425533cd1d6ed52cff99d95fa8eae3a915cc286df93ef12ce3f992f1",
+      "new": false
+    },
+    {
+      "path": "scripts/qa/encoded-candidates.mjs",
+      "sha256": "f70658500af873324d64e3d94b8262dfea9bc5c44c10707da318ee19a9663abe",
+      "new": true
+    },
+    {
+      "path": "scripts/qa/navigation.mjs",
+      "sha256": "6323711bc55ee19c19430eb35f4ae40c7e3820dca095d1c2148d41c105d2f165",
+      "new": false
+    },
+    {
+      "path": "scripts/qa/persistence-races.mjs",
+      "sha256": "c69c77668158643e1cdfad3162b79c819c0552fd8594928eba0ee323166d62ea",
+      "new": false
+    },
+    {
+      "path": "scripts/qa/project-capacity.mjs",
+      "sha256": "1c70f7397a1306d6614eb8cf19c5f555fa573a917493e5404350472d52c97824",
+      "new": true
+    },
+    {
+      "path": "scripts/qa/storage-contracts.mjs",
+      "sha256": "c345d741010b40f2e68f182d2a28db6ca270af6dcbfa9a90f50de84a87954321",
+      "new": false
+    }
+  ],
+  "historicalComponentScope": "Window and Java export component source files remain byte-identical to predecessor; their historical receipts are not relabelled new whole-App evidence. Current App workflows have their own final-candidate receipts."
+}
