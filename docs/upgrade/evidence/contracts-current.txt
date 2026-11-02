@@ -1,0 +1,889 @@
+
+> react-example@0.0.0 test
+> node scripts/test-contracts.mjs
+
+
+src/components/viewportInputRoutes.test.ts
+TAP version 13
+# Subtest: viewport command drops cannot execute while root input or a visible modal owns input
+ok 1 - viewport command drops cannot execute while root input or a visible modal owns input
+  ---
+  duration_ms: 1.043023
+  ...
+# Subtest: hidden dialogs do not block drops and blocked equip drops do not change tools or blocks
+ok 2 - hidden dialogs do not block drops and blocked equip drops do not change tools or blocks
+  ---
+  duration_ms: 0.212322
+  ...
+# Subtest: closed or inactive hotkey capture ignores input; IME and dead keys stop capture without binding
+ok 3 - closed or inactive hotkey capture ignores input; IME and dead keys stop capture without binding
+  ---
+  duration_ms: 0.146401
+  ...
+# Subtest: Tab remains focus traversal and Escape cancels rather than becoming a stored shortcut
+ok 4 - Tab remains focus traversal and Escape cancels rather than becoming a stored shortcut
+  ---
+  duration_ms: 0.101152
+  ...
+# Subtest: ghost shortcut help follows the configured key and explains reserved legacy Tab
+ok 5 - ghost shortcut help follows the configured key and explains reserved legacy Tab
+  ---
+  duration_ms: 0.249633
+  ...
+# Subtest: momentary look restores the complete prior orthographic view and isolates mutable source data
+ok 6 - momentary look restores the complete prior orthographic view and isolates mutable source data
+  ---
+  duration_ms: 1.149044
+  ...
+# Subtest: momentary look tolerates duplicate begin, coalesced release and cancellation by ordinary navigation
+ok 7 - momentary look tolerates duplicate begin, coalesced release and cancellation by ordinary navigation
+  ---
+  duration_ms: 0.147032
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.369042
+
+src/engine/chunkAndPatternEngine.safety.test.ts
+TAP version 13
+# Subtest: valid brush fixtures retain exact shapes, hollow shells, and radius-zero behavior
+ok 1 - valid brush fixtures retain exact shapes, hollow shells, and radius-zero behavior
+  ---
+  duration_ms: 1.313917
+  ...
+# Subtest: brush config rejects negative, fractional, nonfinite, extreme, and unknown settings without clamping
+ok 2 - brush config rejects negative, fractional, nonfinite, extreme, and unknown settings without clamping
+  ---
+  duration_ms: 3.96862
+  ...
+# Subtest: brush placement validates its entire destination and scale before mutating or creating history
+ok 3 - brush placement validates its entire destination and scale before mutating or creating history
+  ---
+  duration_ms: 6.080507
+  ...
+# Subtest: valid brushes retain one undo, lower-floor clipping, erase behavior, and air-only no-op history
+ok 4 - valid brushes retain one undo, lower-floor clipping, erase behavior, and air-only no-op history
+  ---
+  duration_ms: 1.693672
+  ...
+# Subtest: chunk expansion rejects unsafe indices, dimensions, and styles before snapshot or generation
+ok 5 - chunk expansion rejects unsafe indices, dimensions, and styles before snapshot or generation
+  ---
+  duration_ms: 10.25963
+  ...
+# Subtest: negative chunk indices remain valid and fixed templates retain their original cells
+ok 6 - negative chunk indices remain valid and fixed templates retain their original cells
+  ---
+  duration_ms: 1.088794
+  ...
+# Subtest: selection transforms retain valid shifts, contractions, ordering, and null-corner fallback
+ok 7 - selection transforms retain valid shifts, contractions, ordering, and null-corner fallback
+  ---
+  duration_ms: 0.299864
+  ...
+# Subtest: selection transform rejection preserves supplied corners for invalid steps, bounds, or destinations
+ok 8 - selection transform rejection preserves supplied corners for invalid steps, bounds, or destinations
+  ---
+  duration_ms: 0.322664
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 34.436405
+
+src/engine/javaSchematic.test.ts
+TAP version 13
+# Subtest: candidate profile pins DataVersion rather than protocol and cannot claim native qualification
+ok 1 - candidate profile pins DataVersion rather than protocol and cannot claim native qualification
+  ---
+  duration_ms: 1.815523
+  ...
+# Subtest: independent NBT oracle verifies v3 structure, exact cell order and hand-calculated negative offset fixture
+ok 2 - independent NBT oracle verifies v3 structure, exact cell order and hand-calculated negative offset fixture
+  ---
+  duration_ms: 17.593793
+  ...
+# Subtest: source entry order does not change canonical NBT or deterministic report
+ok 3 - source entry order does not change canonical NBT or deterministic report
+  ---
+  duration_ms: 3.410923
+  ...
+# Subtest: explicit and absent air are both encoded, while an all-air selected region is allowed
+ok 4 - explicit and absent air are both encoded, while an all-air selected region is allowed
+  ---
+  duration_ms: 3.597956
+  ...
+# Subtest: dense budget accepts 100000 cells, rejects large sparse bounds, and checks before reading cells
+ok 5 - dense budget accepts 100000 cells, rejects large sparse bounds, and checks before reading cells
+  ---
+  duration_ms: 7.235312
+  ...
+# Subtest: NBT Shorts preserve unsigned dimensions 32768 and 65535 without accepting 65536
+ok 6 - NBT Shorts preserve unsigned dimensions 32768 and 65535 without accepting 65536
+  ---
+  duration_ms: 6.174488
+  ...
+# Subtest: coordinates and derived offsets are signed Int32 values without coercion or rounding
+ok 7 - coordinates and derived offsets are signed Int32 values without coercion or rounding
+  ---
+  duration_ms: 3.316271
+  ...
+# Subtest: an individually valid offset cannot let the clipboard far edge wrap signed Int32
+ok 8 - an individually valid offset cannot let the clipboard far edge wrap signed Int32
+  ---
+  duration_ms: 1.208645
+  ...
+# Subtest: duplicate positions, out-of-scope cells and unsupported states reject the entire export
+ok 9 - duplicate positions, out-of-scope cells and unsupported states reject the entire export
+  ---
+  duration_ms: 1.092704
+  ...
+# Subtest: unsupported payloads, geometry and fields are rejected at every admitted object level
+ok 10 - unsupported payloads, geometry and fields are rejected at every admitted object level
+  ---
+  duration_ms: 0.503966
+  ...
+# Subtest: malformed objects, array holes, accessors and decorators do not become silent content loss
+ok 11 - malformed objects, array holes, accessors and decorators do not become silent content loss
+  ---
+  duration_ms: 0.716489
+  ...
+# Subtest: Unicode name uses Java modified UTF-8 with a literal emoji byte oracle
+ok 12 - Unicode name uses Java modified UTF-8 with a literal emoji byte oracle
+  ---
+  duration_ms: 1.831943
+  ...
+# Subtest: encoder snapshots caller data before compression and never mutates input
+ok 13 - encoder snapshots caller data before compression and never mutates input
+  ---
+  duration_ms: 1.490409
+  ...
+# Subtest: pre-aborted and aborted compression requests reject without a successful result
+ok 14 - pre-aborted and aborted compression requests reject without a successful result
+  ---
+  duration_ms: 1.782092
+  ...
+# Subtest: missing or failing platform compression rejects instead of returning mislabeled NBT
+ok 15 - missing or failing platform compression rejects instead of returning mislabeled NBT
+  ---
+  duration_ms: 0.551447
+  ...
+# Subtest: compression stream failures and excessive output do not return a partial schematic
+ok 16 - compression stream failures and excessive output do not return a partial schematic
+  ---
+  duration_ms: 1.769032
+  ...
+# Subtest: independent oracle detects truncated gzip/NBT and invalid palette data; no native claim
+ok 17 - independent oracle detects truncated gzip/NBT and invalid palette data; no native claim
+  ---
+  duration_ms: 3.22208
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 62.966106
+
+src/engine/schematicExporter.safety.test.ts
+TAP version 13
+# Subtest: sparse diagnostic bounds reject before attempting a dense export
+ok 1 - sparse diagnostic bounds reject before attempting a dense export
+  ---
+  duration_ms: 10.000926
+  ...
+# Subtest: draft Minecraft exports reject fractional, nonfinite and overlapping coordinates
+ok 2 - draft Minecraft exports reject fractional, nonfinite and overlapping coordinates
+  ---
+  duration_ms: 0.498437
+  ...
+# Subtest: draft mappings reject missing IDs, inherited IDs and injected commands without fallback
+ok 3 - draft mappings reject missing IDs, inherited IDs and injected commands without fallback
+  ---
+  duration_ms: 0.566507
+  ...
+# Subtest: source accessors are rejected without invoking them and missing definitions stay explicit
+ok 4 - source accessors are rejected without invoking them and missing definitions stay explicit
+  ---
+  duration_ms: 0.185482
+  ...
+# Subtest: negative asymmetric diagnostic region keeps its index order and clearly declares its limits
+ok 5 - negative asymmetric diagnostic region keeps its index order and clearly declares its limits
+  ---
+  duration_ms: 0.75371
+  ...
+# Subtest: world names cannot inject additional mcfunction commands
+ok 6 - world names cannot inject additional mcfunction commands
+  ---
+  duration_ms: 0.893712
+  ...
+# Subtest: multiline imported project names cannot escape a generated Godot comment
+ok 7 - multiline imported project names cannot escape a generated Godot comment
+  ---
+  duration_ms: 0.284834
+  ...
+# Subtest: AI mapping validation retains absent rows, admits low scores without inflation, and isolates arrays
+ok 8 - AI mapping validation retains absent rows, admits low scores without inflation, and isolates arrays
+  ---
+  duration_ms: 1.313557
+  ...
+# Subtest: unknown, duplicate, malformed and oversized AI suggestions reject the whole response
+ok 9 - unknown, duplicate, malformed and oversized AI suggestions reject the whole response
+  ---
+  duration_ms: 1.095424
+  ...
+# Subtest: AI transport bounds a streamed response and forwards cancellation without provider access
+ok 10 - AI transport bounds a streamed response and forwards cancellation without provider access
+  ---
+  duration_ms: 21.462722
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46.63019
+
+src/engine/spatialCopilotEngine.safety.test.ts
+TAP version 13
+# Subtest: command previews reject nonfinite, fractional, and excessive sparse bounds regardless of output cap
+ok 1 - command previews reject nonfinite, fractional, and excessive sparse bounds regardless of output cap
+  ---
+  duration_ms: 10.22708
+  ...
+# Subtest: preview counts are strictly bounded and zero disables output
+ok 2 - preview counts are strictly bounded and zero disables output
+  ---
+  duration_ms: 0.239863
+  ...
+# Subtest: known valid previews preserve exact walls, interior, clear, stack, and capped output
+ok 3 - known valid previews preserve exact walls, interior, clear, stack, and capped output
+  ---
+  duration_ms: 0.480786
+  ...
+# Subtest: stack previews and morphology recommendations obey the same destination and repeated-work bounds as commands
+ok 4 - stack previews and morphology recommendations obey the same destination and repeated-work bounds as commands
+  ---
+  duration_ms: 0.250543
+  ...
+# Subtest: copilot prediction counts and used coordinates reject invalid input before extrapolation
+ok 5 - copilot prediction counts and used coordinates reject invalid input before extrapolation
+  ---
+  duration_ms: 2.393451
+  ...
+# Subtest: valid copilot momentum remains deterministic and emitted predictions stay inside coordinate bounds
+ok 6 - valid copilot momentum remains deterministic and emitted predictions stay inside coordinate bounds
+  ---
+  duration_ms: 0.688219
+  ...
+# Subtest: malformed learned offsets are rejected while valid seeded patterns remain usable
+ok 7 - malformed learned offsets are rejected while valid seeded patterns remain usable
+  ---
+  duration_ms: 0.411025
+  ...
+# Subtest: symmetry rejects invalid coordinates/pivots and retains finite fractional pivots
+ok 8 - symmetry rejects invalid coordinates/pivots and retains finite fractional pivots
+  ---
+  duration_ms: 0.342854
+  ...
+# Subtest: walkability audit rejects nonfinite coordinates and excessive lighting work instead of looping or reporting readiness
+ok 9 - walkability audit rejects nonfinite coordinates and excessive lighting work instead of looping or reporting readiness
+  ---
+  duration_ms: 3.357443
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25.230369
+
+src/engine/studioActions.test.ts
+TAP version 13
+# Subtest: factory validates the full authored document and exposes only an isolated Freeform session
+ok 1 - factory validates the full authored document and exposes only an isolated Freeform session
+  ---
+  duration_ms: 14.96166
+  ...
+# Subtest: place and erase produce deterministic IDs, one history entry, and a monotonic live revision
+ok 2 - place and erase produce deterministic IDs, one history entry, and a monotonic live revision
+  ---
+  duration_ms: 14.769467
+  ...
+# Subtest: paint has explicit override removal and leaves other authored fields intact
+ok 3 - paint has explicit override removal and leaves other authored fields intact
+  ---
+  duration_ms: 10.154879
+  ...
+# Subtest: complete authored snapshots and undo/redo preserve world, definitions, library, configurations and extensions
+ok 4 - complete authored snapshots and undo/redo preserve world, definitions, library, configurations and extensions
+  ---
+  duration_ms: 9.719773
+  ...
+# Subtest: undo preserves newer durable revision and timestamp while restoring authored content
+ok 5 - undo preserves newer durable revision and timestamp while restoring authored content
+  ---
+  duration_ms: 6.838676
+  ...
+# Subtest: optional authored metadata stays exactly absent across edit, undo and redo
+ok 6 - optional authored metadata stays exactly absent across edit, undo and redo
+  ---
+  duration_ms: 7.87833
+  ...
+# Subtest: mutable input aliases are neither retained nor frozen by the action boundary
+ok 7 - mutable input aliases are neither retained nor frozen by the action boundary
+  ---
+  duration_ms: 7.292833
+  ...
+# Subtest: no-op place, paint, erase and fill preserve exact state identity, revision and redo
+ok 8 - no-op place, paint, erase and fill preserve exact state identity, revision and redo
+  ---
+  duration_ms: 17.34138
+  ...
+# Subtest: tokens bind document, live revision, session and history epoch, including edit-undo ABA
+ok 9 - tokens bind document, live revision, session and history epoch, including edit-undo ABA
+  ---
+  duration_ms: 13.178767
+  ...
+# Subtest: fill uses explicit ordered inclusive bounds, replaces atomically and records one predecessor
+ok 10 - fill uses explicit ordered inclusive bounds, replaces atomically and records one predecessor
+  ---
+  duration_ms: 6.218089
+  ...
+# Subtest: nonfinite, fractional, extreme or unordered coordinates and oversized dense regions reject before enumeration
+ok 11 - nonfinite, fractional, extreme or unordered coordinates and oversized dense regions reject before enumeration
+  ---
+  duration_ms: 12.107114
+  ...
+# Subtest: invalid definitions, material fields and scale reject atomically, including paint on an empty slot
+ok 12 - invalid definitions, material fields and scale reject atomically, including paint on an empty slot
+  ---
+  duration_ms: 22.653376
+  ...
+# Subtest: unknown actions and unsupported fields never acquire target authority from opaque extensions
+ok 13 - unknown actions and unsupported fields never acquire target authority from opaque extensions
+  ---
+  duration_ms: 4.75011
+  ...
+# Subtest: accessors are not invoked and malformed runtime action data does not mutate state
+ok 14 - accessors are not invoked and malformed runtime action data does not mutate state
+  ---
+  duration_ms: 1.708012
+  ...
+# Subtest: combined undo and redo count stays bounded and no-op cannot evict history
+ok 15 - combined undo and redo count stays bounded and no-op cannot evict history
+  ---
+  duration_ms: 20.53876
+  ...
+# Subtest: history byte budget evicts only older entries and rejects an unretainable predecessor
+ok 16 - history byte budget evicts only older entries and rejects an unretainable predecessor
+  ---
+  duration_ms: 23.809481
+  ...
+# Subtest: history bytes include multibyte Unicode payload and both stacks
+ok 17 - history bytes include multibyte Unicode payload and both stacks
+  ---
+  duration_ms: 9.639702
+  ...
+# Subtest: corrupt, foreign-epoch and forged over-budget history fail without applying any snapshot
+ok 18 - corrupt, foreign-epoch and forged over-budget history fail without applying any snapshot
+  ---
+  duration_ms: 8.176023
+  ...
+# Subtest: empty history and exhausted live revision reject without rewinding durable identity
+ok 19 - empty history and exhausted live revision reject without rewinding durable identity
+  ---
+  duration_ms: 5.159985
+  ...
+# Subtest: exact-fit history remains undoable across live-counter digit growth and durable acknowledgements
+ok 20 - exact-fit history remains undoable across live-counter digit growth and durable acknowledgements
+  ---
+  duration_ms: 9.026204
+  ...
+# Subtest: place and fill allocate deterministic collision-free IDs after imports or legacy moves
+ok 21 - place and fill allocate deterministic collision-free IDs after imports or legacy moves
+  ---
+  duration_ms: 8.814472
+  ...
+# Subtest: exact 100000-cell fill succeeds and total document capacity rejects further additions
+ok 22 - exact 100000-cell fill succeeds and total document capacity rejects further additions
+  ---
+  duration_ms: 1856.542843
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2116.032575
+
+src/engine/studioEngagementEngine.test.ts
+TAP version 13
+# Subtest: Atmosphere presets resolve deterministically
+ok 1 - Atmosphere presets resolve deterministically
+  ---
+  duration_ms: 0.616688
+  ...
+# Subtest: Mastery rank progresses across XP thresholds
+ok 2 - Mastery rank progresses across XP thresholds
+  ---
+  duration_ms: 0.191252
+  ...
+# Subtest: Procedural biome generator produces valid worlds for all 6 templates
+ok 3 - Procedural biome generator produces valid worlds for all 6 templates
+  ---
+  duration_ms: 5.209856
+  ...
+# Subtest: Architectural contract evaluator accurately scores progress and completion
+ok 4 - Architectural contract evaluator accurately scores progress and completion
+  ---
+  duration_ms: 1.421328
+  ...
+# Subtest: Daily build prompt is deterministic per date string
+ok 5 - Daily build prompt is deterministic per date string
+  ---
+  duration_ms: 0.116942
+  ...
+# Subtest: Timelapse ordering sorts bottom-up and slices steps cleanly
+ok 6 - Timelapse ordering sorts bottom-up and slices steps cleanly
+  ---
+  duration_ms: 0.171652
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15.199212
+
+src/engine/viewportNavigation.test.ts
+TAP version 13
+# Subtest: framing contains every corner for wide/portrait perspective views at nonzero coordinates
+ok 1 - framing contains every corner for wide/portrait perspective views at nonzero coordinates
+  ---
+  duration_ms: 2.467071
+  ...
+# Subtest: orthographic top/front/side framing fits and parallel lines have no perspective shrink
+ok 2 - orthographic top/front/side framing fits and parallel lines have no perspective shrink
+  ---
+  duration_ms: 1.163865
+  ...
+# Subtest: empty, degenerate and nonfinite bounds produce a usable frame
+ok 3 - empty, degenerate and nonfinite bounds produce a usable frame
+  ---
+  duration_ms: 0.211523
+  ...
+# Subtest: bookmark restore preserves camera, projection, pivot and apparent zoom after resize
+ok 4 - bookmark restore preserves camera, projection, pivot and apparent zoom after resize
+  ---
+  duration_ms: 0.925332
+  ...
+# Subtest: frame-all bounds include rotated/scaled footprints rather than only anchor cells
+ok 5 - frame-all bounds include rotated/scaled footprints rather than only anchor cells
+  ---
+  duration_ms: 0.545246
+  ...
+# Subtest: drag that returns to origin and fast drags remain camera-owned
+ok 6 - drag that returns to origin and fast drags remain camera-owned
+  ---
+  duration_ms: 0.207113
+  ...
+# Subtest: cancellation and outside-origin releases cannot commit a click
+ok 7 - cancellation and outside-origin releases cannot commit a click
+  ---
+  duration_ms: 0.164422
+  ...
+# Subtest: multi-pointer navigation never turns the remaining finger back into an edit
+ok 8 - multi-pointer navigation never turns the remaining finger back into an edit
+  ---
+  duration_ms: 0.101221
+  ...
+# Subtest: IME and consumed key events never become viewport shortcuts
+ok 9 - IME and consumed key events never become viewport shortcuts
+  ---
+  duration_ms: 0.271864
+  ...
+# Subtest: default keys are unique, Tab is free, and saved custom bindings remain untouched
+ok 10 - default keys are unique, Tab is free, and saved custom bindings remain untouched
+  ---
+  duration_ms: 0.528556
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16.254386
+
+src/engine/windowLayoutEngine.test.ts
+TAP version 13
+# Subtest: clampWindowRectToViewport keeps window inside shrunk viewport bounds
+ok 1 - clampWindowRectToViewport keeps window inside shrunk viewport bounds
+  ---
+  duration_ms: 0.584428
+  ...
+# Subtest: resizeWindowRect resizes from southeast and northwest handles within bounds
+ok 2 - resizeWindowRect resizes from southeast and northwest handles within bounds
+  ---
+  duration_ms: 0.202243
+  ...
+# Subtest: computeResponsiveWorkspaceMetrics preserves center 3D viewport on split-screen resize
+ok 3 - computeResponsiveWorkspaceMetrics preserves center 3D viewport on split-screen resize
+  ---
+  duration_ms: 0.144692
+  ...
+# Subtest: computeResponsiveBarLayout prevents side bars from overflowing narrow viewports
+ok 4 - computeResponsiveBarLayout prevents side bars from overflowing narrow viewports
+  ---
+  duration_ms: 0.214483
+  ...
+# Subtest: universal drag payload serializes and converts to ActionBarSlotItem
+ok 5 - universal drag payload serializes and converts to ActionBarSlotItem
+  ---
+  duration_ms: 0.150742
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7.184001
+
+src/engine/worldEditEngine.safety.test.ts
+TAP version 13
+# Subtest: undo and redo restore the complete authored engine domain, including nullable selection
+ok 1 - undo and redo restore the complete authored engine domain, including nullable selection
+  ---
+  duration_ms: 4.287274
+  ...
+# Subtest: history does not alias block scales, definition voxels/scales, clipboard, or restored live data
+ok 2 - history does not alias block scales, definition voxels/scales, clipboard, or restored live data
+  ---
+  duration_ms: 3.021558
+  ...
+# Subtest: legacy blocks-only snapshots remain readable and redo captures the full current domain
+ok 3 - legacy blocks-only snapshots remain readable and redo captures the full current domain
+  ---
+  duration_ms: 1.894694
+  ...
+# Subtest: history depth remains bounded and a new edit invalidates redo
+ok 4 - history depth remains bounded and a new edit invalidates redo
+  ---
+  duration_ms: 0.891092
+  ...
+# Subtest: blueprint stamp undo removes added definitions and restores overwritten definitions
+ok 5 - blueprint stamp undo removes added definitions and restores overwritten definitions
+  ---
+  duration_ms: 2.317049
+  ...
+# Subtest: move undo restores selection and cut undo restores the prior clipboard
+ok 6 - move undo restores selection and cut undo restores the prior clipboard
+  ---
+  duration_ms: 1.617071
+  ...
+# Subtest: position commands reject nonfinite, partial, and out-of-range inputs while retaining finite rounding
+ok 7 - position commands reject nonfinite, partial, and out-of-range inputs while retaining finite rounding
+  ---
+  duration_ms: 4.338865
+  ...
+# Subtest: region commands and selection blueprint creation reject unsafe bounds before enumeration
+ok 8 - region commands and selection blueprint creation reject unsafe bounds before enumeration
+  ---
+  duration_ms: 29.006896
+  ...
+# Subtest: checked work budget accepts the exact boundary and rejects products and coordinates beyond it
+ok 9 - checked work budget accepts the exact boundary and rejects products and coordinates beyond it
+  ---
+  duration_ms: 0.207602
+  ...
+# Subtest: procedural parameters and transform counts reject malformed tokens rather than clamp or default
+ok 10 - procedural parameters and transform counts reject malformed tokens rather than clamp or default
+  ---
+  duration_ms: 5.701202
+  ...
+# Subtest: procedural and transform destination checks reject crossing the coordinate boundary
+ok 11 - procedural and transform destination checks reject crossing the coordinate boundary
+  ---
+  duration_ms: 3.073859
+  ...
+# Subtest: stack budgets repeated work and move/stack reject inconsistent source coordinates
+ok 12 - stack budgets repeated work and move/stack reject inconsistent source coordinates
+  ---
+  duration_ms: 2.608243
+  ...
+# Subtest: paste rejects invalid clipboard coordinates, excessive counts, sparse volume, and invalid destinations atomically
+ok 13 - paste rejects invalid clipboard coordinates, excessive counts, sparse volume, and invalid destinations atomically
+  ---
+  duration_ms: 5.634611
+  ...
+# Subtest: blueprint placement/load reject malformed sizes and payloads without history or scene changes
+ok 14 - blueprint placement/load reject malformed sizes and payloads without history or scene changes
+  ---
+  duration_ms: 0.864481
+  ...
+# Subtest: fractional custom-block dimensions remain loadable with integer selection corners and one undo
+ok 15 - fractional custom-block dimensions remain loadable with integer selection corners and one undo
+  ---
+  duration_ms: 0.898522
+  ...
+# Subtest: normal shape generation and bounded stack remain functional after validation
+ok 16 - normal shape generation and bounded stack remain functional after validation
+  ---
+  duration_ms: 0.746569
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76.996403
+
+src/engine/worldEditEngine.test.ts
+TAP version 13
+# Subtest: Selection dimensions and volume calculate accurately
+ok 1 - Selection dimensions and volume calculate accurately
+  ---
+  duration_ms: 0.76147
+  ...
+# Subtest: WorldEdit //pos1, //pos2, and //set fill region and support //undo and //redo
+ok 2 - WorldEdit //pos1, //pos2, and //set fill region and support //undo and //redo
+  ---
+  duration_ms: 3.019008
+  ...
+# Subtest: WorldEdit //walls, //replace, and //hollow manipulate selection accurately
+ok 3 - WorldEdit //walls, //replace, and //hollow manipulate selection accurately
+  ---
+  duration_ms: 1.61584
+  ...
+# Subtest: WorldEdit //copy and //paste duplicate selected structures
+ok 4 - WorldEdit //copy and //paste duplicate selected structures
+  ---
+  duration_ms: 1.902214
+  ...
+# Subtest: Custom blocks and multi-block blueprints can be created and stamped or loaded into a new world
+ok 5 - Custom blocks and multi-block blueprints can be created and stamped or loaded into a new world
+  ---
+  duration_ms: 1.461149
+  ...
+# Subtest: Minecraft WASD hotkey mapping, Mouse Free-Look toggle/hold keys, and Google Drive backup payload serialize accurately
+ok 6 - Minecraft WASD hotkey mapping, Mouse Free-Look toggle/hold keys, and Google Drive backup payload serialize accurately
+  ---
+  duration_ms: 0.8138
+  ...
+# Subtest: Legacy exporters produce schematic diagnostic JSON and expected command/LDraw text fields (no native qualification)
+ok 7 - Legacy exporters produce schematic diagnostic JSON and expected command/LDraw text fields (no native qualification)
+  ---
+  duration_ms: 9.692822
+  ...
+# Subtest: Multi-Chunk World expansion, active chunk FPS culling, and Smart Connected Art Matcher work accurately
+ok 8 - Multi-Chunk World expansion, active chunk FPS culling, and Smart Connected Art Matcher work accurately
+  ---
+  duration_ms: 2.762085
+  ...
+# Subtest: Adaptive UI Rescaling metrics and Stylus Mode pressure scaling compute accurately across Android, Tablet, and PC viewports
+ok 9 - Adaptive UI Rescaling metrics and Stylus Mode pressure scaling compute accurately across Android, Tablet, and PC viewports
+  ---
+  duration_ms: 0.301984
+  ...
+# Subtest: 3D Volume Place & Erase Brushes and Selection Box Shift/Raise/Expand transforms execute accurately
+ok 10 - 3D Volume Place & Erase Brushes and Selection Box Shift/Raise/Expand transforms execute accurately
+  ---
+  duration_ms: 2.021436
+  ...
+# Subtest: Local spatial helpers produce symmetry, prediction, morphology and walkability results
+ok 11 - Local spatial helpers produce symmetry, prediction, morphology and walkability results
+  ---
+  duration_ms: 2.905427
+  ...
+# Subtest: Open-Source CC0 Block Market, Modular Multi-Hotbars & World/Chunk Reset work cleanly
+ok 12 - Open-Source CC0 Block Market, Modular Multi-Hotbars & World/Chunk Reset work cleanly
+  ---
+  duration_ms: 0.964302
+  ...
+# Subtest: Refined Self-Learning 3D Ghost Auto-Complete: Pattern Archive, Linger Removal Penalty, Object Class Detection & CTM Ghost Cohesion
+ok 13 - Refined Self-Learning 3D Ghost Auto-Complete: Pattern Archive, Linger Removal Penalty, Object Class Detection & CTM Ghost Cohesion
+  ---
+  duration_ms: 1.107004
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 37.619336
+
+src/lib/indexedDbStorage.test.ts
+TAP version 13
+# Subtest: missing IndexedDB is an explicit failure for strict legacy reads
+ok 1 - missing IndexedDB is an explicit failure for strict legacy reads
+  ---
+  duration_ms: 0.983812
+  ...
+# Subtest: quota estimates preserve measured zero and report unknown rather than fabricated capacity
+ok 2 - quota estimates preserve measured zero and report unknown rather than fabricated capacity
+  ---
+  duration_ms: 0.298334
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6.777326
+
+src/lib/legacyStudioImport.test.ts
+TAP version 13
+# Subtest: full project and completeDocument wrapper preserve all authored content and identity
+ok 1 - full project and completeDocument wrapper preserve all authored content and identity
+  ---
+  duration_ms: 23.139023
+  ...
+# Subtest: invalid or unsupported completeDocument never falls back to valid-looking legacy fields
+ok 2 - invalid or unsupported completeDocument never falls back to valid-looking legacy fields
+  ---
+  duration_ms: 9.845575
+  ...
+# Subtest: legacy complete export preserves edited built-ins, all configs and world metadata as a new candidate
+ok 3 - legacy complete export preserves edited built-ins, all configs and world metadata as a new candidate
+  ---
+  duration_ms: 9.835215
+  ...
+# Subtest: duplicate legacy definition IDs reject instead of silently selecting the last definition
+ok 4 - duplicate legacy definition IDs reject instead of silently selecting the last definition
+  ---
+  duration_ms: 12.65442
+  ...
+# Subtest: explicit malformed legacy values reject rather than being replaced by defaults
+ok 5 - explicit malformed legacy values reject rather than being replaced by defaults
+  ---
+  duration_ms: 60.198242
+  ...
+# Subtest: omitted fields use isolated defaults without inheriting unrelated identity, sharing or opaque profile
+ok 6 - omitted fields use isolated defaults without inheriting unrelated identity, sharing or opaque profile
+  ---
+  duration_ms: 3.319272
+  ...
+# Subtest: unsupported envelopes, damaged JSON, unsafe definitions and oversized input reject without repair
+ok 7 - unsupported envelopes, damaged JSON, unsafe definitions and oversized input reject without repair
+  ---
+  duration_ms: 15.924321
+  ...
+# Subtest: content equality excludes save metadata but includes document-only metadata and every authored field
+ok 8 - content equality excludes save metadata but includes document-only metadata and every authored field
+  ---
+  duration_ms: 1.56161
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 147.0765
+
+src/lib/projectBackup.test.ts
+TAP version 13
+# Subtest: portable backup preserves edited built-ins and the complete authored document independently of later edits
+ok 1 - portable backup preserves edited built-ins and the complete authored document independently of later edits
+  ---
+  duration_ms: 13.192666
+  ...
+# Subtest: bounded service payload rejects excess UTF-8 bytes and never returns truncated JSON
+ok 2 - bounded service payload rejects excess UTF-8 bytes and never returns truncated JSON
+  ---
+  duration_ms: 0.326214
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18.406853
+
+src/lib/studioDocument.test.ts
+TAP version 13
+# Subtest: actual initial engine, all starter blueprints and authored defaults round-trip completely
+ok 1 - actual initial engine, all starter blueprints and authored defaults round-trip completely
+  ---
+  duration_ms: 17.422551
+  ...
+# Subtest: edited built-ins, custom scales, chunks, pattern, lighting and opaque extensions survive independently
+ok 2 - edited built-ins, custom scales, chunks, pattern, lighting and opaque extensions survive independently
+  ---
+  duration_ms: 4.119922
+  ...
+# Subtest: missing definitions and inconsistent dictionary keys are rejected without repair
+ok 3 - missing definitions and inconsistent dictionary keys are rejected without repair
+  ---
+  duration_ms: 6.809506
+  ...
+# Subtest: invalid positions, rotations, scales and duplicate identities are rejected
+ok 4 - invalid positions, rotations, scales and duplicate identities are rejected
+  ---
+  duration_ms: 11.187911
+  ...
+# Subtest: unknown fields, versions and unsafe JSON retain originals by rejection instead of stripping
+ok 5 - unknown fields, versions and unsafe JSON retain originals by rejection instead of stripping
+  ---
+  duration_ms: 4.076351
+  ...
+# Subtest: cyclic, accessor, sparse and oversized inputs fail before unsafe serialization
+ok 6 - cyclic, accessor, sparse and oversized inputs fail before unsafe serialization
+  ---
+  duration_ms: 6.543793
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 56.980041

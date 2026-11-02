@@ -3,7 +3,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useStudioPersistence, type StudioAuthoredContent, type StudioEditAuthority } from './lib/useStudioPersistence';
+import { createStudioId, type StudioDocument } from './lib/studioDocument';
+import { StudioEditorSession } from './lib/studioEditorSession';
+import { prepareStudioBrush, SINGLE_CELL_BRUSH } from './lib/studioBrushEdit';
+import { StudioRecipeModel } from './lib/studioRecipeModel';
+import { StudioKitModel } from './lib/studioKitModel';
+import { StudioResourceWorkspace } from './components/StudioResourceWorkspace';
+import { StudioRecipeWorkspace } from './components/StudioRecipeWorkspace';
+import { importStudioCandidate } from './lib/legacyStudioImport';
+import { prepareBlueprintImport, prepareCloudSnapshotImport } from './lib/studioResourceImport';
+import { StudioRecoveryPanel } from './components/StudioRecoveryPanel';
+import { StudioNavigationToolbar } from './components/StudioNavigationToolbar';
+import { StudioCoordinateEditor } from './components/StudioCoordinateEditor';
+import { StudioWorkspaceMenu, type StudioWorkspaceAction, type StudioMenuPage } from './components/StudioWorkspaceMenu';
+import { StudioCellInspector } from './components/StudioCellInspector';
+import { StudioCellInspectorModel } from './lib/studioCellInspectorModel';
+import { applyStudioCellEditPatch, studioCellAnchor } from './lib/studioCellEdit';
+import { useStudioWorkspacePreferences } from './lib/useStudioWorkspacePreferences';
+import { StudioCompatibilityPanel, type StudioCompatibilityReview } from './components/StudioCompatibilityPanel';
+import { describeCompatibilitySource, reviewStudioCompatibility, eligibleJavaDefinitions, matchesCompatibilityReview } from './lib/studioCompatibility';
+import { validateBlueprintDefinitionMerge } from './engine/worldEditEngine';
+import type { ViewportNavigationAction, ViewportNavigationRequest, ViewportNavigationState } from './engine/viewportNavigation';
+import { hasOpenViewportModal, shouldIgnoreViewportKeyboard } from './engine/viewportInput';
 import { User } from 'firebase/auth';
 import {
   AdaptivePatternArchiveState,
@@ -35,7 +58,6 @@ import {
   DEFAULT_CHUNK_CONFIG,
   DEFAULT_SMART_PATTERN_CONFIG,
   DEFAULT_VOLUME_BRUSH_CONFIG,
-  applyVolumeBrushToWorld,
   chunkKey,
   expandWorldIntoChunk,
   getChunkCoordForBlock,
@@ -78,14 +100,18 @@ import {
   createInitialEngineState,
   executeWorldEditCommand,
   getSelectionBounds,
+  getGridCoordError,
   getSelectionDimensions,
   loadBlueprintIntoNewWorld,
   pushUndoSnapshot,
   stampBlueprintIntoWorld,
+  validateBlueprintPlacement,
+  validateBlueprintLoad,
 } from './engine/worldEditEngine';
 import {
   CameraViewPreset,
   SkyblockViewport,
+  getViewportRenderTelemetry,
 } from './components/SkyblockViewport';
 import {
   RightInspectorTab,
@@ -111,8 +137,6 @@ import {
 } from './components/AdaptiveMobileStylusHub';
 import {
   CloudWorldSummary,
-  deleteAllUserCloudData,
-  deleteCloudBlueprint,
   fetchCloudBlueprints,
   getAccessToken,
   googleSignIn,
@@ -121,22 +145,18 @@ import {
   saveBlueprintToCloud,
   saveWorldToCloud,
   subscribeToAuth,
-  subscribeToWorldPresence,
-  subscribeToWorldRoom,
   updateCollaboratorPresence,
 } from './lib/firebase';
 import {
   BrickForgeProjectBackup,
   LocalAutosaveSnapshot,
   buildProjectBackupPayload,
-  createDriveBackupFile,
 } from './lib/googleDrive';
 import {
   DEFAULT_USER_PROGRESS_STATE,
   StudioUserProgressState,
-  hydrateAndMigrateStudioStorage,
-  idbClearAll,
   idbSet,
+  idbGetStrict,
 } from './lib/indexedDbStorage';
 import {
   playBlockEraseSound,
@@ -150,6 +170,7 @@ import {
   applyProceduralBiomeToWorld,
   buildOrderedTimelapseList,
   computeMasteryRank,
+  computeUpdatedBuildStreak,
   getAtmospherePresetById,
   sliceBlocksAtTimelapseStep,
 } from './engine/studioEngagementEngine';
@@ -157,6 +178,16 @@ import { ContractsAndBiomesModal } from './components/ContractsAndBiomesModal';
 import { CinematicTimelapseDock } from './components/CinematicTimelapseDock';
 import { OnboardingTourOverlay } from './components/OnboardingTourOverlay';
 import { DraggableHudOverlay } from './components/DraggableWindow';
+import {
+  SelfTestingAuditorModal,
+  AuditorModalTab,
+} from './components/SelfTestingAuditorModal';
+import { installGlobalIssueInterceptors } from './engine/issueTrackerEngine';
+import {
+  emitOasisMilestoneReward,
+  installOasisCapsuleBridge,
+  publishOasisAudioplayState,
+} from './lib/oasisCapsuleBridge';
 import { computeResponsiveWorkspaceMetrics } from './engine/windowLayoutEngine';
 import {
   BookOpen,
@@ -178,44 +209,60 @@ const LOCAL_MODULAR_HUD_KEY = 'brickforge_modular_hud_v1';
 const LOCAL_SAVED_PROJECTS_KEY = 'brickforge_saved_projects_v1';
 const LOCAL_COPILOT_ARCHIVE_KEY = 'brickforge_copilot_archive_v1';
 const LOCAL_USER_PROGRESS_KEY = 'brickforge_user_progress_v1';
+const DEFAULT_LIGHTING_CONFIG: DynamicLightingConfig = {
+  timeOfDay: 13.5, sunAzimuth: 135, sunIntensity: 1.5, ambientIntensity: 0.7,
+  shadowsEnabled: true, pointLightsEnabled: true, fogDensity: 0.25,
+};
 
 function generateShortHash(): string {
   return Math.random().toString(16).substring(2, 9);
 }
 
-export default function App() {
-  const [engineState, setEngineState] = useState<WorldEditEngineState>(() => {
-    const initial = createInitialEngineState();
-    try {
-      const savedCustomRaw = localStorage.getItem(LOCAL_CUSTOM_BLOCKS_STORAGE_KEY);
-      if (savedCustomRaw) {
-        const parsed: CustomBlockDefinition[] = JSON.parse(savedCustomRaw);
-        for (const def of parsed) {
-          if (def.isCustom) {
-            initial.customBlocks[def.id] = def;
-          }
-        }
-      }
-      // Restore latest autosaved world blocks if present
-      const snapsRaw = localStorage.getItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY);
-      if (snapsRaw) {
-        const snaps: LocalAutosaveSnapshot[] = JSON.parse(snapsRaw);
-        if (snaps.length > 0 && snaps[0].backup?.blocks) {
-          initial.blocks = snaps[0].backup.blocks;
-          if (Array.isArray(snaps[0].backup.customBlocks)) {
-            for (const d of snaps[0].backup.customBlocks) {
-              if (d.isCustom) {
-                initial.customBlocks[d.id] = d;
-              }
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignore storage error
-    }
-    return initial;
+function initialStudioDocument(): StudioDocument {
+  const engine = createInitialEngineState();
+  return structuredClone({
+    format: 'lfs-studio-project', schemaVersion: 1, documentId: createStudioId(), revision: 0,
+    historyEpoch: createStudioId('history'), savedAt: new Date().toISOString(),
+    world: { worldId: createStudioId('world'), worldName: 'Untitled Studio Project', roomCode: 'SKY101', isPublicWorld: false },
+    blocks: engine.blocks, customBlocks: engine.customBlocks, blueprints: STARTER_STRUCTURE_BLUEPRINTS,
+    chunkConfig: DEFAULT_CHUNK_CONFIG, patternConfig: DEFAULT_SMART_PATTERN_CONFIG, lightingConfig: DEFAULT_LIGHTING_CONFIG,
   });
+}
+
+function authoredDocument(document: StudioDocument): StudioAuthoredContent {
+  const { world, blocks, customBlocks, blueprints, chunkConfig, patternConfig, lightingConfig, extensions } = document;
+  return { world, blocks, customBlocks, blueprints, chunkConfig, patternConfig, lightingConfig, extensions };
+}
+
+export default function App() {
+  const [editor] = useState(() => new StudioEditorSession(initialStudioDocument()));
+  const editorSnapshot = useSyncExternalStore(editor.subscribe, editor.getSnapshot, editor.getSnapshot);
+  const workspaceAppearance = useStudioWorkspacePreferences();
+  const [cellInspector] = useState(() => new StudioCellInspectorModel(() => ({ document: editor.getDocument(), workspace: editor.getSnapshot().workspace,
+    token: JSON.stringify(editor.getToken()), writable: editor.getSnapshot().writable && !editor.getSnapshot().exclusive }), edit => editor.transaction('Edit cell properties', () => {
+      const engine = editor.getEngineState(), patch = applyStudioCellEditPatch(editor.getDocument(), engine, edit);
+      editor.setEngineState({ ...engine, blocks: patch.blocks, pos1: patch.pos1, pos2: patch.pos2 });
+      editor.setDocumentField('chunkConfig', patch.chunkConfig);
+    }, JSON.parse(edit.sourceToken))));
+  const cellInspectorSnapshot = useSyncExternalStore(cellInspector.subscribe, cellInspector.getSnapshot, cellInspector.getSnapshot);
+  useEffect(() => { const unsubscribe = editor.subscribe(cellInspector.synchronize); cellInspector.synchronize(); return unsubscribe; }, [editor, cellInspector]);
+  const [recipeModel] = useState(() => new StudioRecipeModel(() => ({ document: editor.getDocument(), workspace: editor.getSnapshot().workspace,
+    token: JSON.stringify(editor.getToken()), writable: editor.getSnapshot().writable && !editor.getSnapshot().exclusive }), proposal => editor.transaction(`Recipe: ${proposal.report.name}`, () => {
+      editor.setEngineState(proposal.state); editor.setDocumentField('chunkConfig', proposal.chunkConfig);
+    }, JSON.parse(proposal.sourceToken))));
+  const recipeSnapshot = useSyncExternalStore(recipeModel.subscribe, recipeModel.getSnapshot, recipeModel.getSnapshot);
+  useEffect(() => { const unsubscribe = editor.subscribe(recipeModel.synchronize); recipeModel.synchronize(); return () => { unsubscribe(); recipeModel.close(); }; }, [editor, recipeModel]);
+  const [studioMenuStartPage, setStudioMenuStartPage] = useState<StudioMenuPage>('actions');
+  const engineState = editor.getEngineState();
+  const setEngineState = editor.setEngineState;
+  // A cached rendered edit cannot target a newer source or reopened session.
+  const directEditToken = useMemo(() => editor.getToken(), [editor, editorSnapshot.sessionId, editorSnapshot.editRevision]);
+  const target = editorSnapshot.document.targetPolicy?.target;
+  const isJavaLocked = target?.kind === 'minecraft-java' && target.locked;
+  const eligibleBlockIds = useMemo(() => eligibleJavaDefinitions(editorSnapshot.document), [editorSnapshot.document]);
+  const selectableDefinitions = useMemo(() => isJavaLocked
+    ? Object.fromEntries(eligibleBlockIds.map(id => [id, engineState.customBlocks[id]]))
+    : engineState.customBlocks, [isJavaLocked, eligibleBlockIds, engineState.customBlocks]);
 
   const [hotbarBlockIds, setHotbarBlockIds] = useState<string[]>([
     'grass_brick',
@@ -228,14 +275,30 @@ export default function App() {
     'crystal_glass',
     'voxel_lantern',
   ]);
-  const [activeBlockId, setActiveBlockId] = useState<string>('cobble_brick');
+  const [preferredBlockId, setPreferredBlockId] = useState<string>('cobble_brick');
+  const activeBlockId = isJavaLocked && !eligibleBlockIds.includes(preferredBlockId) ? eligibleBlockIds[0] ?? '' : preferredBlockId;
+  const recipeBlockId = selectableDefinitions[activeBlockId] ? activeBlockId : Object.keys(selectableDefinitions)[0] ?? '';
+  const setActiveBlockId = useCallback((id: string) => {
+    if (isJavaLocked && !eligibleBlockIds.includes(id)) { editor.reject('This block has no unchanged mapping in the locked profile. Choose an eligible block or review unlocking.'); return; }
+    setPreferredBlockId(id);
+  }, [isJavaLocked, eligibleBlockIds, editor]);
   const [toolMode, setToolMode] = useState<ToolMode>('place');
-  const [placementRotation, setPlacementRotation] = useState<0 | 90 | 180 | 270>(0);
-  const [activeBlockScale, setActiveBlockScale] = useState<BlockScale3D>({
+  const [freeformRotation, setFreeformRotation] = useState<0 | 90 | 180 | 270>(0);
+  const placementRotation = isJavaLocked ? 0 : freeformRotation;
+  const setPlacementRotation = useCallback((value: React.SetStateAction<0 | 90 | 180 | 270>) => {
+    if (isJavaLocked) { editor.reject('This candidate profile supports unrotated unit blocks. Rotation remains available after unlocking.'); return; }
+    setFreeformRotation(value);
+  }, [isJavaLocked, editor]);
+  const [freeformBlockScale, setFreeformBlockScale] = useState<BlockScale3D>({
     x: 1,
     y: 1,
     z: 1,
   });
+  const activeBlockScale = useMemo(() => isJavaLocked ? { x: 1, y: 1, z: 1 } : freeformBlockScale, [isJavaLocked, freeformBlockScale]);
+  const setActiveBlockScale = useCallback((value: React.SetStateAction<BlockScale3D>) => {
+    if (isJavaLocked) { editor.reject('This candidate profile supports unit scale. Freeform scale is retained for use after unlocking.'); return; }
+    setFreeformBlockScale(value);
+  }, [isJavaLocked, editor]);
   const [scrollResizeMode, setScrollResizeMode] =
     useState<ScrollResizeMode>('snap');
   const [scrollResizeAxis, setScrollResizeAxis] =
@@ -252,12 +315,12 @@ export default function App() {
         )
       );
     },
-    [scrollResizeMode, scrollResizeAxis]
+    [scrollResizeMode, scrollResizeAxis, setActiveBlockScale]
   );
 
   const handleResetBlockScale = useCallback(() => {
     setActiveBlockScale({ x: 1, y: 1, z: 1 });
-  }, []);
+  }, [setActiveBlockScale]);
 
   // 3D Volume Place & Erase Brush config (scrollable radius 1..8, sphere/cube/cylinder/diamond)
   const [volumeBrush, setVolumeBrush] = useState<VolumeBrushConfig>(
@@ -272,7 +335,7 @@ export default function App() {
   const effectiveSelectionGizmoActive =
     isHoldingSelectionGizmo || selectionGizmoUnlocked;
 
-  // Local Spatial Copilot & Real-Time Symmetry Mirror state (100% client-side, <1.2ms on Pixel 8 Pro)
+  // Local Spatial Copilot & Real-Time Symmetry Mirror state (device performance unqualified)
   const [symmetryConfig, setSymmetryConfig] = useState<SymmetryConfig>(
     DEFAULT_SYMMETRY_CONFIG
   );
@@ -453,30 +516,8 @@ export default function App() {
   }, []);
 
   // Multi-Project Save / Load Manager state
-  const [savedProjects, setSavedProjects] = useState<SavedStudioProject[]>(
-    () => {
-      try {
-        const raw = localStorage.getItem(LOCAL_SAVED_PROJECTS_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch {
-        // Ignore
-      }
-      return [];
-    }
-  );
-
-  const persistSavedProjects = useCallback((list: SavedStudioProject[]) => {
-    setSavedProjects(list);
-    try {
-      localStorage.setItem(LOCAL_SAVED_PROJECTS_KEY, JSON.stringify(list));
-    } catch {
-      // Ignore
-    }
-    idbSet('saved_projects', list).catch(() => {});
-  }, []);
+  const [savedProjects, setSavedProjects] = useState<SavedStudioProject[]>([]);
+  const [projectCatalogVersion, setProjectCatalogVersion] = useState(0);
 
   const commandInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -484,6 +525,11 @@ export default function App() {
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [daylightMode, setDaylightMode] = useState<boolean>(false);
   const [cameraPreset, setCameraPreset] = useState<CameraViewPreset>('free');
+  const [navigationRequest, setNavigationRequest] = useState<ViewportNavigationRequest>({ id: 1, action: 'orbit' });
+  const [navigationState, setNavigationState] = useState<ViewportNavigationState>({ mode: 'orbit', projection: 'perspective', canGoBack: false });
+  const navigate = useCallback((action: ViewportNavigationAction) => {
+    setNavigationRequest(previous => ({ id: previous.id + 1, action }));
+  }, []);
 
   // Workbench UI state: Word Ribbon tab + Left/Right Dock Inspector tabs (auto-collapsed on mobile phones)
   const [activeRibbonTab, setActiveRibbonTab] = useState<RibbonTabId>('home');
@@ -492,9 +538,10 @@ export default function App() {
   );
   const [leftSidebarFloating, setLeftSidebarFloating] = useState<boolean>(false);
   const [leftDockedWidth, setLeftDockedWidth] = useState<number>(240);
-  const [rightSidebarTab, setRightSidebarTab] = useState<RightInspectorTab>(() =>
+  const [rightSidebarTab, setRightSidebarTabState] = useState<RightInspectorTab>(() =>
     typeof window !== 'undefined' && window.innerWidth < 1024 ? 'closed' : 'legend'
   );
+  const setRightSidebarTab = useCallback((next: React.SetStateAction<RightInspectorTab>) => { cellInspector.close(); setRightSidebarTabState(next); }, [cellInspector]);
   const [rightSidebarFloating, setRightSidebarFloating] = useState<boolean>(false);
   const [rightDockedWidth, setRightDockedWidth] = useState<number>(320);
 
@@ -608,9 +655,9 @@ export default function App() {
       setWindowDims({ width: w, height: h });
       if (w < 768) {
         setIsLeftToolboxOpen(false);
-        setRightSidebarTab('closed');
+        setRightSidebarTabState('closed');
       } else if (w < 1080) {
-        setRightSidebarTab((prev) => (prev === 'legend' ? 'closed' : prev));
+        setRightSidebarTabState((prev) => (prev === 'legend' ? 'closed' : prev));
       }
     };
     window.addEventListener('resize', onResize);
@@ -634,7 +681,7 @@ export default function App() {
         windowDims.height,
         isLeftToolboxOpen && !leftSidebarFloating,
         leftDockedWidth,
-        rightSidebarTab !== 'closed' && !rightSidebarFloating,
+        cellInspectorSnapshot.open || rightSidebarTab !== 'closed' && !rightSidebarFloating,
         rightDockedWidth
       ),
     [
@@ -646,6 +693,7 @@ export default function App() {
       rightSidebarTab,
       rightSidebarFloating,
       rightDockedWidth,
+      cellInspectorSnapshot.open,
     ]
   );
 
@@ -656,39 +704,35 @@ export default function App() {
   }, [effectiveUiMetrics.effectiveScale]);
 
   // Dynamic Lighting Studio state
-  const [lightingConfig, setLightingConfig] = useState<DynamicLightingConfig>({
-    timeOfDay: 13.5, // Afternoon crisp sun
-    sunAzimuth: 135,
-    sunIntensity: 1.5,
-    ambientIntensity: 0.7,
-    shadowsEnabled: true,
-    pointLightsEnabled: true,
-    fogDensity: 0.25,
-  });
+  const authoredLighting = editorSnapshot.document.lightingConfig;
+  const lightingConfig = authoredLighting ?? DEFAULT_LIGHTING_CONFIG;
+  const setLightingConfig = useCallback((next: React.SetStateAction<DynamicLightingConfig>) => {
+    return editor.setDocumentField('lightingConfig', previous => typeof next === 'function' ? next(previous ?? DEFAULT_LIGHTING_CONFIG) : next);
+  }, [editor]);
 
   // Multi-Chunk World Grid & Active Chunk Culling state
-  const [chunkConfig, setChunkConfig] = useState<WorldChunkConfig>(
-    DEFAULT_CHUNK_CONFIG
-  );
+  const chunkConfig = editorSnapshot.document.chunkConfig;
+  const setChunkConfig = useCallback((next: React.SetStateAction<WorldChunkConfig>) => editor.setDocumentField('chunkConfig', next), [editor]);
 
   // Smart Pattern Variation & Connected-Neighbor Art Matcher state
-  const [patternConfig, setPatternConfig] =
-    useState<SmartPatternVariationConfig>(DEFAULT_SMART_PATTERN_CONFIG);
+  const patternConfig = editorSnapshot.document.patternConfig;
+  const setPatternConfig = useCallback((next: React.SetStateAction<SmartPatternVariationConfig>) => editor.setDocumentField('patternConfig', next), [editor]);
 
-  // Continuous Pattern Evolution Loop timer when autoEvolveLoop is enabled
+  // Animation belongs to the viewport. Timer ticks must not mutate authored
+  // settings, generate durable revisions or invalidate a pending recovery.
+  const [patternPreviewOffset, setPatternPreviewOffset] = useState(0);
   useEffect(() => {
+    setPatternPreviewOffset(0);
     if (!patternConfig.enabled || !patternConfig.autoEvolveLoop) return;
-    const intervalMs = 240;
     const id = window.setInterval(() => {
-      setPatternConfig((prev) => ({
-        ...prev,
-        evolutionPhase:
-          (prev.evolutionPhase + 0.12 * (prev.evolveSpeed || 1)) %
-          (Math.PI * 2),
-      }));
-    }, intervalMs);
+      if (document.visibilityState === 'hidden') return;
+      setPatternPreviewOffset(previous => (previous + 0.12 * patternConfig.evolveSpeed) % (Math.PI * 2));
+    }, 240);
     return () => window.clearInterval(id);
-  }, [patternConfig.enabled, patternConfig.autoEvolveLoop, patternConfig.evolveSpeed]);
+  }, [patternConfig]);
+  const previewPatternConfig = useMemo(() => patternConfig.enabled && patternConfig.autoEvolveLoop
+    ? { ...patternConfig, evolutionPhase: (patternConfig.evolutionPhase + patternPreviewOffset) % (Math.PI * 2) }
+    : patternConfig, [patternConfig, patternPreviewOffset]);
 
   // Git-style Version Control Commit Tree state
   const [gitCommits, setGitCommits] = useState<GitCommitNode[]>(() => {
@@ -702,9 +746,7 @@ export default function App() {
       // Ignore
     }
     const initBlocks = createInitialEngineState().blocks;
-    const initCustom = Object.values(createInitialEngineState().customBlocks).filter(
-      (d) => d.isCustom
-    );
+    const initCustom = Object.values(createInitialEngineState().customBlocks);
     const count = Object.keys(initBlocks).length;
     return [
       {
@@ -726,10 +768,11 @@ export default function App() {
   });
 
   // Minecraft WASD Flying Mode, Free-Look Mouse Mode & Customizable Hotkey Config
-  const [flyMode, setFlyMode] = useState<boolean>(true);
-  const [mouseLookToggled, setMouseLookToggled] = useState<boolean>(false);
+  const flyMode = navigationState.mode === 'fly';
+  const mouseLookToggled = flyMode;
   const [isHoldingMouseLook, setIsHoldingMouseLook] = useState<boolean>(false);
-  const effectiveFreeLook = mouseLookToggled !== isHoldingMouseLook;
+  const effectiveFreeLook = flyMode;
+  const toggleFlyNavigation = useCallback(() => navigate(navigationState.mode === 'fly' ? 'orbit' : 'fly'), [navigate, navigationState.mode]);
 
   const [hotkeyConfig, setHotkeyConfig] = useState<HotkeyConfig>(() =>
     loadHotkeyConfig()
@@ -741,24 +784,8 @@ export default function App() {
   }, []);
 
   // Saved blueprints (Starter + Custom Block Blueprints + User Saved Structures)
-  const [blueprints, setBlueprints] = useState<BlueprintPrefab[]>(() => {
-    const initialList = [...STARTER_STRUCTURE_BLUEPRINTS];
-    try {
-      const raw = localStorage.getItem(LOCAL_BLUEPRINTS_STORAGE_KEY);
-      if (raw) {
-        const parsed: BlueprintPrefab[] = JSON.parse(raw);
-        const existingIds = new Set(initialList.map((b) => b.id));
-        for (const bp of parsed) {
-          if (!existingIds.has(bp.id)) {
-            initialList.push(bp);
-          }
-        }
-      }
-    } catch {
-      // Ignore storage error
-    }
-    return initialList;
-  });
+  const blueprints = editorSnapshot.document.blueprints;
+  const setBlueprints = useCallback((next: React.SetStateAction<BlueprintPrefab[]>) => editor.setDocumentField('blueprints', next), [editor]);
   const [activeBlueprint, setActiveBlueprint] = useState<BlueprintPrefab | null>(
     STARTER_STRUCTURE_BLUEPRINTS[0]
   );
@@ -789,32 +816,68 @@ export default function App() {
     | 'market'
     | 'main_menu'
     | 'contracts_biomes'
+    | 'compatibility'
+    | 'studio_menu'
   >('none');
+  const [isAuditorModalOpen, setIsAuditorModalOpen] = useState<boolean>(false);
+  const [auditorInitialTab, setAuditorInitialTab] =
+    useState<AuditorModalTab>('self_tests');
+
+  useEffect(() => {
+    installGlobalIssueInterceptors(() => {
+      const gpu = getViewportRenderTelemetry();
+      return {
+        capturedAtIso: new Date().toISOString(),
+        activeBlockCount: Object.keys(engineState.blocks).length,
+        unlockedChunksCount: chunkConfig.unlockedChunks.length,
+        activeToolMode: toolMode,
+        activeBlockId,
+        webglGeometries: gpu.geometries,
+        webglTextures: gpu.textures,
+        webglDrawCalls: gpu.calls,
+        webglTriangles: gpu.triangles,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        lastCommands: commandLog.slice(-6).map((c) => c.cmd),
+        openWindows: activeModal === 'none' ? [] : [activeModal],
+      };
+    });
+  }, [
+    engineState.blocks,
+    chunkConfig.unlockedChunks.length,
+    toolMode,
+    activeBlockId,
+    commandLog,
+    activeModal,
+  ]);
+
+  useEffect(() => {
+    return installOasisCapsuleBridge();
+  }, []);
+
+  useEffect(() => {
+    const preset = getAtmospherePresetById(activeAtmosphereId);
+    publishOasisAudioplayState({
+      title: `LFS Block Studio · ${preset.name}`,
+      artist: 'LFS Oasis Spatial Soundscape',
+      atmospherePresetId: activeAtmosphereId,
+      isPlaying: userProgress.soundEnabled,
+    });
+  }, [activeAtmosphereId, userProgress.soundEnabled]);
 
   // Firebase Auth, Google Drive OAuth, & Multiplayer state
   const [user, setUser] = useState<User | null>(null);
   const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
   const [needsDriveAuth, setNeedsDriveAuth] = useState<boolean>(true);
-  const [worldId, setWorldId] = useState<string>('skyblock_island_1');
-  const [worldName, setWorldName] = useState<string>(() => {
-    try {
-      const snapsRaw = localStorage.getItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY);
-      if (snapsRaw) {
-        const snaps: LocalAutosaveSnapshot[] = JSON.parse(snapsRaw);
-        if (snaps[0]?.worldName) return snaps[0].worldName;
-      }
-    } catch {
-      // Ignore
-    }
-    return 'Starter Skyblock Island';
-  });
-  const [roomCode, setRoomCode] = useState<string>('SKY101');
-  const [isPublicWorld, setIsPublicWorld] = useState<boolean>(true);
+  const { worldId, worldName, roomCode, isPublicWorld } = editorSnapshot.document.world;
+  const setWorldId = useCallback((next: React.SetStateAction<string>) => editor.setWorldField('worldId', next), [editor]);
+  const setWorldName = useCallback((next: React.SetStateAction<string>) => editor.setWorldField('worldName', next), [editor]);
+  const setRoomCode = useCallback((next: React.SetStateAction<string>) => editor.setWorldField('roomCode', next), [editor]);
+  const setIsPublicWorld = useCallback((next: React.SetStateAction<boolean>) => editor.setWorldField('isPublicWorld', next), [editor]);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [collaborators, setCollaborators] = useState<CollaboratorPresence[]>([]);
   const [cloudWorlds, setCloudWorlds] = useState<CloudWorldSummary[]>([]);
   const [isLoadingCloudBp, setIsLoadingCloudBp] = useState<boolean>(false);
-  const isRemoteApplyingRef = useRef<boolean>(false);
 
   // Autosave & Google Drive Auto-Backup state
   const [autosaveEnabled, setAutosaveEnabled] = useState<boolean>(() => {
@@ -860,60 +923,97 @@ export default function App() {
       }
       return true;
     });
-  const [localSnapshots, setLocalSnapshots] = useState<LocalAutosaveSnapshot[]>(
-    () => {
-      try {
-        const raw = localStorage.getItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch {
-        // Ignore
-      }
-      return [];
-    }
-  );
-  const [lastAutosaveTime, setLastAutosaveTime] = useState<string | null>(() => {
-    try {
-      const raw = localStorage.getItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY);
-      if (raw) {
-        const parsed: LocalAutosaveSnapshot[] = JSON.parse(raw);
-        if (parsed[0]?.savedAt) return parsed[0].savedAt;
-      }
-    } catch {
-      // Ignore
-    }
-    return null;
-  });
+  const [localSnapshots, setLocalSnapshots] = useState<LocalAutosaveSnapshot[]>([]);
+  const [lastAutosaveTime, setLastAutosaveTime] = useState<string | null>(null);
   const [lastDriveSyncTime, setLastDriveSyncTime] = useState<string | null>(
     null
   );
 
+  const applyRecoveredDocument = useCallback((doc: StudioDocument) => {
+    const result = editor.installVerifiedDocument(doc);
+    if (result.status === 'rejected') throw new Error(result.message);
+    setIsLiveConnected(false);
+  }, [editor]);
+  const authoredContent = useMemo(() => authoredDocument(editorSnapshot.document), [editorSnapshot.document]);
+  const editAuthority = useMemo<StudioEditAuthority>(() => ({
+    readContent: () => authoredDocument(editor.getDocument()),
+    getToken: () => JSON.stringify(editor.getToken()),
+    setWritable: editor.setWritable,
+    acquireLock: () => {
+      const handle = editor.beginExclusive();
+      return handle ? () => { editor.endExclusive(handle); } : null;
+    },
+    acknowledgeSaved: (doc, sourceToken) => {
+      const result = editor.acknowledgeDurable(doc, JSON.parse(sourceToken));
+      if (result.status === 'rejected') throw new Error(result.message);
+    },
+  }), [editor]);
+  const persistence = useStudioPersistence({
+    content: authoredContent, onRestore: applyRecoveredDocument, autosaveEnabled, autosaveIntervalSec, editAuthority,
+  });
+  const [kitModel] = useState(() => new StudioKitModel(
+    () => ({ document: editor.getDocument(), engine: editor.getEngineState(), token: JSON.stringify(editor.getToken()), writable: editor.getSnapshot().writable && !editor.getSnapshot().exclusive }),
+    proposal => persistence.preserveResourceCandidate(proposal.archivalDocument, proposal.legacySources, proposal.sourceToken),
+    proposal => editor.transaction(`Import kit: ${proposal.report.name}`, () => {
+      editor.setDocumentField('customBlocks', proposal.document.customBlocks);
+      editor.setDocumentField('blueprints', proposal.document.blueprints);
+      editor.setDocumentField('extensions', proposal.document.extensions);
+    }, JSON.parse(proposal.sourceToken)),
+    proposal => editor.transaction(`Place blueprint: ${proposal.report.name}`, () => {
+      editor.setEngineState(proposal.state); editor.setDocumentField('chunkConfig', proposal.chunkConfig);
+    }, JSON.parse(proposal.sourceToken))));
+  const kitSnapshot = useSyncExternalStore(kitModel.subscribe, kitModel.getSnapshot, kitModel.getSnapshot);
+  useEffect(() => { const unsubscribe = editor.subscribe(kitModel.synchronize); kitModel.synchronize(); return () => { unsubscribe(); kitModel.close(); }; }, [editor, kitModel]);
+  const compatibilityReview = useRef<StudioCompatibilityReview | null>(null);
+  const compatibilitySource = useMemo(() => describeCompatibilitySource(editorSnapshot.document, JSON.stringify(editor.getToken())), [editor, editorSnapshot.document, editorSnapshot.editRevision, editorSnapshot.sessionId]);
+  const handleReviewCompatibility = useCallback((draft: Parameters<typeof reviewStudioCompatibility>[1]) => {
+    if (!persistence.ready || persistence.busy || !editor.getSnapshot().writable || editor.getSnapshot().exclusive) throw new Error('Finish saving or recovery before reviewing a target change.');
+    if (draft.sourceToken !== JSON.stringify(editor.getToken())) throw new Error('The project changed. Review the current build again.');
+    const report = reviewStudioCompatibility(editor.getDocument(), draft);
+    compatibilityReview.current = report;
+    return report;
+  }, [editor, persistence.ready, persistence.busy]);
+  const handleApplyCompatibility = useCallback(async (report: StudioCompatibilityReview, acknowledgement: { appearanceSubstitution: true; newHistoryEpoch: true }) => {
+    if (!matchesCompatibilityReview(report, compatibilityReview.current, JSON.stringify(editor.getToken()))) return { status: 'stale' as const, message: 'This review no longer matches the current project. Review again before applying.' };
+    if (acknowledgement.appearanceSubstitution !== true || acknowledgement.newHistoryEpoch !== true) return { status: 'rejected' as const, message: 'Review the appearance substitutions and new Undo-history consequence first.' };
+    compatibilityReview.current = null; // one submission per exact review, including uncertain outcomes
+    const applied = await persistence.transitionTarget(report.target, report.sourceToken);
+    return applied
+      ? { status: 'applied' as const, message: 'Target policy saved. A checkpoint preserves the previous state; this project now has a new Undo history.' }
+      : { status: 'rejected' as const, message: 'The target transition did not finish in this view. Check saving/recovery status before reviewing or retrying.' };
+  }, [editor, persistence.transitionTarget]);
+  useEffect(() => { setLastAutosaveTime(persistence.savedAt); }, [persistence.savedAt]);
   useEffect(() => {
-    document.body.dataset.state = 'playing';
-    hydrateAndMigrateStudioStorage({
-      projectsKey: LOCAL_SAVED_PROJECTS_KEY,
-      snapshotsKey: LOCAL_AUTOSAVE_SNAPSHOTS_KEY,
-      gitCommitsKey: LOCAL_GIT_COMMITS_KEY,
-      archiveKey: LOCAL_COPILOT_ARCHIVE_KEY,
-      customBlocksKey: LOCAL_CUSTOM_BLOCKS_STORAGE_KEY,
-      userProgressKey: LOCAL_USER_PROGRESS_KEY,
-    }).then((bundle) => {
-      if (bundle.savedProjects && bundle.savedProjects.length > 0) {
-        setSavedProjects(bundle.savedProjects);
+    if (!persistence.ready) return;
+    let cancelled = false;
+    (async () => {
+      const copies = await persistence.listNamedCopies();
+      const projects: SavedStudioProject[] = copies.map(copy => ({
+        id: copy.id, name: copy.document.world.worldName, description: copy.document.world.description ?? '',
+        updatedAt: copy.document.savedAt, blockCount: Object.keys(copy.document.blocks).length,
+        unlockedChunksCount: copy.document.chunkConfig.unlockedChunks.length,
+        blocks: copy.document.blocks, customBlocks: Object.values(copy.document.customBlocks),
+        chunkConfig: copy.document.chunkConfig, completeDocument: copy.document,
+      }));
+      // Keep legacy slots discoverable without rewriting or deleting their original records.
+      const originals: { source: string; value: unknown }[] = [];
+      try { const raw = localStorage.getItem(LOCAL_SAVED_PROJECTS_KEY); if (raw) originals.push({ source: 'local', value: JSON.parse(raw) }); } catch { /* Active IndexedDB project remains usable without localStorage. */ }
+      try { originals.push({ source: 'idb', value: await idbGetStrict('saved_projects') }); } catch { /* Failure is not permission to overwrite the legacy store. */ }
+      for (const original of originals) {
+        if (!Array.isArray(original.value)) continue;
+        for (const [index, item] of original.value.slice(0, 100).entries()) {
+          const parsed = importStudioCandidate(JSON.stringify(item), persistence.importDefaults());
+          if (parsed.ok === false) continue;
+          const doc = parsed.value;
+          projects.push({ id: `legacy:${original.source}:${index}`, name: doc.world.worldName, description: 'Preserved legacy project', updatedAt: doc.savedAt,
+            blockCount: Object.keys(doc.blocks).length, unlockedChunksCount: doc.chunkConfig.unlockedChunks.length,
+            blocks: doc.blocks, customBlocks: Object.values(doc.customBlocks), chunkConfig: doc.chunkConfig, completeDocument: doc });
+        }
       }
-      if (bundle.localSnapshots && bundle.localSnapshots.length > 0) {
-        setLocalSnapshots(bundle.localSnapshots);
-      }
-      if (bundle.gitCommits && bundle.gitCommits.length > 0) {
-        setGitCommits(bundle.gitCommits);
-      }
-      if (bundle.patternArchive && bundle.patternArchive.patterns) {
-        setPatternArchive((prev) => ({ ...prev, ...bundle.patternArchive }));
-      }
-      if (bundle.userProgress) {
-        setUserProgress((prev) => ({ ...prev, ...bundle.userProgress }));
-      }
-    });
-  }, []);
+      if (!cancelled) setSavedProjects(projects);
+    })().catch(() => { /* Recovery panel retains its storage error; never replace a failed list with an empty one. */ });
+    return () => { cancelled = true; };
+  }, [persistence.ready, persistence.listNamedCopies, persistence.importDefaults, projectCatalogVersion, activeModal]);
 
   // Save autosave preferences
   useEffect(() => {
@@ -977,41 +1077,20 @@ export default function App() {
     return null;
   }, []);
 
-  // Persist user blueprints locally
-  const persistLocalBlueprints = (list: BlueprintPrefab[]) => {
-    try {
-      const userOnly = list.filter((b) => b.authorId !== 'system');
-      localStorage.setItem(LOCAL_BLUEPRINTS_STORAGE_KEY, JSON.stringify(userOnly));
-    } catch {
-      // Ignore quota errors
-    }
-  };
-
-  const persistLocalCustomBlocks = (defs: Record<string, CustomBlockDefinition>) => {
-    const customOnly = Object.values(defs).filter((d) => d.isCustom);
-    try {
-      localStorage.setItem(
-        LOCAL_CUSTOM_BLOCKS_STORAGE_KEY,
-        JSON.stringify(customOnly)
-      );
-    } catch {
-      // Ignore quota errors
-    }
-    idbSet('custom_blocks', customOnly).catch(() => {});
-  };
-
   const appendLog = useCallback((cmd: string, message: string, success = true) => {
-    setCommandLog((prev) => [
+    const write = () => setCommandLog((prev) => [
       ...prev.slice(-24),
       { id: `${Date.now()}_${Math.random()}`, cmd, message, success },
     ]);
-  }, []);
+    if (success) editor.afterCommit(write); else write();
+  }, [editor]);
 
   // Git Commit Creation & Checkout
   const handleCreateGitCommit = useCallback(
     (customMessage?: string) => {
+      const current = editor.getEngineState();
       const prevHead = gitCommits[0];
-      const currentKeys = new Set(Object.keys(engineState.blocks));
+      const currentKeys = new Set(Object.keys(current.blocks));
       const prevKeys = new Set(
         prevHead ? Object.keys(prevHead.blocksSnapshot) : []
       );
@@ -1038,10 +1117,8 @@ export default function App() {
         blockCount: currentKeys.size,
         addedDelta: added,
         removedDelta: removed,
-        blocksSnapshot: { ...engineState.blocks },
-        customBlocksSnapshot: Object.values(engineState.customBlocks).filter(
-          (d) => d.isCustom
-        ),
+        blocksSnapshot: structuredClone(current.blocks),
+        customBlocksSnapshot: structuredClone(Object.values(current.customBlocks)),
       };
 
       setGitCommits((prev) => {
@@ -1054,37 +1131,39 @@ export default function App() {
         idbSet('git_commits', next).catch(() => {});
         return next;
       });
-      setActiveCommitId(newCommit.id);
+      editor.afterCommit(() => setActiveCommitId(newCommit.id));
       appendLog(
         `git commit -m "${message}"`,
         `[main ${hash}] ${message} (+${added} -${removed})`,
         true
       );
     },
-    [gitCommits, engineState.blocks, engineState.customBlocks, appendLog]
+    [editor, gitCommits, appendLog]
   );
 
   const handleCheckoutGitCommit = useCallback(
     (commit: GitCommitNode) => {
+      return editor.transaction('Checkout Git Commit', () => {
       setEngineState((prev) => {
         const withUndo = pushUndoSnapshot(prev, `Checkout ${commit.hash}`);
         const nextCustom = { ...withUndo.customBlocks };
         for (const d of commit.customBlocksSnapshot || []) {
           nextCustom[d.id] = d;
         }
-        persistLocalCustomBlocks(nextCustom);
+
         return {
           ...withUndo,
           blocks: { ...commit.blocksSnapshot },
           customBlocks: nextCustom,
         };
       });
-      setActiveCommitId(commit.id);
+      editor.afterCommit(() => setActiveCommitId(commit.id));
       appendLog(
         `git checkout ${commit.hash}`,
         `Checked out commit ${commit.hash}: "${commit.message}" (${commit.blockCount} blocks).`,
         true
       );
+      });
     },
     [appendLog]
   );
@@ -1092,6 +1171,7 @@ export default function App() {
   // Update active block color from Windows Paint swatch / color picker
   const handleUpdateActiveBlockColor = useCallback(
     (newHexColor: string) => {
+      return editor.transaction('Update Active Block Color', () => {
       setEngineState((prev) => {
         const currentDef = prev.customBlocks[activeBlockId];
         if (!currentDef) return prev;
@@ -1103,205 +1183,62 @@ export default function App() {
           ...prev.customBlocks,
           [activeBlockId]: updatedDef,
         };
-        persistLocalCustomBlocks(nextCustom);
+
         return {
           ...prev,
           customBlocks: nextCustom,
         };
+      });
       });
     },
     [activeBlockId]
   );
 
   // Build portable project backup payload
-  const handleBuildCurrentBackupPayload =
-    useCallback((): BrickForgeProjectBackup => {
-      return buildProjectBackupPayload({
-        worldId,
-        worldName,
-        roomCode,
-        isPublicWorld,
-        blocks: engineState.blocks,
-        customBlocks: engineState.customBlocks,
-        blueprints,
-        hotkeys: hotkeyConfig,
-      });
-    }, [
-      worldId,
-      worldName,
-      roomCode,
-      isPublicWorld,
-      engineState.blocks,
-      engineState.customBlocks,
-      blueprints,
-      hotkeyConfig,
-    ]);
+  const handleBuildCurrentBackupPayload = useCallback((): BrickForgeProjectBackup => {
+    const document = persistence.currentDocument();
+    return buildProjectBackupPayload({
+      worldId: document.world.worldId, worldName: document.world.worldName, roomCode: document.world.roomCode,
+      isPublicWorld: document.world.isPublicWorld, blocks: document.blocks, customBlocks: document.customBlocks,
+      blueprints: document.blueprints, hotkeys: hotkeyConfig, completeDocument: document,
+    });
+  }, [hotkeyConfig, persistence.currentDocument]);
 
-  // Perform Local Autosave Snapshot + Optional Google Drive Auto-Backup
-  const performSaveSnapshot = useCallback(
-    async (trigger: 'auto' | 'manual') => {
-      const payload = handleBuildCurrentBackupPayload();
-      const nowIso = payload.savedAt;
-      const snapshot: LocalAutosaveSnapshot = {
-        id: `snap_${Date.now()}`,
-        savedAt: nowIso,
-        worldName: payload.worldName,
-        blockCount: payload.blockCount,
-        trigger,
-        backup: payload,
-      };
-
-      setLocalSnapshots((prev) => {
-        const next = [snapshot, ...prev.slice(0, 5)];
-        try {
-          localStorage.setItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY, JSON.stringify(next));
-        } catch {
-          // Ignore quota error
-        }
-        idbSet('autosave_snapshots', next).catch(() => {});
-        return next;
-      });
-      setLastAutosaveTime(nowIso);
-
-      if (trigger === 'manual') {
-        handleCreateGitCommit(`Manual save (${payload.blockCount} blocks)`);
-      }
-
-      // If signed into Google Drive and autoDriveBackupEnabled (or manual save with token), upload snapshot
-      const token = await getAccessToken();
-      if (token && (autoDriveBackupEnabled || trigger === 'manual')) {
-        try {
-          await createDriveBackupFile(token, payload);
-          setLastDriveSyncTime(new Date().toISOString());
-          if (trigger === 'manual') {
-            appendLog(
-              '//backup drive',
-              `Saved local snapshot and backed up "${payload.worldName}" (${payload.blockCount} blocks) to Google Drive.`,
-              true
-            );
-          }
-        } catch {
-          // Non-fatal if offline or token expired
-        }
-      } else if (trigger === 'manual') {
-        appendLog(
-          '//save',
-          `Saved project snapshot "${payload.worldName}" (${payload.blockCount} blocks) to local storage.`,
-          true
-        );
-      }
-    },
-    [
-      handleBuildCurrentBackupPayload,
-      autoDriveBackupEnabled,
-      appendLog,
-      handleCreateGitCommit,
-    ]
-  );
-
-  // Restore project from a Local Autosave Snapshot or Google Drive Backup
-  const handleRestoreFromBackup = useCallback(
-    (backup: BrickForgeProjectBackup, sourceLabel: string) => {
-      setEngineState((prev) => {
-        const withUndo = pushUndoSnapshot(prev, `Restore ${sourceLabel}`);
-        const nextCustom = { ...withUndo.customBlocks };
-        if (Array.isArray(backup.customBlocks)) {
-          for (const d of backup.customBlocks) {
-            nextCustom[d.id] = d;
-          }
-        }
-        persistLocalCustomBlocks(nextCustom);
-        return {
-          ...withUndo,
-          blocks: backup.blocks || {},
-          customBlocks: nextCustom,
-        };
-      });
-
-      if (backup.worldId) setWorldId(backup.worldId);
-      if (backup.worldName) setWorldName(backup.worldName);
-      if (backup.roomCode) setRoomCode(backup.roomCode);
-      if (typeof backup.isPublicWorld === 'boolean') {
-        setIsPublicWorld(backup.isPublicWorld);
-      }
-
-      if (Array.isArray(backup.blueprints) && backup.blueprints.length > 0) {
-        setBlueprints((prev) => {
-          const map = new Map<string, BlueprintPrefab>();
-          for (const item of prev) map.set(item.id, item);
-          for (const bItem of backup.blueprints) map.set(bItem.id, bItem);
-          const merged = Array.from(map.values());
-          persistLocalBlueprints(merged);
-          return merged;
-        });
-      }
-
-      if (backup.hotkeys) {
-        handleChangeHotkeyConfig(backup.hotkeys);
-      }
-
-      appendLog(
-        '//restore',
-        `Restored "${backup.worldName}" (${backup.blockCount} blocks) from ${sourceLabel}.`,
-        true
-      );
-    },
-    [appendLog, handleChangeHotkeyConfig]
-  );
-
-  // Automatic debounced local save after block/customBlock modifications
-  const autosaveSkipFirstRef = useRef(true);
-  useEffect(() => {
-    if (autosaveSkipFirstRef.current) {
-      autosaveSkipFirstRef.current = false;
-      return;
+  // The local receipt follows transaction completion. Cloud backup is an explicit separate operation.
+  const performSaveSnapshot = useCallback(async (trigger: 'auto' | 'manual'): Promise<boolean> => {
+    const token = JSON.stringify(editor.getToken());
+    const succeeded = await persistence.save();
+    if (!succeeded) {
+      if (trigger === 'manual') appendLog('//save', 'The project was not saved. Retry or download your work from the recovery notice.', false);
+      return false;
     }
-    if (!autosaveEnabled) return;
-    const timer = window.setTimeout(() => {
-      const payload = handleBuildCurrentBackupPayload();
-      const nowIso = payload.savedAt;
-      const snap: LocalAutosaveSnapshot = {
-        id: `snap_${Date.now()}`,
-        savedAt: nowIso,
-        worldName: payload.worldName,
-        blockCount: payload.blockCount,
-        trigger: 'auto',
-        backup: payload,
-      };
-      setLocalSnapshots((prev) => {
-        const next = [snap, ...prev.slice(0, 5)];
-        try {
-          localStorage.setItem(LOCAL_AUTOSAVE_SNAPSHOTS_KEY, JSON.stringify(next));
-        } catch {
-          // Ignore
-        }
-        idbSet('autosave_snapshots', next).catch(() => {});
-        return next;
-      });
-      setLastAutosaveTime(nowIso);
-    }, 1800);
-    return () => window.clearTimeout(timer);
-  }, [
-    engineState.blocks,
-    engineState.customBlocks,
-    worldName,
-    autosaveEnabled,
-    handleBuildCurrentBackupPayload,
-  ]);
+    if (trigger === 'manual') {
+      if (token !== JSON.stringify(editor.getToken())) {
+        appendLog('//save', 'Saved the captured revision. Later edits remain in your open project.');
+      } else {
+        const payload = handleBuildCurrentBackupPayload();
+        setLocalSnapshots(previous => [{ id: createStudioId('snapshot'), savedAt: payload.savedAt, worldName: payload.worldName, blockCount: payload.blockCount, trigger, backup: payload }, ...previous.slice(0, 5)]);
+        handleCreateGitCommit(`Manual save (${payload.blockCount} blocks)`);
+        appendLog('//save', `Saved "${payload.worldName}" locally. Download a project copy for an independent backup.`);
+      }
+    }
+    return true;
+  }, [editor, persistence.save, handleBuildCurrentBackupPayload, appendLog, handleCreateGitCommit]);
 
-  // Scheduled Interval Autosave & Google Drive Auto-Sync
-  useEffect(() => {
-    if (!autosaveEnabled) return;
-    const intervalMs = Math.max(15, autosaveIntervalSec) * 1000;
-    const id = window.setInterval(() => {
-      performSaveSnapshot('auto');
-    }, intervalMs);
-    return () => window.clearInterval(id);
-  }, [autosaveEnabled, autosaveIntervalSec, performSaveSnapshot]);
+  // Restores are validated, durable copies; original project revisions remain recoverable.
+  const handleRestoreFromBackup = useCallback(async (backup: BrickForgeProjectBackup, sourceLabel: string) => {
+    const raw = JSON.stringify(backup);
+    const result = importStudioCandidate(raw, persistence.importDefaults());
+    if (result.ok === false) { appendLog('//restore', result.error.message, false); return false; }
+    const restored = await persistence.restoreCopy(result.value, [{ sourceId: sourceLabel, raw }]);
+    appendLog('//restore', restored ? `Restored "${result.value.world.worldName}" as a separate project.` : 'Restore stopped. Your current project was retained.', restored);
+    return restored;
+  }, [persistence.importDefaults, persistence.restoreCopy, appendLog]);
 
   // Expand world into a target chunk (cx, cz) with a starter island/platform pad
   const handleExpandChunk = useCallback(
     (cx: number, cz: number, style: ChunkExpansionStyle) => {
+      return editor.transaction('Expand Chunk', () => {
       const k = chunkKey(cx, cz);
       setEngineState((prev) => {
         const res = expandWorldIntoChunk(
@@ -1311,6 +1248,7 @@ export default function App() {
           style,
           chunkConfig.chunkSize
         );
+        if (res.error) throw new Error(res.error);
         return res.nextState;
       });
       setChunkConfig((prev) => {
@@ -1331,201 +1269,70 @@ export default function App() {
         `Expanded world into Chunk (${cx}, ${cz}) with "${style}" pad.`,
         true
       );
+      });
     },
     [chunkConfig.chunkSize, appendLog]
   );
 
-  // Place a single block at target coordinate (with Smart Placement Predictor, Self-Learning Archive, Live Symmetry Mirroring & Custom Shift+Scroll Scale)
-  const handlePlaceBlockAt = useCallback(
-    (coord: GridCoord) => {
-      const symTargets = computeSymmetryTargets(
-        coord,
-        placementRotation,
-        symmetryConfig
-      );
+  // Single-cell and volume placement share the same detached proposal rules.
+  const handlePlaceBlockAt = useCallback((coord: GridCoord) => editor.transaction('Place Block At', () => {
+    const source = editor.getEngineState();
+    const proposal = prepareStudioBrush(editor.getDocument(), source, { center: coord, mode: 'place', brush: SINGLE_CELL_BRUSH,
+      activeBlockId, rotation: placementRotation, customScale: activeBlockScale, symmetry: symmetryConfig });
+    if (!proposal.affectedCount) return;
+    setEngineState(proposal.state); setChunkConfig(proposal.chunkConfig);
+    editor.afterCommit(() => playBlockPlaceSound(activeBlockId, coord.y, userProgress.soundEnabled, userProgress.hapticsEnabled));
+    editor.afterCommit(() => incrementUsageCount(activeBlockId, proposal.affectedCount));
+    const placed = proposal.state.blocks[coordKey(proposal.changedCoords[0].x, proposal.changedCoords[0].y, proposal.changedCoords[0].z)];
+    const nowMs = Date.now(), newPlacementEntry: PlacementHistoryEntry = {
+      coord: { ...placed.position }, blockDefId: placed.blockDefId, rotation: placed.rotation, timestamp: nowMs,
+    };
+    if (copilotConfig.adaptiveLearningEnabled !== false) {
+      const objCls = copilotConfig.targetObjectClass && copilotConfig.targetObjectClass !== 'auto_detect'
+        ? copilotConfig.targetObjectClass : detectArchitecturalObjectClass({ blocks: source.blocks, customBlocks: source.customBlocks, hoveredCoord: coord }).classId;
+      editor.afterCommit(() => setPatternArchive(previous => recordPlacementInPatternArchive({ archive: previous,
+        newPlacement: newPlacementEntry, recentPlacements, blocks: source.blocks, customBlocks: source.customBlocks,
+        activeObjectClass: objCls, nowMs })));
+    }
+    editor.afterCommit(() => setRecentPlacements(previous => [...previous.slice(-7), newPlacementEntry]));
+  }, directEditToken), [editor, directEditToken, activeBlockId, placementRotation, activeBlockScale, symmetryConfig,
+    userProgress.soundEnabled, userProgress.hapticsEnabled, incrementUsageCount, copilotConfig.adaptiveLearningEnabled,
+    copilotConfig.targetObjectClass, recentPlacements, setChunkConfig]);
 
-      playBlockPlaceSound(
-        activeBlockId,
-        coord.y,
-        userProgress.soundEnabled,
-        userProgress.hapticsEnabled
-      );
-      incrementUsageCount(activeBlockId, symTargets.length);
-
-      setChunkConfig((prev) => {
-        let nextUnlocked = prev.unlockedChunks;
-        let nextActive = prev.activeChunks;
-        let mutated = false;
-        for (const t of symTargets) {
-          const { cx, cz } = getChunkCoordForBlock(
-            t.coord.x,
-            t.coord.z,
-            chunkConfig.chunkSize
-          );
-          const ck = chunkKey(cx, cz);
-          if (!nextUnlocked.includes(ck) || nextActive[ck] === false) {
-            if (!mutated) {
-              nextUnlocked = [...prev.unlockedChunks];
-              nextActive = { ...prev.activeChunks };
-              mutated = true;
-            }
-            if (!nextUnlocked.includes(ck)) nextUnlocked.push(ck);
-            nextActive[ck] = true;
-          }
-        }
-        return mutated
-          ? { ...prev, unlockedChunks: nextUnlocked, activeChunks: nextActive }
-          : prev;
-      });
-
-      const nowMs = Date.now();
-      const newPlacementEntry: PlacementHistoryEntry = {
-        coord: { ...coord },
-        blockDefId: activeBlockId,
-        rotation: placementRotation,
-        timestamp: nowMs,
-      };
-
-      if (copilotConfig.adaptiveLearningEnabled !== false) {
-        const objCls =
-          copilotConfig.targetObjectClass &&
-          copilotConfig.targetObjectClass !== 'auto_detect'
-            ? copilotConfig.targetObjectClass
-            : detectArchitecturalObjectClass({
-                blocks: engineState.blocks,
-                customBlocks: engineState.customBlocks,
-                hoveredCoord: coord,
-              }).classId;
-
-        setPatternArchive((prevArch) =>
-          recordPlacementInPatternArchive({
-            archive: prevArch,
-            newPlacement: newPlacementEntry,
-            recentPlacements,
-            blocks: engineState.blocks,
-            customBlocks: engineState.customBlocks,
-            activeObjectClass: objCls,
-            nowMs,
-          })
-        );
+  const handleEraseBlockAt = useCallback((coord: GridCoord) => editor.transaction('Erase Block At', () => {
+    const proposal = prepareStudioBrush(editor.getDocument(), editor.getEngineState(), { center: coord, mode: 'erase', brush: SINGLE_CELL_BRUSH,
+      activeBlockId, rotation: 0, symmetry: symmetryConfig });
+    if (!proposal.affectedCount) return;
+    setEngineState(proposal.state);
+    editor.afterCommit(() => playBlockEraseSound(coord.y, userProgress.soundEnabled, userProgress.hapticsEnabled));
+    if (copilotConfig.adaptiveLearningEnabled !== false) editor.afterCommit(() => setPatternArchive(previous => {
+      const result = recordBlockRemovalForLingerLearning({ archive: previous, removedCoords: proposal.changedCoords });
+      if (result.penalizedCount > 0) {
+        setLastLingerPenaltyToast(`Copilot learned from removal (-${result.penalizedCount} pattern weight)`);
+        window.setTimeout(() => setLastLingerPenaltyToast(null), 4200);
       }
-
-      setRecentPlacements((prev) => [...prev.slice(-7), newPlacementEntry]);
-
-      setEngineState((prev) => {
-        const def = prev.customBlocks[activeBlockId];
-        if (!def) return prev;
-        const withUndo = pushUndoSnapshot(
-          prev,
-          symTargets.length > 1
-            ? `Mirror Place ${def.name} (×${symTargets.length})`
-            : `Place ${def.name}`
-        );
-
-        const hasCustomScale =
-          activeBlockScale.x !== 1 ||
-          activeBlockScale.y !== 1 ||
-          activeBlockScale.z !== 1;
-
-        const nextBlocks = { ...withUndo.blocks };
-        for (const t of symTargets) {
-          const k = coordKey(t.coord.x, t.coord.y, t.coord.z);
-          const prediction = predictBlockAttributesOnPlacement({
-            coord: t.coord,
-            def,
-            allBlocks: nextBlocks,
-            allDefs: prev.customBlocks,
-            config: patternConfig,
-          });
-          nextBlocks[k] = {
-            id: `blk_${t.coord.x}_${t.coord.y}_${t.coord.z}`,
-            blockDefId: def.id,
-            position: { ...t.coord },
-            rotation: t.rotation,
-            colorOverride: prediction.colorOverride,
-            textureOverride: prediction.textureOverride,
-            customScale: hasCustomScale ? { ...activeBlockScale } : undefined,
-          };
-        }
-
-        return {
-          ...withUndo,
-          blocks: nextBlocks,
-        };
-      });
-    },
-    [
-      activeBlockId,
-      placementRotation,
-      symmetryConfig,
-      incrementUsageCount,
-      chunkConfig.chunkSize,
-      copilotConfig.adaptiveLearningEnabled,
-      copilotConfig.targetObjectClass,
-      engineState.blocks,
-      engineState.customBlocks,
-      recentPlacements,
-      patternConfig,
-      activeBlockScale,
-    ]
-  );
-
-  // Erase block at coordinate (with Live Symmetry Mirroring & Linger Removal Negative-Reinforcement Learning)
-  const handleEraseBlockAt = useCallback(
-    (coord: GridCoord) => {
-      playBlockEraseSound(
-        coord.y,
-        userProgress.soundEnabled,
-        userProgress.hapticsEnabled
-      );
-      const symTargets = computeSymmetryTargets(coord, 0, symmetryConfig);
-      const removedCoords = symTargets.map((t) => t.coord);
-
-      if (copilotConfig.adaptiveLearningEnabled !== false) {
-        setPatternArchive((prevArch) => {
-          const res = recordBlockRemovalForLingerLearning({
-            archive: prevArch,
-            removedCoords,
-          });
-          if (res.penalizedCount > 0) {
-            setLastLingerPenaltyToast(
-              `Copilot learned from removal (-${res.penalizedCount} pattern weight)`
-            );
-            window.setTimeout(() => setLastLingerPenaltyToast(null), 4200);
-          }
-          return res.nextArchive;
-        });
-      }
-
-      setEngineState((prev) => {
-        const hasAny = symTargets.some(
-          (t) => Boolean(prev.blocks[coordKey(t.coord.x, t.coord.y, t.coord.z)])
-        );
-        if (!hasAny) return prev;
-        const withUndo = pushUndoSnapshot(
-          prev,
-          `Erase (${coord.x},${coord.y},${coord.z})`
-        );
-        const nextBlocks = { ...withUndo.blocks };
-        for (const t of symTargets) {
-          delete nextBlocks[coordKey(t.coord.x, t.coord.y, t.coord.z)];
-        }
-        return { ...withUndo, blocks: nextBlocks };
-      });
-    },
-    [symmetryConfig, copilotConfig.adaptiveLearningEnabled]
-  );
+      return result.nextArchive;
+    }));
+  }, directEditToken), [editor, directEditToken, activeBlockId, symmetryConfig, copilotConfig.adaptiveLearningEnabled,
+    userProgress.soundEnabled, userProgress.hapticsEnabled]);
 
   // Paint block material/type at coordinate
   const handlePaintBlockAt = useCallback(
     (coord: GridCoord) => {
-      incrementUsageCount(activeBlockId, 1);
+      return editor.transaction('Paint Block At', () => {
+      const error = getGridCoordError(coord); if (error) throw new Error(error);
+      editor.afterCommit(() => incrementUsageCount(activeBlockId, 1));
       setEngineState((prev) => {
         const k = coordKey(coord.x, coord.y, coord.z);
         const existing = prev.blocks[k];
         const activeDef = prev.customBlocks[activeBlockId];
         if (!existing || !activeDef) return prev;
         const withUndo = pushUndoSnapshot(prev, `Paint ${activeDef.name}`);
+        if (isJavaLocked) {
+          // In the game profile, material painting means a real native block-state change.
+          // Per-instance color/texture overrides are not admitted by this candidate.
+          return { ...withUndo, blocks: { ...withUndo.blocks, [k]: { ...existing, blockDefId: activeDef.id } } };
+        }
         return {
           ...withUndo,
           blocks: {
@@ -1539,8 +1346,9 @@ export default function App() {
           },
         };
       });
+      }, directEditToken);
     },
-    [activeBlockId, incrementUsageCount]
+    [activeBlockId, incrementUsageCount, isJavaLocked, directEditToken]
   );
 
   // Eyedropper pick block at coordinate
@@ -1549,8 +1357,8 @@ export default function App() {
       const k = coordKey(coord.x, coord.y, coord.z);
       const blk = engineState.blocks[k];
       if (blk) {
-        setActiveBlockId(blk.blockDefId);
-        setToolMode('place');
+        editor.afterCommit(() => setActiveBlockId(blk.blockDefId));
+        editor.afterCommit(() => setToolMode('place'));
         appendLog('//pick', `Picked block ${blk.blockDefId}`, true);
       }
     },
@@ -1560,7 +1368,10 @@ export default function App() {
   // Stamp active blueprint at coordinate
   const handleStampBlueprintAt = useCallback(
     (coord: GridCoord) => {
+      return editor.transaction('Stamp Blueprint At', () => {
       if (!activeBlueprint) return;
+      const error = validateBlueprintPlacement(editor.getEngineState(), activeBlueprint, coord, placementRotation);
+      if (error) throw new Error(error);
       setEngineState((prev) =>
         stampBlueprintIntoWorld(prev, activeBlueprint, coord, placementRotation)
       );
@@ -1569,30 +1380,46 @@ export default function App() {
         `Stamped blueprint "${activeBlueprint.name}" (${activeBlueprint.blocks.length} blocks) at (${coord.x}, ${coord.y}, ${coord.z}).`,
         true
       );
+      }, directEditToken);
     },
-    [activeBlueprint, placementRotation, appendLog]
+    [activeBlueprint, placementRotation, appendLog, directEditToken]
   );
 
   // Set Pos1 / Pos2
   const handleSetPos1 = useCallback(
     (coord: GridCoord) => {
+      return editor.transaction('Set Pos1', () => {
       setEngineState((prev) => ({ ...prev, pos1: coord }));
       appendLog('//pos1', `Pos1 set to (${coord.x}, ${coord.y}, ${coord.z})`, true);
+      }, directEditToken);
     },
-    [appendLog]
+    [appendLog, directEditToken]
   );
 
   const handleSetPos2 = useCallback(
     (coord: GridCoord) => {
+      return editor.transaction('Set Pos2', () => {
       setEngineState((prev) => ({ ...prev, pos2: coord }));
       appendLog('//pos2', `Pos2 set to (${coord.x}, ${coord.y}, ${coord.z})`, true);
+      }, directEditToken);
     },
-    [appendLog]
+    [appendLog, directEditToken]
   );
+
+  const handleClearSelection = useCallback(() => {
+    editor.transaction('Clear selection', () => {
+      setEngineState((prev) => ({ ...prev, pos1: null, pos2: null }));
+    }, directEditToken);
+    setSelectionGizmoUnlocked(false);
+    setActiveCommandPreviewMode(null);
+    setToolMode((current) => (current === 'wand_select' ? 'place' : current));
+    appendLog('//desel', 'Cleared 3D region selection.', true);
+  }, [editor, directEditToken, appendLog]);
 
   // Nudge 3D selection box face handle (+x, -x, +y, -y, +z, -z)
   const handleNudgeSelectionFace = useCallback(
     (face: '+x' | '-x' | '+y' | '-y' | '+z' | '-z', delta: number) => {
+      return editor.transaction('Nudge Selection Face', () => {
       setEngineState((prev) => {
         if (!prev.pos1 || !prev.pos2) return prev;
         const b = getSelectionBounds(prev.pos1, prev.pos2);
@@ -1606,12 +1433,13 @@ export default function App() {
         if (face === '-z') min.z = Math.min(max.z, min.z - delta);
         return { ...prev, pos1: min, pos2: max };
       });
+      }, directEditToken);
     },
-    []
+    [directEditToken]
   );
 
   // Scroll-resize selection box while holding selection gizmo modifier
-  const handleScrollResizeSelection = useCallback((direction: 1 | -1) => {
+  const handleScrollResizeSelection = useCallback((direction: 1 | -1) => editor.transaction('Resize selection', () => {
     setEngineState((prev) => {
       if (!prev.pos1 || !prev.pos2) return prev;
       const next = transformSelectionBox(
@@ -1620,211 +1448,125 @@ export default function App() {
         direction > 0 ? 'expand_all' : 'contract_all',
         1
       );
+      if (next.error) throw new Error(next.error);
       return { ...prev, pos1: next.pos1, pos2: next.pos2 };
     });
-  }, []);
+  }, directEditToken), [editor, directEditToken]);
 
-  // Apply 3D Volume Place or Erase Brush at target coordinate (supports Live Symmetry Mirroring & Linger Learning)
-  const handleApplyVolumeBrushAt = useCallback(
-    (center: GridCoord, mode: 'place' | 'erase' | 'brush_place' | 'brush_erase') => {
-      const symTargets = computeSymmetryTargets(
-        center,
-        placementRotation,
-        symmetryConfig
-      );
-      if (mode === 'place' || mode === 'brush_place') {
-        incrementUsageCount(activeBlockId, symTargets.length);
-      } else if (copilotConfig.adaptiveLearningEnabled !== false) {
-        setPatternArchive((prevArch) => {
-          const res = recordBlockRemovalForLingerLearning({
-            archive: prevArch,
-            removedCoords: symTargets.map((t) => t.coord),
-          });
-          if (res.penalizedCount > 0) {
-            setLastLingerPenaltyToast(
-              `Copilot learned from brush erase (-${res.penalizedCount} pattern weight)`
-            );
-            window.setTimeout(() => setLastLingerPenaltyToast(null), 4200);
-          }
-          return res.nextArchive;
-        });
-      }
-      setEngineState((prev) => {
-        let working = prev;
-        for (const t of symTargets) {
-          const res = applyVolumeBrushToWorld({
-            state: working,
-            center: t.coord,
-            mode,
-            brush: volumeBrush,
-            activeBlockId,
-            rotation: t.rotation,
-            customScale: activeBlockScale,
-            patternConfig,
-          });
-          working = res.nextState;
+  // One complete session commit for all mirrored brush cells and revealed chunks.
+  const handleApplyVolumeBrushAt = useCallback((center: GridCoord, mode: 'place' | 'erase' | 'brush_place' | 'brush_erase') => {
+    let affectedCount = 0;
+    const result = editor.transaction('Apply Volume Brush At', () => {
+      const proposal = prepareStudioBrush(editor.getDocument(), editor.getEngineState(), { center, mode, brush: volumeBrush,
+        activeBlockId, rotation: placementRotation, customScale: activeBlockScale, symmetry: symmetryConfig });
+      affectedCount = proposal.affectedCount;
+      if (!affectedCount) return;
+      setEngineState(proposal.state); setChunkConfig(proposal.chunkConfig);
+      if (mode === 'place' || mode === 'brush_place') editor.afterCommit(() => incrementUsageCount(activeBlockId, affectedCount));
+      else if (copilotConfig.adaptiveLearningEnabled !== false) editor.afterCommit(() => setPatternArchive(previous => {
+        const learned = recordBlockRemovalForLingerLearning({ archive: previous, removedCoords: proposal.changedCoords });
+        if (learned.penalizedCount > 0) {
+          setLastLingerPenaltyToast(`Copilot learned from brush erase (-${learned.penalizedCount} pattern weight)`);
+          window.setTimeout(() => setLastLingerPenaltyToast(null), 4200);
         }
-        return working;
-      });
-    },
-    [
-      volumeBrush,
-      activeBlockId,
-      placementRotation,
-      symmetryConfig,
-      incrementUsageCount,
-      copilotConfig.adaptiveLearningEnabled,
-      activeBlockScale,
-      patternConfig,
-    ]
-  );
+        return learned.nextArchive;
+      }));
+    }, directEditToken);
+    return result.status === 'applied' ? { ...result, message: result.message ?? `Changed ${affectedCount} cells. Undo restores the complete brush edit.` } : result;
+  }, [editor, directEditToken, volumeBrush, activeBlockId, placementRotation, activeBlockScale, symmetryConfig,
+    incrementUsageCount, copilotConfig.adaptiveLearningEnabled, setChunkConfig]);
 
   // Execute WorldEdit CLI command
   const handleRunCommand = useCallback(
     (rawCmd: string) => {
-      setEngineState((prev) => {
-        const res = executeWorldEditCommand(prev, rawCmd, hoveredCoord);
-        appendLog(rawCmd, res.message, res.success);
-        if (res.equipWand) {
-          setToolMode('wand_select');
-        }
-        return res.nextState;
-      });
+      if (typeof rawCmd !== 'string' || rawCmd.length > 4096) {
+        appendLog('//command', 'Command exceeds the supported length.', false); return { status: 'rejected' as const, message: 'Command exceeds the supported length.' };
+      }
+      const verb = rawCmd.trim().replace(/^\/+/, '').toLowerCase();
+      if (verb === 'undo' || verb === 'redo') {
+        const result = verb === 'undo' ? editor.undo() : editor.redo();
+        appendLog(rawCmd, result.message ?? (result.status === 'applied' ? `${verb === 'undo' ? 'Undid' : 'Redid'} the complete edit.` : `Nothing to ${verb}.`), result.status !== 'rejected');
+        return result;
+      }
+      const token = editor.getToken();
+      const res = executeWorldEditCommand(editor.getEngineState(), rawCmd, hoveredCoord);
+      if (!res.success) { appendLog(rawCmd, res.message, false); return { status: 'rejected' as const, message: res.message }; }
+      const result = editor.transaction('Command', () => { setEngineState(res.nextState); }, token);
+      appendLog(rawCmd, result.status === 'rejected' ? result.message! : res.message, result.status !== 'rejected');
+      if (result.status !== 'rejected' && res.equipWand) setToolMode('wand_select');
+      if (result.status !== 'rejected' && ['desel', 'deselect', 'sel'].includes(verb)) {
+        setSelectionGizmoUnlocked(false);
+        setActiveCommandPreviewMode(null);
+        setToolMode(current => current === 'wand_select' ? 'place' : current);
+      }
+      return result;
     },
-    [hoveredCoord, appendLog]
+    [editor, hoveredCoord, appendLog]
   );
 
   // Save a newly designed Custom Block from Workshop
-  const handleSaveCustomBlock = useCallback(
-    async (
-      blockDef: CustomBlockDefinition,
-      saveAsPublicBp: boolean,
-      description: string
-    ) => {
-      setEngineState((prev) => {
-        const nextCustom = { ...prev.customBlocks, [blockDef.id]: blockDef };
-        persistLocalCustomBlocks(nextCustom);
-        return { ...prev, customBlocks: nextCustom };
+  const handleSaveCustomBlock = useCallback(async (
+    blockDef: CustomBlockDefinition, saveAsPublicBp: boolean, description: string
+  ) => {
+    const bp = createBlueprintFromCustomBlock(blockDef, description, user?.uid || 'local_builder', user?.displayName || user?.email || 'Local Builder', saveAsPublicBp);
+    const result = editor.transaction('Create workshop block and blueprint', () => {
+      const collision = validateBlueprintDefinitionMerge(editor.getEngineState().customBlocks, [blockDef]);
+      if (collision) throw new Error(collision);
+      setEngineState(prev => ({ ...prev, customBlocks: { ...prev.customBlocks, [blockDef.id]: blockDef } }));
+      setBlueprints(prev => [bp, ...prev]);
+      editor.afterCommit(() => {
+        setHotbarBlockIds(prev => prev.includes(blockDef.id) ? prev : [blockDef.id, ...prev.slice(0, 8)]);
+        setActiveBlockId(blockDef.id); setToolMode('place');
       });
-
-      setHotbarBlockIds((prev) => {
-        if (prev.includes(blockDef.id)) return prev;
-        return [blockDef.id, ...prev.slice(0, 8)];
-      });
-      setActiveBlockId(blockDef.id);
-      setToolMode('place');
-
-      const bp = createBlueprintFromCustomBlock(
-        blockDef,
-        description,
-        user?.uid || 'local_builder',
-        user?.displayName || user?.email || 'Local Builder',
-        saveAsPublicBp
-      );
-
-      setBlueprints((prev) => {
-        const next = [bp, ...prev];
-        persistLocalBlueprints(next);
-        return next;
-      });
-
-      appendLog(
-        `//workshop ${blockDef.id}`,
-        `Created custom block "${blockDef.name}" (${blockDef.shape}) and saved to Blueprints & Palette.`,
-        true
-      );
-
-      if (user) {
-        try {
-          await saveBlueprintToCloud(bp);
-        } catch {
-          // Non-fatal if offline
-        }
-      }
-    },
-    [user, appendLog]
-  );
+      appendLog('//workshop', `Created "${blockDef.name}" and its blueprint.`, true);
+    });
+    if (result.status === 'applied' && saveAsPublicBp && user) {
+      try { await saveBlueprintToCloud(bp); }
+      catch { appendLog('//workshop cloud', 'Saved locally; cloud publication failed.', false); }
+    }
+    return result.status === 'applied';
+  }, [editor, user, appendLog]);
 
   // Save Pos1..Pos2 selection (or entire world) as a Structure Blueprint
-  const handleSaveSelectionBlueprint = useCallback(
-    (
-      name: string,
-      description: string,
-      isPublic: boolean,
-      captureWholeWorld: boolean
-    ): boolean => {
-      let stateForCapture = engineState;
-      if (captureWholeWorld) {
-        const allCoords = Object.values(engineState.blocks).map((b) => b.position);
-        if (allCoords.length === 0) return false;
-        const minX = Math.min(...allCoords.map((c) => c.x));
-        const maxX = Math.max(...allCoords.map((c) => c.x));
-        const minY = Math.min(...allCoords.map((c) => c.y));
-        const maxY = Math.max(...allCoords.map((c) => c.y));
-        const minZ = Math.min(...allCoords.map((c) => c.z));
-        const maxZ = Math.max(...allCoords.map((c) => c.z));
-        stateForCapture = {
-          ...engineState,
-          pos1: { x: minX, y: minY, z: minZ },
-          pos2: { x: maxX, y: maxY, z: maxZ },
-        };
+  const handleSaveSelectionBlueprint = useCallback((
+    name: string, description: string, isPublic: boolean, captureWholeWorld: boolean
+  ): boolean => {
+    let state = editor.getEngineState();
+    if (captureWholeWorld) {
+      const blocks = Object.values(state.blocks);
+      if (!blocks.length) return false;
+      const min = { ...blocks[0].position }, max = { ...min };
+      for (const { position } of blocks) for (const axis of ['x', 'y', 'z'] as const) {
+        min[axis] = Math.min(min[axis], position[axis]); max[axis] = Math.max(max[axis], position[axis]);
       }
-
-      const bp = createBlueprintFromSelection(
-        stateForCapture,
-        name,
-        description,
-        user?.uid || 'local_builder',
-        user?.displayName || user?.email || 'Local Builder',
-        isPublic
-      );
-      if (!bp) return false;
-
-      setBlueprints((prev) => {
-        const next = [bp, ...prev];
-        persistLocalBlueprints(next);
-        return next;
-      });
-      setActiveBlueprint(bp);
-      appendLog(
-        `//blueprint save`,
-        `Saved structure blueprint "${bp.name}" (${bp.blocks.length} blocks).`,
-        true
-      );
-
-      if (user) {
-        saveBlueprintToCloud(bp).catch(() => {});
-      }
-      return true;
-    },
-    [engineState, user, appendLog]
-  );
+      state = { ...state, pos1: min, pos2: max };
+    }
+    const bp = createBlueprintFromSelection(state, name, description, user?.uid || 'local_builder', user?.displayName || user?.email || 'Local Builder', isPublic);
+    if (!bp) return false;
+    const result = editor.transaction('Save selection blueprint', () => {
+      setBlueprints(prev => [bp, ...prev]);
+      editor.afterCommit(() => { setActiveBlueprint(bp); });
+      appendLog('//blueprint save', `Saved "${bp.name}" (${bp.blocks.length} blocks).`);
+    });
+    if (result.status !== 'applied') return false;
+    if (isPublic && user) void saveBlueprintToCloud(bp).catch(() => appendLog('//blueprint cloud', 'Saved locally; cloud publication failed.', false));
+    return true;
+  }, [editor, user, appendLog]);
 
   // Equip a blueprint for interactive stamping
-  const handleEquipBlueprintStamp = useCallback(
-    (bp: BlueprintPrefab) => {
-      setEngineState((prev) => {
-        const nextCustom = { ...prev.customBlocks };
-        for (const def of bp.customBlockDefs) {
-          nextCustom[def.id] = def;
-        }
-        return { ...prev, customBlocks: nextCustom };
-      });
-      setActiveBlueprint(bp);
-      setToolMode('stamp_blueprint');
-      appendLog(
-        `//blueprint equip`,
-        `Equipped "${bp.name}" stamp. Click any block surface in the 3D world to place structure.`,
-        true
-      );
-    },
-    [appendLog]
-  );
+  const handleEquipBlueprintStamp = useCallback((bp: BlueprintPrefab) => {
+    // Equipping is a tool preference. Definitions are admitted with the stamp itself.
+    setActiveBlueprint(bp); setToolMode('stamp_blueprint');
+    appendLog('//blueprint equip', `Equipped "${bp.name}". Stamping validates the complete blueprint.`);
+  }, [appendLog]);
 
   // Immediately stamp a blueprint at Pos1 in current world
   const handlePlaceBlueprintAtPos1 = useCallback(
     (bp: BlueprintPrefab) => {
-      const target = engineState.pos1 || { x: 0, y: 1, z: 0 };
+      return editor.transaction('Place Blueprint At Pos1', () => {
+      const target = editor.getEngineState().pos1 || { x: 0, y: 1, z: 0 };
+      const error = validateBlueprintPlacement(editor.getEngineState(), bp, target, placementRotation);
+      if (error) throw new Error(error);
       setEngineState((prev) =>
         stampBlueprintIntoWorld(prev, bp, target, placementRotation)
       );
@@ -1833,85 +1575,65 @@ export default function App() {
         `Placed blueprint "${bp.name}" (${bp.blocks.length} blocks) at (${target.x}, ${target.y}, ${target.z}).`,
         true
       );
+      });
     },
     [engineState.pos1, placementRotation, appendLog]
   );
 
   // Load a saved blueprint into a fresh world
-  const handleLoadBlueprintIntoNewWorld = useCallback(
-    (bp: BlueprintPrefab) => {
-      setEngineState((prev) => loadBlueprintIntoNewWorld(prev, bp, true));
-      setWorldName(`${bp.name} World`);
-      appendLog(
-        `//blueprint load-world`,
-        `Loaded blueprint "${bp.name}" into a new Skyblock world (${bp.blocks.length} structure blocks).`,
-        true
-      );
-    },
-    [appendLog]
-  );
+  const handleLoadBlueprintIntoNewWorld = useCallback(async (bp: BlueprintPrefab) => {
+    const state = editor.getEngineState();
+    const error = validateBlueprintLoad(state, bp, true);
+    if (error) { appendLog('//blueprint new-world', error, false); return false; }
+    const next = loadBlueprintIntoNewWorld(state, bp, true);
+    const candidate = { ...editor.getDocument(), blocks: next.blocks, customBlocks: next.customBlocks,
+      chunkConfig: structuredClone(DEFAULT_CHUNK_CONFIG),
+      world: { worldId: createStudioId('world'), worldName: `${bp.name} World`, roomCode: '', isPublicWorld: false },
+    };
+    const opened = await persistence.restoreCopy(candidate);
+    appendLog('//blueprint new-world', opened ? `Opened "${bp.name}" as a separate project.` : 'New project was not opened; current work is preserved.', opened);
+    return opened;
+  }, [editor, persistence.restoreCopy, appendLog]);
 
-  const handleDeleteBlueprint = useCallback(
-    (bpId: string) => {
-      setBlueprints((prev) => {
-        const next = prev.filter((b) => b.id !== bpId);
-        persistLocalBlueprints(next);
-        return next;
-      });
-      if (user) {
-        deleteCloudBlueprint(bpId).catch(() => {});
-      }
-    },
-    [user]
-  );
+  const handleDeleteBlueprint = useCallback((bpId: string) => {
+    const result = editor.transaction('Remove library blueprint', () => { setBlueprints(prev => prev.filter(bp => bp.id !== bpId)); });
+    if (result.status === 'applied') appendLog('//blueprint remove', 'Removed the local library entry. Undo restores it.');
+  }, [editor, appendLog]);
 
-  const handleImportBlueprintJson = useCallback(
-    (rawJson: string): boolean => {
-      try {
-        const parsed = JSON.parse(rawJson);
-        if (!parsed || !Array.isArray(parsed.blocks)) return false;
-        const bp: BlueprintPrefab = {
-          id: parsed.id || `bp_import_${Date.now()}`,
-          name: parsed.name || 'Imported Blueprint',
-          description: parsed.description || 'Imported from JSON schematic',
-          authorId: user?.uid || 'local_builder',
-          authorName: user?.displayName || 'Local Builder',
-          blueprintType: parsed.blueprintType || 'structure_blueprint',
-          isPublic: false,
-          size: parsed.size || { lx: 3, ly: 3, lz: 3 },
-          blocks: parsed.blocks,
-          customBlockDefs: parsed.customBlockDefs || [],
-          createdAt: new Date().toISOString(),
-        };
-        setBlueprints((prev) => {
-          const next = [bp, ...prev];
-          persistLocalBlueprints(next);
-          return next;
-        });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    [user]
-  );
+  const handleImportBlueprintJson = useCallback(async (rawJson: string): Promise<boolean> => {
+    const token = editor.getToken();
+    const prepared = prepareBlueprintImport(rawJson, { sourceId: 'blueprint:import', authorId: user?.uid || 'local_builder', authorName: user?.displayName || 'Local Builder' });
+    if (!prepared.ok) { appendLog('//blueprint import', prepared.error.message, false); return false; }
+    const { blueprint, document, legacySources } = prepared.value;
+    if (!await persistence.preserveResourceCandidate(document, legacySources, JSON.stringify(token))) {
+      appendLog('//blueprint import', 'The original could not be preserved for this edit revision. Nothing was imported; review the project notice and retry.', false);
+      return false;
+    }
+    const result = editor.transaction('Import blueprint', () => { setBlueprints(prev => [blueprint, ...prev]); }, token);
+    if (result.status === 'rejected') appendLog('//blueprint import', result.message!, false);
+    return result.status === 'applied';
+  }, [editor, user, persistence.preserveResourceCandidate, appendLog]);
 
   const handleRefreshCloudBlueprints = useCallback(async () => {
+    const token = editor.getToken();
     setIsLoadingCloudBp(true);
     try {
       const cloudList = await fetchCloudBlueprints();
-      setBlueprints((prev) => {
-        const map = new Map<string, BlueprintPrefab>();
-        for (const item of prev) map.set(item.id, item);
-        for (const cItem of cloudList) map.set(cItem.id, cItem);
-        return Array.from(map.values());
-      });
-    } catch {
-      // Ignore offline/permission errors for guests
-    } finally {
-      setIsLoadingCloudBp(false);
-    }
-  }, []);
+      const result = editor.transaction('Import cloud library', () => {
+        setBlueprints(prev => {
+          const map = new Map(prev.map(bp => [bp.id, bp]));
+          for (const bp of cloudList) {
+            const existing = map.get(bp.id);
+            if (existing && JSON.stringify(existing) !== JSON.stringify(bp)) throw new Error(`Cloud blueprint "${bp.name}" conflicts with a local entry. Import a separate copy.`);
+            map.set(bp.id, bp);
+          }
+          return [...map.values()];
+        });
+      }, token);
+      if (result.status === 'rejected') appendLog('//cloud library', result.message!, false);
+    } catch (error) { appendLog('//cloud library', error instanceof Error ? error.message : 'Cloud library unavailable.', false); }
+    finally { setIsLoadingCloudBp(false); }
+  }, [editor, appendLog]);
 
   const handleRefreshCloudWorlds = useCallback(async () => {
     try {
@@ -1923,83 +1645,26 @@ export default function App() {
   }, []);
 
   const handleSaveCurrentWorldToCloud = useCallback(async () => {
+    const token = editor.getToken(), document = editor.getDocument();
     const savedId = await saveWorldToCloud({
-      worldId,
-      name: worldName,
-      roomCode,
-      isPublic: isPublicWorld,
-      blocks: engineState.blocks,
-      customBlocks: engineState.customBlocks,
+      worldId: document.world.worldId, name: document.world.worldName, roomCode: document.world.roomCode,
+      isPublic: document.world.isPublicWorld, blocks: document.blocks, customBlocks: document.customBlocks,
     });
-    setWorldId(savedId);
-    setIsLiveConnected(true);
+    const result = editor.transaction('Record cloud identity', () => { setWorldId(savedId); }, token);
+    appendLog('//cloud save', result.status === 'rejected' ? 'The captured cloud snapshot was saved; newer local work remains unchanged.' : 'Saved the captured cloud snapshot. Live co-editing is not connected.');
     await handleRefreshCloudWorlds();
-  }, [
-    worldId,
-    worldName,
-    roomCode,
-    isPublicWorld,
-    engineState.blocks,
-    engineState.customBlocks,
-    handleRefreshCloudWorlds,
-  ]);
+  }, [editor, appendLog, handleRefreshCloudWorlds]);
 
-  const handleJoinCloudWorld = useCallback(
-    (summary: CloudWorldSummary) => {
-      try {
-        const parsedBlocks = JSON.parse(summary.blocksData);
-        const parsedCustom: CustomBlockDefinition[] = JSON.parse(
-          summary.customBlocksData || '[]'
-        );
-        setEngineState((prev) => {
-          const nextCustom = { ...prev.customBlocks };
-          for (const d of parsedCustom) nextCustom[d.id] = d;
-          return {
-            ...prev,
-            blocks: parsedBlocks,
-            customBlocks: nextCustom,
-          };
-        });
-        setWorldId(summary.id);
-        setWorldName(summary.name);
-        setRoomCode(summary.roomCode);
-        setIsPublicWorld(summary.isPublic);
-        setIsLiveConnected(true);
-        appendLog(
-          `//join ${summary.roomCode}`,
-          `Joined cloud world "${summary.name}" (${summary.blockCount} blocks).`,
-          true
-        );
-      } catch {
-        appendLog('//join', 'Failed to parse cloud world blocks.', false);
-      }
-    },
-    [appendLog]
-  );
+  const handleJoinCloudWorld = useCallback(async (summary: CloudWorldSummary) => {
+    const prepared = prepareCloudSnapshotImport({ sourceId: `cloud:${summary.id}`, name: summary.name,
+      blocksData: summary.blocksData, ...(summary.customBlocksData === undefined ? {} : { customBlocksData: summary.customBlocksData }) });
+    if (!prepared.ok) { appendLog('//cloud open', prepared.error.message, false); return; }
+    const opened = await persistence.restoreCopy(prepared.value.document, prepared.value.legacySources);
+    appendLog('//cloud open', opened ? 'Opened a separate local copy with its original cloud data preserved. Live co-editing is not connected.' : 'Cloud copy was not opened; current work is preserved.', opened);
+  }, [persistence.restoreCopy, appendLog]);
 
-  // Live Multiplayer Co-Building Subscription when connected
-  useEffect(() => {
-    if (!isLiveConnected || !user) return;
-    const unsubWorld = subscribeToWorldRoom(worldId, (summary) => {
-      try {
-        const remoteBlocks = JSON.parse(summary.blocksData);
-        isRemoteApplyingRef.current = true;
-        setEngineState((prev) => ({
-          ...prev,
-          blocks: remoteBlocks,
-        }));
-      } catch {
-        // Ignore parse error
-      }
-    });
-    const unsubPresence = subscribeToWorldPresence(worldId, (list) => {
-      setCollaborators(list);
-    });
-    return () => {
-      unsubWorld();
-      unsubPresence();
-    };
-  }, [isLiveConnected, user, worldId]);
+  // Whole-world live replacement has no conflict protocol. It cannot write into
+  // this session. Cloud snapshots enter only through verified separate-copy recovery.
 
   // Broadcast cursor presence in live multiplayer mode
   const handleCursorMove = useCallback(
@@ -2049,6 +1714,7 @@ export default function App() {
 
   const copilotPredictions = useMemo(() => {
     if (
+      isJavaLocked ||
       !copilotConfig.enabled ||
       !copilotConfig.ghostAutoCompleteEnabled ||
       toolMode !== 'place'
@@ -2073,6 +1739,7 @@ export default function App() {
         copilotConfig.connectedTextureGhostMatch !== false,
     });
   }, [
+    isJavaLocked,
     copilotConfig.enabled,
     copilotConfig.ghostAutoCompleteEnabled,
     copilotConfig.adaptiveLearningEnabled,
@@ -2088,6 +1755,9 @@ export default function App() {
     detectedObjectClass,
     patternConfig,
   ]);
+  // A displayed proposal belongs to this source generation, including edit→Undo.
+  // Any intervening mutation before React renders the new proposal rejects Apply.
+  const copilotProposalToken = useMemo(() => editor.getToken(), [editor, editorSnapshot.sessionId, editorSnapshot.editRevision, copilotPredictions, symmetryConfig, patternConfig]);
 
   const selectionMorphology = useMemo(() => {
     if (!copilotConfig.enabled) return null;
@@ -2132,22 +1802,24 @@ export default function App() {
     if (!copilotConfig.enabled) return null;
     return auditWorldWalkability(engineState.blocks, engineState.customBlocks);
   }, [copilotConfig.enabled, engineState.blocks, engineState.customBlocks]);
+  const walkabilityProposalToken = useMemo(() => editor.getToken(), [editor, editorSnapshot.sessionId, editorSnapshot.editRevision, walkabilityReport]);
 
   // Accept predicted Ghost Auto-Complete blocks (Tab or 1-tap HUD button)
   const handleAcceptCopilotPredictions = useCallback(() => {
+      return editor.transaction('Accept Copilot Predictions', () => {
     if (copilotPredictions.length === 0) return;
 
-    playGhostAcceptArpeggio(
+    editor.afterCommit(() => playGhostAcceptArpeggio(
       userProgress.soundEnabled,
       userProgress.hapticsEnabled
-    );
-    incrementUsageCount(activeBlockId, copilotPredictions.length);
+    ));
+    editor.afterCommit(() => incrementUsageCount(activeBlockId, copilotPredictions.length));
 
     if (copilotConfig.adaptiveLearningEnabled !== false) {
       const anchorBlockId =
         recentPlacements[recentPlacements.length - 1]?.blockDefId ||
         activeBlockId;
-      setPatternArchive((prevArch) =>
+      editor.afterCommit(() => setPatternArchive((prevArch) =>
         recordAcceptedGhostPredictionsInArchive({
           archive: prevArch,
           acceptedPredictions: copilotPredictions,
@@ -2155,7 +1827,7 @@ export default function App() {
           lingerWindowSec: copilotConfig.lingerTrackingWindowSec || 45,
           activeObjectClass: detectedObjectClass?.classId || 'house_dwelling',
         })
-      );
+      ));
     }
 
     setEngineState((prev) => {
@@ -2166,7 +1838,7 @@ export default function App() {
       const nextBlocks = { ...withUndo.blocks };
       for (const pred of copilotPredictions) {
         const def = prev.customBlocks[pred.blockDefId];
-        if (!def) continue;
+        if (!def) throw new Error('A predicted block definition is no longer available. Recompute the preview.');
         const symTargets = computeSymmetryTargets(
           pred.position,
           pred.rotation,
@@ -2185,7 +1857,7 @@ export default function App() {
                 })
               : { colorOverride: pred.colorOverride, textureOverride: pred.textureOverride };
           nextBlocks[k] = {
-            id: `blk_${t.coord.x}_${t.coord.y}_${t.coord.z}`,
+            id: nextBlocks[k]?.id ?? createStudioId('block'),
             blockDefId: def.id,
             position: { ...t.coord },
             rotation: t.rotation,
@@ -2197,7 +1869,7 @@ export default function App() {
       return { ...withUndo, blocks: nextBlocks };
     });
     const lastPred = copilotPredictions[copilotPredictions.length - 1];
-    setRecentPlacements((prev) => [
+    editor.afterCommit(() => setRecentPlacements((prev) => [
       ...prev.slice(-6),
       {
         coord: { ...lastPred.position },
@@ -2205,14 +1877,16 @@ export default function App() {
         rotation: lastPred.rotation,
         timestamp: Date.now(),
       },
-    ]);
+    ]));
     appendLog(
       '//copilot accept',
       `Accepted +${copilotPredictions.length} predicted ghost blocks (${copilotPredictions[0].reason}). Monitored in 45s linger buffer.`,
       true
     );
+      }, copilotProposalToken);
   }, [
     copilotPredictions,
+    copilotProposalToken,
     incrementUsageCount,
     activeBlockId,
     copilotConfig.adaptiveLearningEnabled,
@@ -2227,130 +1901,66 @@ export default function App() {
 
   // Auto-Place Voxel Lanterns in dark interior spots flagged by Walkability Audit
   const handleAutoLightDarkSpots = useCallback(() => {
-    if (!walkabilityReport || walkabilityReport.darkInteriorCoords.length === 0) {
-      return;
-    }
-    setEngineState((prev) => {
-      const withUndo = pushUndoSnapshot(
-        prev,
-        `Auto-Light (${walkabilityReport.darkInteriorCoords.length} lanterns)`
-      );
-      const nextBlocks = { ...withUndo.blocks };
+    return editor.transaction('Auto-light interior', () => {
+      if (!walkabilityReport?.darkInteriorCoords.length) return;
+      const previous = editor.getEngineState(), blocks = { ...previous.blocks };
       let placed = 0;
-      for (const c of walkabilityReport.darkInteriorCoords.slice(0, 8)) {
-        const k = coordKey(c.x, c.y, c.z);
-        if (!nextBlocks[k]) {
-          nextBlocks[k] = {
-            id: `blk_${c.x}_${c.y}_${c.z}`,
-            blockDefId: 'voxel_lantern',
-            position: { ...c },
-            rotation: 0,
-          };
-          placed++;
-        }
+      for (const position of walkabilityReport.darkInteriorCoords.slice(0, 8)) {
+        const key = coordKey(position.x, position.y, position.z);
+        if (!blocks[key]) { blocks[key] = { id: createStudioId('block'), blockDefId: 'voxel_lantern', position: { ...position }, rotation: 0 }; placed++; }
       }
-      appendLog(
-        '//copilot light',
-        `Placed ${placed} Voxel Lanterns in dark interior pockets.`,
-        true
-      );
-      return { ...withUndo, blocks: nextBlocks };
-    });
-  }, [walkabilityReport, appendLog]);
+      setEngineState({ ...previous, blocks });
+      appendLog('//copilot light', `Placed ${placed} lanterns.`);
+    }, walkabilityProposalToken);
+  }, [editor, walkabilityReport, walkabilityProposalToken, appendLog]);
 
-  // Execute a repeatable Command Macro Loop from the Modular Action Bar HUD
-  const handleTriggerMacroLoop = useCallback(
-    (macro: CommandMacroLoop) => {
-      const resolveCommandTokens = (raw: string) =>
-        raw.replace(/\{active\}/g, activeBlockId);
+  // Every HUD macro opens the same detached review; choosing a recipe never applies it.
+  const handleTriggerMacroLoop = useCallback((macro: CommandMacroLoop) => {
+    const cursor = studioCellAnchor(hoveredCoord ?? editor.getEngineState().pos1 ?? { x: 0, y: 1, z: 0 });
+    recipeModel.show(recipeBlockId);
+    recipeModel.loadMacro(macro, recipeBlockId, cursor, false, recipeModel.getSnapshot().version);
+  }, [editor, recipeModel, recipeBlockId, hoveredCoord]);
 
-      const totalIterations = Math.max(1, Math.min(16, macro.iterations || 1));
-      if (!macro.intervalMs || macro.intervalMs <= 0) {
-        setEngineState((prev) => {
-          let working = prev;
-          for (let i = 0; i < totalIterations; i++) {
-            for (const c of macro.commands) {
-              const res = executeWorldEditCommand(
-                working,
-                resolveCommandTokens(c),
-                hoveredCoord
-              );
-              working = res.nextState;
-            }
-          }
-          return working;
-        });
-        appendLog(
-          `//macro ${macro.name}`,
-          `Executed Command Loop "${macro.name}" (${macro.commands.length} cmds × ${totalIterations}x).`,
-          true
-        );
-      } else {
-        let stepIdx = 0;
-        const stepDelay = Math.max(100, macro.intervalMs);
-        const timer = window.setInterval(() => {
-          if (stepIdx >= totalIterations) {
-            window.clearInterval(timer);
-            return;
-          }
-          stepIdx++;
-          setEngineState((prev) => {
-            let working = prev;
-            for (const c of macro.commands) {
-              const res = executeWorldEditCommand(
-                working,
-                resolveCommandTokens(c),
-                hoveredCoord
-              );
-              working = res.nextState;
-            }
-            return working;
-          });
-        }, stepDelay);
-        appendLog(
-          `//macro ${macro.name}`,
-          `Running animated Command Loop "${macro.name}" (${totalIterations} steps @ ${stepDelay}ms)...`,
-          true
-        );
-      }
-    },
-    [activeBlockId, hoveredCoord, appendLog]
-  );
-
-  // Install CC0 Open-Source Market Blocks into the User's Active Studio Library
+  // Add local catalogue definitions without retargeting existing instances.
   const handleInstallMarketBlocks = useCallback(
     (defs: CustomBlockDefinition[]) => {
+      return editor.transaction('Add catalogue blocks', () => {
       if (defs.length === 0) return;
+      const collision = validateBlueprintDefinitionMerge(editor.getEngineState().customBlocks, defs);
+      if (collision) throw new Error(collision);
       setEngineState((prev) => {
         const nextCustom = { ...prev.customBlocks };
         for (const d of defs) {
-          nextCustom[d.id] = { ...d, isCustom: true };
+          if (!Object.hasOwn(nextCustom, d.id)) nextCustom[d.id] = structuredClone(d);
         }
-        persistLocalCustomBlocks(nextCustom);
+
         return { ...prev, customBlocks: nextCustom };
       });
-      setActiveBlockId(defs[0].id);
-      setToolMode('place');
+      if (!isJavaLocked || eligibleBlockIds.includes(defs[0].id)) {
+        editor.afterCommit(() => setActiveBlockId(defs[0].id));
+        editor.afterCommit(() => setToolMode('place'));
+      }
       appendLog(
         '//market install',
         defs.length === 1
-          ? `Added "${defs[0].name}" from CC0 Market to your Studio Library.`
-          : `Installed ${defs.length} CC0 blocks into your Studio Library.`,
+          ? `Added "${defs[0].name}" from the local catalogue to your Studio Library.`
+          : `Added ${defs.length} catalogue blocks to your Studio Library.`,
         true
       );
+      });
     },
-    [appendLog]
+    [editor, appendLog, isJavaLocked, eligibleBlockIds, setActiveBlockId]
   );
 
   // Assign a block from the Studio Library directly to Primary Hotbar Slot 1..9
   const handleAssignBlockToPrimarySlot = useCallback(
     (blockId: string, slotIndex: number) => {
       const clampedIdx = Math.max(0, Math.min(8, slotIndex));
-      setHotbarBlockIds((prev) => {
+      editor.afterCommit(() => setHotbarBlockIds((prev) => {
         const next = [...prev];
         next[clampedIdx] = blockId;
         return next;
-      });
+      }));
       setHudConfig((prev) => {
         const nextBars = prev.bars.map((bar) => {
           if (bar.id !== 'bar_primary_blocks') return bar;
@@ -2372,186 +1982,79 @@ export default function App() {
         }
         return next;
       });
-      setActiveBlockId(blockId);
-      setToolMode('place');
+      editor.afterCommit(() => setActiveBlockId(blockId));
+      editor.afterCommit(() => setToolMode('place'));
     },
     []
   );
 
-  // Save/Overwrite a Named Project in the Main Menu Project Manager
-  const handleSaveProjectSlot = useCallback(
-    (name: string, description: string, overwriteId?: string) => {
-      const cleanName = name.trim() || worldName || 'Untitled Studio Project';
-      const nowIso = new Date().toISOString();
-      const customList = Object.values(engineState.customBlocks).filter(
-        (d) => d.isCustom
-      );
-      const proj: SavedStudioProject = {
-        id: overwriteId || `proj_${Date.now()}`,
-        name: cleanName,
-        description: description.trim() || 'Saved from LFS Block Studio Main Menu',
-        updatedAt: nowIso,
-        blockCount: Object.keys(engineState.blocks).length,
-        unlockedChunksCount: chunkConfig.unlockedChunks.length,
-        blocks: { ...engineState.blocks },
-        customBlocks: customList,
-        chunkConfig: { ...chunkConfig },
-      };
+  // Named checkpoints preserve full documents. Earlier copies remain available in Recovery.
+  const handleSaveProjectSlot = useCallback(async (name: string, description: string): Promise<boolean> => {
+    const saved = await persistence.saveNamedCopy(name, description);
+    if (saved) setProjectCatalogVersion(version => version + 1);
+    appendLog('//project checkpoint', saved ? `Saved a complete named copy: "${name}".` : 'Named copy was not saved. Check the recovery notice.', saved);
+    return saved;
+  }, [persistence.saveNamedCopy, appendLog]);
 
-      setWorldName(cleanName);
-      const nextList = overwriteId
-        ? [proj, ...savedProjects.filter((p) => p.id !== overwriteId)]
-        : [proj, ...savedProjects];
-      persistSavedProjects(nextList.slice(0, 20));
-      appendLog(
-        '//project save',
-        `Saved project "${cleanName}" (${proj.blockCount} blocks).`,
-        true
-      );
-    },
-    [
-      worldName,
-      engineState.blocks,
-      engineState.customBlocks,
-      chunkConfig,
-      savedProjects,
-      persistSavedProjects,
-      appendLog,
-    ]
-  );
+  const handleLoadProjectSlot = useCallback(async (project: SavedStudioProject): Promise<boolean> => {
+    const raw = JSON.stringify(project.completeDocument ?? project);
+    const result = importStudioCandidate(raw, persistence.importDefaults());
+    if (result.ok === false) { appendLog('//project open', result.error.message, false); return false; }
+    const opened = await persistence.restoreCopy(result.value, [{ sourceId: `project:${project.id}`, raw }]);
+    if (opened) setProjectCatalogVersion(version => version + 1);
+    return opened;
+  }, [persistence.importDefaults, persistence.restoreCopy, appendLog]);
 
-  const handleLoadProjectSlot = useCallback(
-    (proj: SavedStudioProject) => {
-      setEngineState((prev) => {
-        const withUndo = pushUndoSnapshot(prev, `Load Project ${proj.name}`);
-        const nextCustom = { ...withUndo.customBlocks };
-        for (const d of proj.customBlocks || []) {
-          nextCustom[d.id] = d;
-        }
-        persistLocalCustomBlocks(nextCustom);
-        return {
-          ...withUndo,
-          blocks: { ...proj.blocks },
-          customBlocks: nextCustom,
-        };
-      });
-      if (proj.chunkConfig) {
-        setChunkConfig(proj.chunkConfig);
-      }
-      setWorldName(proj.name);
-      appendLog(
-        '//project load',
-        `Loaded project "${proj.name}" (${proj.blockCount} blocks).`,
-        true
-      );
-    },
-    [appendLog]
-  );
-
-  const handleDeleteProjectSlot = useCallback(
-    (projectId: string) => {
-      const next = savedProjects.filter((p) => p.id !== projectId);
-      persistSavedProjects(next);
-    },
-    [savedProjects, persistSavedProjects]
-  );
-
-  const handleImportProjectJson = useCallback(
-    (rawJson: string): boolean => {
-      try {
-        const parsed = JSON.parse(rawJson);
-        if (!parsed || typeof parsed.blocks !== 'object') return false;
-        const proj: SavedStudioProject = {
-          id: parsed.id || `proj_import_${Date.now()}`,
-          name: parsed.name || parsed.worldName || 'Imported LFS Project',
-          description: parsed.description || 'Imported from .lfsproj.json',
-          updatedAt: new Date().toISOString(),
-          blockCount: Object.keys(parsed.blocks).length,
-          unlockedChunksCount:
-            parsed.chunkConfig?.unlockedChunks?.length || 1,
-          blocks: parsed.blocks,
-          customBlocks: Array.isArray(parsed.customBlocks)
-            ? parsed.customBlocks
-            : [],
-          chunkConfig: parsed.chunkConfig || DEFAULT_CHUNK_CONFIG,
-        };
-        persistSavedProjects([proj, ...savedProjects]);
-        handleLoadProjectSlot(proj);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    [savedProjects, persistSavedProjects, handleLoadProjectSlot]
-  );
+  const handleImportProjectJson = useCallback(async (rawJson: string): Promise<boolean> => {
+    const result = importStudioCandidate(rawJson, persistence.importDefaults());
+    if (result.ok === false) { appendLog('//project import', result.error.message, false); return false; }
+    const opened = await persistence.restoreCopy(result.value, [{ sourceId: 'imported-project-file', raw: rawJson }]);
+    if (opened) setProjectCatalogVersion(version => version + 1);
+    return opened;
+  }, [persistence.importDefaults, persistence.restoreCopy, appendLog]);
 
   // Reset Entire World to a Selected Template
-  const handleResetEntireWorld = useCallback(
-    (template: WorldResetTemplateId) => {
-      setEngineState((prev) => {
-        const res = resetEntireWorldToTemplate(
-          prev,
-          template,
-          chunkConfig.chunkSize
-        );
-        appendLog('//reset world', res.summary, true);
-        return res.nextState;
-      });
+  const handleResetEntireWorld = useCallback((template: WorldResetTemplateId) => {
+    return editor.transaction('Reset world', () => {
+      const result = resetEntireWorldToTemplate(editor.getEngineState(), template, editor.getDocument().chunkConfig.chunkSize);
+      setEngineState(result.nextState);
       setChunkConfig(DEFAULT_CHUNK_CONFIG);
-    },
-    [chunkConfig.chunkSize, appendLog]
-  );
+      appendLog('//reset world', result.summary);
+    });
+  }, [editor, appendLog]);
 
-  // Reset or Clear a Specific Individual Chunk (cx, cz) without affecting other chunks
-  const handleResetSpecificChunk = useCallback(
-    (
-      cx: number,
-      cz: number,
-      style:
-        | 'clear_air'
-        | 'grass_island'
-        | 'stone_foundation'
-        | 'timber_deck'
-        | 'sandstone_plaza'
-    ) => {
-      setEngineState((prev) => {
-        const res = resetSpecificChunkInWorld(
-          prev,
-          cx,
-          cz,
-          style,
-          chunkConfig.chunkSize
-        );
-        appendLog(`//reset chunk (${cx},${cz})`, res.summary, true);
-        return res.nextState;
-      });
-    },
-    [chunkConfig.chunkSize, appendLog]
-  );
+  const handleResetSpecificChunk = useCallback((cx: number, cz: number, style: 'clear_air' | 'grass_island' | 'stone_foundation' | 'timber_deck' | 'sandstone_plaza') => {
+    return editor.transaction('Reset chunk', () => {
+      const result = resetSpecificChunkInWorld(editor.getEngineState(), cx, cz, style, editor.getDocument().chunkConfig.chunkSize);
+      setEngineState(result.nextState);
+      appendLog('//reset chunk', result.summary);
+    });
+  }, [editor, appendLog]);
 
   // Engagement Handlers: Atmosphere Presets, Procedural Biomes, Contract XP & Compliance Purge
   const handleSelectAtmospherePreset = useCallback(
     (presetId: AtmospherePresetId) => {
+      return editor.transaction('Select Atmosphere Preset', () => {
       const preset = getAtmospherePresetById(presetId);
-      setActiveAtmosphereId(preset.id);
-      setDaylightMode(preset.daylightMode);
+      editor.afterCommit(() => setActiveAtmosphereId(preset.id));
+      editor.afterCommit(() => setDaylightMode(preset.daylightMode));
       setLightingConfig({ ...preset.lighting });
       appendLog(
         `//atmosphere ${preset.id}`,
         `Applied "${preset.name}" solar & fog preset.`,
         true
       );
+      });
     },
     [appendLog]
   );
 
   const handleGenerateProceduralBiome = useCallback(
     (biomeId: ProceduralBiomeId, syncAtmosphere: boolean) => {
-      setEngineState((prev) => {
-        const res = applyProceduralBiomeToWorld(prev, biomeId);
-        appendLog(`//biome ${biomeId}`, res.summary, true);
-        return res.nextState;
-      });
+      return editor.transaction('Generate Procedural Biome', () => {
+      const res = applyProceduralBiomeToWorld(editor.getEngineState(), biomeId);
+      setEngineState(res.nextState);
+      appendLog(`//biome ${biomeId}`, res.summary, true);
       setChunkConfig(DEFAULT_CHUNK_CONFIG);
       if (syncAtmosphere) {
         const presetId =
@@ -2566,10 +2069,11 @@ export default function App() {
             : 'studio_noon';
         handleSelectAtmospherePreset(presetId);
       }
-      playContractCompleteFanfare(
+      editor.afterCommit(() => playContractCompleteFanfare(
         userProgress.soundEnabled,
         userProgress.hapticsEnabled
-      );
+      ));
+      });
     },
     [
       appendLog,
@@ -2582,16 +2086,21 @@ export default function App() {
   const handleClaimContractReward = useCallback(
     (contractId: string, xpReward: number) => {
       if (userProgress.claimedContractIds.includes(contractId)) return;
-      playContractCompleteFanfare(
+      editor.afterCommit(() => playContractCompleteFanfare(
         userProgress.soundEnabled,
         userProgress.hapticsEnabled
-      );
+      ));
       const next: StudioUserProgressState = {
         ...userProgress,
         xp: userProgress.xp + xpReward,
         claimedContractIds: [...userProgress.claimedContractIds, contractId],
       };
       persistUserProgress(next);
+      emitOasisMilestoneReward({
+        milestoneId: `contract:${contractId}`,
+        title: `Completed Architectural Contract (${contractId})`,
+        studioXpEarned: xpReward,
+      });
       appendLog(
         `//contract claim ${contractId}`,
         `Completed Architectural Contract (+${xpReward} XP)! Total: ${next.xp} XP.`,
@@ -2604,18 +2113,28 @@ export default function App() {
   const handleClaimDailyPromptReward = useCallback(
     (dateKey: string, bonusXp: number) => {
       if (userProgress.claimedDailyDates.includes(dateKey)) return;
-      playContractCompleteFanfare(
+      editor.afterCommit(() => playContractCompleteFanfare(
         userProgress.soundEnabled,
         userProgress.hapticsEnabled
+      ));
+      const streakUpdate = computeUpdatedBuildStreak(
+        userProgress.lastBuildDate,
+        userProgress.streakDays,
+        dateKey
       );
       const next: StudioUserProgressState = {
         ...userProgress,
         xp: userProgress.xp + bonusXp,
         claimedDailyDates: [...userProgress.claimedDailyDates, dateKey],
-        streakDays: userProgress.streakDays + 1,
-        lastBuildDate: dateKey,
+        streakDays: streakUpdate.streakDays,
+        lastBuildDate: streakUpdate.lastBuildDate,
       };
       persistUserProgress(next);
+      emitOasisMilestoneReward({
+        milestoneId: `daily:${dateKey}`,
+        title: `Daily Build Challenge (${dateKey})`,
+        studioXpEarned: bonusXp,
+      });
       appendLog(
         '//daily claim',
         `Claimed Daily Build Challenge (+${bonusXp} XP, ${next.streakDays}d streak)!`,
@@ -2644,29 +2163,10 @@ export default function App() {
     [userProgress, persistUserProgress]
   );
 
-  const handlePurgeLocalAndCloudAccountData = useCallback(async (): Promise<string> => {
-    const cloudRes = await deleteAllUserCloudData();
-    await idbClearAll();
-    try {
-      localStorage.clear();
-    } catch {
-      // Ignore
-    }
-    setSavedProjects([]);
-    setLocalSnapshots([]);
-    setPatternArchive(createInitialAdaptivePatternArchive());
-    setUserProgress(DEFAULT_USER_PROGRESS_STATE);
-    appendLog(
-      '//compliance purge',
-      `Purged local IndexedDB & ${cloudRes.deletedWorlds} cloud worlds / ${cloudRes.deletedBlueprints} blueprints.`,
-      true
-    );
-    return `Deleted ${cloudRes.deletedWorlds} cloud worlds, ${cloudRes.deletedBlueprints} cloud blueprints, and cleared local IndexedDB.`;
-  }, [appendLog]);
-
   // Global Customizable Keyboard Shortcuts Dispatcher
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (!persistence.ready || persistence.busy || persistence.recoveryOpen || activeModal !== 'none' || isAuditorModalOpen || recipeSnapshot.open || kitSnapshot.open || isAdaptiveSettingsOpen || showOnboardingTour || hasOpenViewportModal(document) || shouldIgnoreViewportKeyboard(e) || e.code === 'Tab') return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -2691,7 +2191,7 @@ export default function App() {
         return;
       }
 
-      if (activeModal !== 'none') return;
+      if (e.metaKey || e.ctrlKey) return;
 
       const { bindings } = hotkeyConfig;
 
@@ -2729,12 +2229,13 @@ export default function App() {
       if (matchesKeyBinding(e, bindings.toggleMouseLookMode)) {
         e.preventDefault();
         if (!e.repeat) {
-          setMouseLookToggled((prev) => !prev);
+          toggleFlyNavigation();
         }
       } else if (matchesKeyBinding(e, bindings.holdMouseLookMode)) {
         e.preventDefault();
         if (!e.repeat) {
           setIsHoldingMouseLook(true);
+          navigate('begin-look');
         }
       } else if (matchesKeyBinding(e, bindings.holdSelectionGizmo)) {
         e.preventDefault();
@@ -2749,31 +2250,31 @@ export default function App() {
         setRightSidebarTab((prev) => (prev === 'closed' ? 'legend' : 'closed'));
       } else if (matchesKeyBinding(e, bindings.toggleFlyMode)) {
         e.preventDefault();
-        setFlyMode((prev) => !prev);
+        navigate(navigationState.mode === 'fly' ? 'orbit' : 'fly');
       } else if (matchesKeyBinding(e, bindings.resetCamera)) {
         e.preventDefault();
-        setCameraPreset('isometric');
+        navigate('home');
       } else if (matchesKeyBinding(e, bindings.toolPlace)) {
         e.preventDefault();
-        setToolMode('place');
+        editor.afterCommit(() => setToolMode('place'));
       } else if (matchesKeyBinding(e, bindings.toolErase)) {
         e.preventDefault();
-        setToolMode('erase');
+        editor.afterCommit(() => setToolMode('erase'));
       } else if (matchesKeyBinding(e, bindings.toolPaint)) {
         e.preventDefault();
-        setToolMode('paint');
+        editor.afterCommit(() => setToolMode('paint'));
       } else if (matchesKeyBinding(e, bindings.toolPick)) {
         e.preventDefault();
-        setToolMode('pick');
+        editor.afterCommit(() => setToolMode('pick'));
       } else if (matchesKeyBinding(e, bindings.toolWand)) {
         e.preventDefault();
-        setToolMode('wand_select');
+        editor.afterCommit(() => setToolMode('wand_select'));
       } else if (matchesKeyBinding(e, bindings.toolBrushPlace)) {
         e.preventDefault();
-        setToolMode('brush_place');
+        editor.afterCommit(() => setToolMode('brush_place'));
       } else if (matchesKeyBinding(e, bindings.toolBrushErase)) {
         e.preventDefault();
-        setToolMode('brush_erase');
+        editor.afterCommit(() => setToolMode('brush_erase'));
       } else if (
         matchesKeyBinding(e, bindings.selectionRaiseUp) ||
         matchesKeyBinding(e, bindings.selectionLowerDown) ||
@@ -2826,8 +2327,8 @@ export default function App() {
       } else if (e.key >= '1' && e.key <= '9') {
         const idx = parseInt(e.key, 10) - 1;
         if (hotbarBlockIds[idx]) {
-          setActiveBlockId(hotbarBlockIds[idx]);
-          setToolMode('place');
+          editor.afterCommit(() => setActiveBlockId(hotbarBlockIds[idx]));
+          editor.afterCommit(() => setToolMode('place'));
         }
       }
     };
@@ -2835,6 +2336,7 @@ export default function App() {
     const onKeyUp = (e: KeyboardEvent) => {
       if (matchesKeyBinding(e, hotkeyConfig.bindings.holdMouseLookMode)) {
         setIsHoldingMouseLook(false);
+        navigate('end-look');
       }
       if (matchesKeyBinding(e, hotkeyConfig.bindings.holdSelectionGizmo)) {
         setIsHoldingSelectionGizmo(false);
@@ -2843,6 +2345,7 @@ export default function App() {
 
     const onBlur = () => {
       setIsHoldingMouseLook(false);
+      navigate('end-look');
       setIsHoldingSelectionGizmo(false);
     };
 
@@ -2863,6 +2366,16 @@ export default function App() {
     handleAcceptCopilotPredictions,
     handleRunCommand,
     performSaveSnapshot,
+    persistence.ready,
+    persistence.busy,
+    persistence.recoveryOpen,
+    isAdaptiveSettingsOpen,
+    recipeSnapshot.open,
+    kitSnapshot.open,
+    showOnboardingTour,
+    navigate,
+    navigationState.mode,
+    toggleFlyNavigation,
   ]);
 
   const totalBlockCount = Object.keys(engineState.blocks).length;
@@ -2880,10 +2393,102 @@ export default function App() {
     setCommandInput('');
   };
 
+  const openStudioMenu = (page: StudioMenuPage = 'actions') => { setStudioMenuStartPage(page); setActiveModal('studio_menu'); };
+  const selectSceneCell = (key: string, token: string) => {
+    if (token !== JSON.stringify(editor.getToken())) return editor.reject('The project changed. Inspect the current cell again.');
+    const block = editor.getEngineState().blocks[key];
+    if (!block) return editor.reject('This cell is no longer in the build.');
+    return editor.transaction('Select scene cell', () => setEngineState(previous => ({ ...previous, pos1: studioCellAnchor(block.position), pos2: studioCellAnchor(block.position) })), JSON.parse(token));
+  };
+  const useSceneBlock = (id: string) => {
+    if (isJavaLocked && !eligibleBlockIds.includes(id)) return editor.reject('This definition is unavailable under the game lock. Review compatibility before using it.');
+    if (!editor.getEngineState().customBlocks[id]) return editor.reject('This definition is no longer available.');
+    setActiveBlockId(id); setToolMode('place');
+    return { status: 'noop' as const, message: 'Active block selected for your next placement. The build is unchanged.' };
+  };
+  const studioMenuActions: StudioWorkspaceAction[] = [
+    { id: 'properties', label: 'Resume cell properties', category: 'Edit', description: 'Return to the last inspected cell and any unfinished properties draft.', keywords: 'inspector position scale rotation', disabledReason: cellInspectorSnapshot.target ? undefined : 'Choose a cell in Scene & inspect or coordinate tools first.', run: () => { cellInspector.reopen(); } },
+    { id: 'save', label: 'Save project locally', category: 'Project', description: 'Save the complete editable project on this browser.', run: () => { void persistence.save(); } },
+    { id: 'backup', label: 'Download project backup', category: 'Project', description: 'Keep an independent editable project file.', keywords: 'export json copy', run: persistence.downloadCurrent },
+    { id: 'recover', label: 'Browse recovery records', category: 'Project', description: 'Inspect saved revisions and open a preserved copy.', run: () => { void persistence.openRecovery(); } },
+    { id: 'projects', label: 'Projects and starters', category: 'Project', description: 'Open project copies, save a named copy or review a starter.', run: () => setActiveModal('main_menu') },
+    { id: 'compatibility', label: 'Review game compatibility lock', category: 'Target', description: 'Choose explicit Java mappings and review the checkpoint and Undo boundary.', keywords: 'minecraft worldedit profile', run: () => setActiveModal('compatibility') },
+    { id: 'export', label: 'Review exports', category: 'Target', description: 'Review a schematic candidate or the available Freeform draft formats.', keywords: 'schem schematic minecraft gltf godot', run: () => setActiveModal('export') },
+    { id: 'undo', label: 'Undo last edit', category: 'Edit', description: 'Restore the complete previous edit, including selection.', disabledReason: editorSnapshot.canUndo ? undefined : 'No edit is available to undo.', run: () => { handleRunCommand('//undo'); } },
+    { id: 'redo', label: 'Redo edit', category: 'Edit', description: 'Reapply the last undone edit.', disabledReason: editorSnapshot.canRedo ? undefined : 'No edit is available to redo.', run: () => { handleRunCommand('//redo'); } },
+    { id: 'coordinate', label: 'Open coordinate tools', category: 'Build', description: 'Place, erase, paint or set selection corners with numeric controls.', keywords: 'precision xyz position', run: () => {
+      const element = document.querySelector<HTMLDetailsElement>('[data-studio-coordinate-editor]');
+      if (element) { element.open = true; element.querySelector<HTMLInputElement>('input')?.focus(); }
+    } },
+    { id: 'commands', label: 'Prepare a WorldEdit command', category: 'Build', description: 'Enter and review a command in the command line before running it.', keywords: 'code scripts set walls sphere copy paste selection', run: () => { commandInputRef.current?.focus(); } },
+    { id: 'recipes', label: 'Open recipe workspace', category: 'Build', description: 'Compose bounded commands, inspect exact changes and Apply once with one Undo.', keywords: 'code scripts automation loops macro preview', run: () => recipeModel.show(recipeBlockId) },
+    { id: 'place', label: 'Choose place tool', category: 'Build', description: 'Use the active block for the next explicit placement.', run: () => setToolMode('place') },
+    { id: 'erase', label: 'Choose erase tool', category: 'Build', description: 'Choose the erase brush. The build changes only when you use it.', run: () => setToolMode('erase') },
+    { id: 'selection', label: 'Choose selection wand', category: 'Build', description: 'Set region corners with the wand or coordinate tools.', run: () => setToolMode('wand_select') },
+    { id: 'orbit', label: 'Orbit camera', category: 'Navigate', description: 'Rotate the camera around the working area.', run: () => navigate('orbit') },
+    { id: 'pan', label: 'Pan camera', category: 'Navigate', description: 'Move the camera without editing the build.', run: () => navigate('pan') },
+    { id: 'fly', label: 'Fly camera', category: 'Navigate', description: 'Use flight navigation. Speed and key mappings remain in navigation settings.', run: () => navigate('fly') },
+    { id: 'frame', label: 'Frame selection', category: 'Navigate', description: 'Bring the explicit selected region into view.', disabledReason: engineState.pos1 && engineState.pos2 ? undefined : 'Set both selection corners first.', run: () => navigate('frame-selection') },
+    { id: 'home', label: 'Recover camera', category: 'Navigate', description: 'Return to the Home view without changing the build.', keywords: 'lost reset', run: () => navigate('home') },
+    { id: 'market', label: 'Browse local block catalogue', category: 'Resources', description: 'Inspect available local blocks before adding them to the library.', keywords: 'market assets', run: () => setActiveModal('market') },
+    { id: 'resources', label: 'Open resource workspace', category: 'Resources', description: 'Review portable kits, browse blocks and blueprints, place precisely or package selected resources.', keywords: 'assets kit zip offline prefab library material import export', run: kitModel.show },
+    { id: 'library', label: 'Open blueprint library', category: 'Resources', description: 'Browse structures or import a blueprint for review.', keywords: 'prefab resource kit', run: () => setActiveModal('blueprints') },
+    { id: 'workshop', label: 'Open block workshop', category: 'Resources', description: 'Design a block and save it through the shared project session.', run: () => setActiveModal('workshop') },
+    { id: 'controls', label: 'Controls and keyboard help', category: 'Help', description: 'Inspect and remap the existing supported shortcuts.', run: () => setActiveModal('hotkeys') },
+    { id: 'settings', label: 'Studio UI and input settings', category: 'Help', description: 'Open existing scaling, layout and stylus settings.', run: () => setIsAdaptiveSettingsOpen(true) },
+    { id: 'auditor', label: 'Open Self-Testing & Issue Auditor', category: 'Help', description: 'Run the 6-suite automated Crucible fuzzer, inspect live WebGL telemetry or review local issues.', keywords: 'self-test audit bug fuzzer diagnostics telemetry healer', run: () => { setAuditorInitialTab('self_tests'); setIsAuditorModalOpen(true); } },
+    { id: 'visual_bug', label: 'Report Visual Bug (Circle & Analyze)', category: 'Help', description: 'Capture the 3D viewport, circle a visual bug and run local Sovereign Forge or heuristic root-cause analysis.', keywords: 'bug screenshot circle report issue', run: () => { setAuditorInitialTab('visual_bug_reporter'); setIsAuditorModalOpen(true); } },
+  ];
+
   return (
     <div className="relative w-screen h-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100">
+      <StudioRecoveryPanel persistence={persistence} />
+      <section aria-label="Game target and compatibility" className="flex flex-wrap items-center gap-3 border-b border-slate-700 bg-slate-900 px-4 py-2 text-sm">
+        <strong>{target?.kind === 'minecraft-java' ? `Java candidate · ${isJavaLocked ? 'Locked' : 'Unlocked'}` : 'Freeform project'}</strong>
+        <button type="button" disabled={!persistence.ready || persistence.busy} onClick={() => setActiveModal('compatibility')} className="rounded border border-emerald-500 px-3 py-2 disabled:opacity-50">Review game compatibility</button>
+        {isJavaLocked && <label>Active mapped block <select aria-label="Active mapped block" value={activeBlockId} disabled={!persistence.ready || persistence.busy} onChange={event => setActiveBlockId(event.target.value)} className="ml-2 rounded border border-slate-500 bg-slate-950 px-2 py-2">
+          {eligibleBlockIds.map(id => <option key={id} value={id}>{engineState.customBlocks[id].name}</option>)}
+        </select></label>}
+        {target?.kind === 'minecraft-java' && <span className="text-amber-200">Native Minecraft export is not qualified.</span>}
+        {isJavaLocked && <p className="basis-full text-xs text-slate-300">Candidate rules: mapped unit blocks, zero rotation and no instance appearance overrides. Paint replaces the mapped block type. Freeform scale/rotation preferences are retained for use after unlocking; smart appearance predictions are inactive while locked.</p>}
+      </section>
+      <StudioCompatibilityPanel isOpen={activeModal === 'compatibility'} onClose={() => setActiveModal('none')} source={compatibilitySource}
+        disabled={!persistence.ready || persistence.busy} onReview={handleReviewCompatibility} onApply={handleApplyCompatibility} />
+      <StudioWorkspaceMenu isOpen={activeModal === 'studio_menu'} onClose={() => setActiveModal(current => current === 'studio_menu' ? 'none' : current)}
+        initialPage={studioMenuStartPage} appearance={workspaceAppearance} onInspectCell={cellInspector.inspect}
+        document={editorSnapshot.document} sourceToken={JSON.stringify(editor.getToken())} history={editor.getHistoryUsage()} disabled={!editorSnapshot.writable || editorSnapshot.exclusive}
+        actions={studioMenuActions} onRename={(name, token) => {
+          if (token !== JSON.stringify(editor.getToken())) return editor.reject('The project changed. Reload the current name before applying your draft.');
+          return editor.setWorldField('worldName', name);
+        }} onSelectCell={selectSceneCell} onUseBlock={useSceneBlock} />
+      <StudioRecipeWorkspace model={recipeModel} snapshot={recipeSnapshot} writable={editorSnapshot.writable && !editorSnapshot.exclusive} sourceToken={JSON.stringify(editor.getToken())}
+        preferences={workspaceAppearance.preferences} definitions={selectableDefinitions} macros={hudConfig.macros} activeBlockId={activeBlockId}
+        currentCursor={studioCellAnchor(hoveredCoord ?? engineState.pos1 ?? { x: 0, y: 1, z: 0 })} />
+      <StudioResourceWorkspace model={kitModel} snapshot={kitSnapshot} document={editorSnapshot.document} sourceToken={JSON.stringify(editor.getToken())}
+        writable={editorSnapshot.writable && !editorSnapshot.exclusive} preferences={workspaceAppearance.preferences} pos1={engineState.pos1} eligibleBlockIds={eligibleBlockIds}
+        onOpenCatalogue={() => setActiveModal('market')} onOpenWorkshop={() => setActiveModal('workshop')}
+        onUseBlock={(id, token) => token === JSON.stringify(editor.getToken()) ? useSceneBlock(id) : editor.reject('The project changed. Choose a current resource again.')}
+        onEquipBlueprint={(id, token) => {
+          if (token !== JSON.stringify(editor.getToken())) return editor.reject('The project changed. Choose a current blueprint again.');
+          const bp = editor.getDocument().blueprints.find(value => value.id === id);
+          if (!bp) return editor.reject('This blueprint is no longer in the current library.');
+          handleEquipBlueprintStamp(bp); return { status: 'noop' };
+        }} />
+      <StudioCoordinateEditor disabled={!editorSnapshot.writable || editorSnapshot.exclusive} brush={volumeBrush} symmetry={symmetryConfig} javaLocked={isJavaLocked}
+        onConfigure={(brush, symmetry) => { setVolumeBrush(brush); setSymmetryConfig(symmetry); }} hasSelection={Boolean(engineState.pos1 || engineState.pos2)} onClearSelection={() => handleRunCommand('//desel')} onApply={(action, coordinate) => {
+        if (action === 'brush_place' || action === 'brush_erase') return handleApplyVolumeBrushAt(coordinate, action);
+        if (action === 'inspect') {
+          if (JSON.stringify(directEditToken) !== JSON.stringify(editor.getToken())) return editor.reject('The project changed. Inspect a current coordinate again.');
+          return cellInspector.inspect(`${coordinate.x},${coordinate.y},${coordinate.z}`, JSON.stringify(directEditToken));
+        }
+        const handler = { place: handlePlaceBlockAt, erase: handleEraseBlockAt, paint: handlePaintBlockAt, pos1: handleSetPos1, pos2: handleSetPos2 }[action];
+        return handler(coordinate);
+      }} />
+      {editorSnapshot.lastError && <div role="alert" className="px-4 py-2 text-sm bg-amber-950 text-amber-100">{editorSnapshot.lastError}</div>}
+      <div className="flex min-h-0 flex-1 flex-col" inert={!persistence.ready || persistence.busy} aria-busy={!persistence.ready || persistence.busy}>
       {/* Top Microsoft Word / Office Style Multi-Tab Studio Ribbon */}
       <StudioRibbonHeader
+        onOpenStudioMenu={() => openStudioMenu()}
         activeRibbonTab={activeRibbonTab}
         onSelectRibbonTab={setActiveRibbonTab}
         worldName={worldName}
@@ -2895,15 +2500,15 @@ export default function App() {
         toolMode={toolMode}
         onSelectToolMode={setToolMode}
         activeBlockId={activeBlockId}
-        customBlocks={engineState.customBlocks}
+        customBlocks={selectableDefinitions}
         activeBlueprint={activeBlueprint}
         blueprintsCount={blueprints.length}
         placementRotation={placementRotation}
         onRotatePlacement={() =>
           setPlacementRotation((prev) => (((prev + 90) % 360) as 0 | 90 | 180 | 270))
         }
-        canUndo={engineState.undoStack.length > 0}
-        canRedo={engineState.redoStack.length > 0}
+        canUndo={editorSnapshot.canUndo}
+        canRedo={editorSnapshot.canRedo}
         onRunCommand={handleRunCommand}
         onTriggerManualSaveNow={() => performSaveSnapshot('manual')}
         onOpenModal={(m) => {
@@ -2913,7 +2518,7 @@ export default function App() {
         showGrid={showGrid}
         onToggleGrid={() => setShowGrid((prev) => !prev)}
         daylightMode={daylightMode}
-        onToggleDaylight={() => setDaylightMode((prev) => !prev)}
+        onToggleDaylight={() => editor.afterCommit(() => setDaylightMode((prev) => !prev))}
         lightingConfig={lightingConfig}
         onChangeLightingConfig={setLightingConfig}
         chunkConfig={chunkConfig}
@@ -2923,10 +2528,10 @@ export default function App() {
         onChangePatternConfig={setPatternConfig}
         onSelectCameraPreset={setCameraPreset}
         flyMode={flyMode}
-        onToggleFlyMode={() => setFlyMode((prev) => !prev)}
+        onToggleFlyMode={toggleFlyNavigation}
         freeLookActive={effectiveFreeLook}
-        onToggleMouseLookMode={() => setMouseLookToggled((prev) => !prev)}
-        rightSidebarTab={rightSidebarTab}
+        onToggleMouseLookMode={toggleFlyNavigation}
+        rightSidebarTab={cellInspectorSnapshot.open ? 'closed' : rightSidebarTab}
         onSelectRightSidebarTab={setRightSidebarTab}
         gitCommits={gitCommits}
         onCreateGitCommit={() => handleCreateGitCommit()}
@@ -2964,6 +2569,10 @@ export default function App() {
             soundEnabled: !userProgress.soundEnabled,
           })
         }
+        onOpenAuditorModal={(tab) => {
+          setAuditorInitialTab(tab);
+          setIsAuditorModalOpen(true);
+        }}
       />
 
       {/* Center Workbench Area: Left MS Paint Toolbox + Center 3D Viewport + Right Command Legend / Git / Lighting Dock */}
@@ -2976,12 +2585,12 @@ export default function App() {
           onSelectToolMode={setToolMode}
           activeBlockId={activeBlockId}
           onSelectBlockId={(id) => {
-            setActiveBlockId(id);
+            editor.afterCommit(() => setActiveBlockId(id));
             if (toolMode === 'stamp_blueprint' || toolMode === 'wand_select') {
-              setToolMode('place');
+              editor.afterCommit(() => setToolMode('place'));
             }
           }}
-          customBlocks={engineState.customBlocks}
+          customBlocks={selectableDefinitions}
           onUpdateActiveBlockColor={handleUpdateActiveBlockColor}
           activeBlueprint={activeBlueprint}
           placementRotation={placementRotation}
@@ -2997,8 +2606,14 @@ export default function App() {
         />
 
             {/* Center 3D Architectural Voxel & Skyblock Viewport */}
-        <main className="relative flex-1 h-full min-w-0 overflow-hidden">
+        <main className="relative flex-1 h-full min-w-0 overflow-hidden flex flex-col">
+          <StudioNavigationToolbar onNavigate={navigate} state={navigationState} disabled={!persistence.ready || persistence.busy} />
+          <div className="relative min-h-0 flex-1">
           <SkyblockViewport
+            navigationRequest={navigationRequest}
+            onNavigationStateChange={setNavigationState}
+            inputBlocked={!persistence.ready || persistence.busy || persistence.recoveryOpen || persistence.choices.length > 0 || activeModal !== 'none' || isAuditorModalOpen || recipeSnapshot.open || kitSnapshot.open || isAdaptiveSettingsOpen || showOnboardingTour || isCinemaOpen}
+            editScope={`${editorSnapshot.sessionId}:${editorSnapshot.document.historyEpoch}`}
             blocks={effectiveViewportBlocks}
             customBlocks={engineState.customBlocks}
             activeBlockId={activeBlockId}
@@ -3011,15 +2626,15 @@ export default function App() {
             daylightMode={daylightMode}
             lightingConfig={lightingConfig}
             chunkConfig={chunkConfig}
-            patternConfig={patternConfig}
+            patternConfig={previewPatternConfig}
             cameraPreset={cameraPreset}
             collaborators={collaborators}
             hotkeyConfig={hotkeyConfig}
             flyMode={flyMode}
-            onToggleFlyMode={() => setFlyMode((prev) => !prev)}
+            onToggleFlyMode={toggleFlyNavigation}
             freeLookActive={effectiveFreeLook}
             isHoldingFreeLook={isHoldingMouseLook}
-            onToggleMouseLookMode={() => setMouseLookToggled((prev) => !prev)}
+            onToggleMouseLookMode={toggleFlyNavigation}
             activeBlockScale={activeBlockScale}
             scrollResizeMode={scrollResizeMode}
             scrollResizeAxis={scrollResizeAxis}
@@ -3048,6 +2663,7 @@ export default function App() {
             onStampBlueprintAt={handleStampBlueprintAt}
             onSetPos1={handleSetPos1}
             onSetPos2={handleSetPos2}
+            onClearSelection={handleClearSelection}
             onNudgeSelectionFace={handleNudgeSelectionFace}
             volumeBrush={volumeBrush}
             onChangeVolumeBrush={setVolumeBrush}
@@ -3061,6 +2677,7 @@ export default function App() {
             onChangeSymmetryConfig={setSymmetryConfig}
             detectedSymmetry={detectedSymmetry}
             copilotConfig={copilotConfig}
+            onChangeCopilotConfig={setCopilotConfig}
             copilotPredictions={copilotPredictions}
             onAcceptCopilotPredictions={handleAcceptCopilotPredictions}
             selectionRecommendations={
@@ -3078,13 +2695,18 @@ export default function App() {
             snapshotTriggerCount={snapshotTriggerCount}
             worldName={worldName}
             onSelectBlockId={(id) => {
-              setActiveBlockId(id);
+              editor.afterCommit(() => setActiveBlockId(id));
               if (toolMode === 'stamp_blueprint' || toolMode === 'wand_select') {
-                setToolMode('place');
+                editor.afterCommit(() => setToolMode('place'));
               }
             }}
             onSelectToolMode={setToolMode}
+            isLeftToolboxOpen={isLeftToolboxOpen}
+            onOpenLeftToolbox={() => setIsLeftToolboxOpen(true)}
+            isRightInspectorOpen={rightSidebarTab !== 'closed' || cellInspectorSnapshot.open}
+            onOpenRightInspector={() => setRightSidebarTab('legend')}
           />
+          </div>
 
           {/* Cinematic Photo Mode & Chronological Build Timelapse Dock */}
           <CinematicTimelapseDock
@@ -3138,14 +2760,14 @@ export default function App() {
             onChangeHudConfig={handleChangeHudConfig}
             activeBlockId={activeBlockId}
             onSelectBlockId={(id) => {
-              setActiveBlockId(id);
+              editor.afterCommit(() => setActiveBlockId(id));
               if (toolMode === 'stamp_blueprint' || toolMode === 'wand_select') {
-                setToolMode('place');
+                editor.afterCommit(() => setToolMode('place'));
               }
             }}
             toolMode={toolMode}
             onSelectToolMode={setToolMode}
-            customBlocks={engineState.customBlocks}
+            customBlocks={selectableDefinitions}
             onRunCommand={handleRunCommand}
             onTriggerMacroLoop={handleTriggerMacroLoop}
             runningMacroId={null}
@@ -3209,7 +2831,7 @@ export default function App() {
             toolMode={toolMode}
             onSelectToolMode={setToolMode}
             activeBlockId={activeBlockId}
-            customBlocks={engineState.customBlocks}
+            customBlocks={selectableDefinitions}
             placementRotation={placementRotation}
             onRotatePlacement={() =>
               setPlacementRotation(
@@ -3225,11 +2847,11 @@ export default function App() {
             onSetPos1={handleSetPos1}
             onSetPos2={handleSetPos2}
             onRunCommand={handleRunCommand}
-            canUndo={engineState.undoStack.length > 0}
-            canRedo={engineState.redoStack.length > 0}
+            canUndo={editorSnapshot.canUndo}
+            canRedo={editorSnapshot.canRedo}
             isLeftToolboxOpen={isLeftToolboxOpen}
             onToggleLeftToolbox={() => setIsLeftToolboxOpen((prev) => !prev)}
-            rightSidebarTab={rightSidebarTab}
+            rightSidebarTab={cellInspectorSnapshot.open ? 'closed' : rightSidebarTab}
             onSelectRightSidebarTab={setRightSidebarTab}
             onOpenModal={(m) => {
               if (m === 'cloud') handleRefreshCloudWorlds();
@@ -3243,7 +2865,7 @@ export default function App() {
 
         {/* Right Dock: Built-In Command & Tool Legend, Chunks & Smart Art, Git History Tree, and Dynamic Lighting Inspector */}
         <CommandLegendSidebar
-          activeTab={rightSidebarTab}
+          activeTab={cellInspectorSnapshot.open ? 'closed' : rightSidebarTab}
           onSelectTab={setRightSidebarTab}
           activeBlockId={activeBlockId}
           blocks={engineState.blocks}
@@ -3268,16 +2890,21 @@ export default function App() {
           onChangeCopilotConfig={setCopilotConfig}
           walkabilityReport={walkabilityReport}
           onAutoLightDarkSpots={handleAutoLightDarkSpots}
+          autoLightUnavailableReason={isJavaLocked ? 'Lantern placement is unavailable in this Java candidate profile.' : !engineState.customBlocks.voxel_lantern ? 'This project needs a lantern definition before auto-light can place one.' : undefined}
           patternArchive={patternArchive}
           detectedObjectClass={detectedObjectClass}
           onResetPatternArchive={() =>
-            setPatternArchive(createInitialAdaptivePatternArchive())
+            editor.afterCommit(() => setPatternArchive(createInitialAdaptivePatternArchive()))
           }
           isFloating={rightSidebarFloating}
           onToggleFloating={() => setRightSidebarFloating((prev) => !prev)}
           dockedWidth={workspaceMetrics.effectiveRightWidth || rightDockedWidth}
           onResizeDockedWidth={setRightDockedWidth}
         />
+        <StudioCellInspector model={cellInspector} snapshot={cellInspectorSnapshot} document={editorSnapshot.document} sourceToken={JSON.stringify(editor.getToken())}
+          writable={editorSnapshot.writable && !editorSnapshot.exclusive} preferences={workspaceAppearance.preferences} definitions={selectableDefinitions}
+          width={workspaceMetrics.effectiveRightWidth || rightDockedWidth} preferredWidth={rightDockedWidth} onWidth={setRightDockedWidth}
+          onBrowse={() => openStudioMenu('scene')} onAppearance={() => openStudioMenu('comfort')} onSelectCell={selectSceneCell} onUseBlock={useSceneBlock} />
       </div>
 
       {/* Bottom Studio Status Bar & Integrated WorldEdit Command Bar (Adapts cleanly to narrow/split-screen window resizing) */}
@@ -3393,8 +3020,8 @@ export default function App() {
         hudConfig={hudConfig}
         usageCounts={hudConfig.usageCounts}
         onSelectBlockId={(id) => {
-          setActiveBlockId(id);
-          setToolMode('place');
+          editor.afterCommit(() => setActiveBlockId(id));
+          editor.afterCommit(() => setToolMode('place'));
         }}
         onInstallMarketBlocks={handleInstallMarketBlocks}
         onAssignBlockToPrimarySlot={handleAssignBlockToPrimarySlot}
@@ -3412,7 +3039,6 @@ export default function App() {
         savedProjects={savedProjects}
         onSaveProjectSlot={handleSaveProjectSlot}
         onLoadProjectSlot={handleLoadProjectSlot}
-        onDeleteProjectSlot={handleDeleteProjectSlot}
         onImportProjectJson={handleImportProjectJson}
         onResetEntireWorld={handleResetEntireWorld}
         onResetSpecificChunk={handleResetSpecificChunk}
@@ -3425,7 +3051,6 @@ export default function App() {
         onClearReportedWorlds={() =>
           persistUserProgress({ ...userProgress, reportedWorldIds: [] })
         }
-        onPurgeLocalAndCloudAccountData={handlePurgeLocalAndCloudAccountData}
       />
 
       <ContractsAndBiomesModal
@@ -3442,8 +3067,8 @@ export default function App() {
         onGenerateProceduralBiome={handleGenerateProceduralBiome}
         onSelectAtmospherePreset={handleSelectAtmospherePreset}
         onSelectBlockId={(id) => {
-          setActiveBlockId(id);
-          setToolMode('place');
+          editor.afterCommit(() => setActiveBlockId(id));
+          editor.afterCommit(() => setToolMode('place'));
         }}
         onLaunchOnboardingTour={() => setShowOnboardingTour(true)}
       />
@@ -3478,9 +3103,9 @@ export default function App() {
         hotkeyConfig={hotkeyConfig}
         onChangeHotkeyConfig={handleChangeHotkeyConfig}
         flyMode={flyMode}
-        onToggleFlyMode={() => setFlyMode((prev) => !prev)}
+        onToggleFlyMode={toggleFlyNavigation}
         mouseLookToggled={mouseLookToggled}
-        onToggleMouseLookMode={() => setMouseLookToggled((prev) => !prev)}
+        onToggleMouseLookMode={toggleFlyNavigation}
       />
 
       <DriveBackupModal
@@ -3516,11 +3141,9 @@ export default function App() {
         isLiveConnected={isLiveConnected}
         collaborators={collaborators}
         cloudWorlds={cloudWorlds}
-        onUpdateWorldMeta={(n, r, pub) => {
-          setWorldName(n);
-          setRoomCode(r);
-          setIsPublicWorld(pub);
-        }}
+        onUpdateWorldMeta={(n, r, pub) => { editor.transaction('Edit world metadata', () => {
+          setWorldName(n); setRoomCode(r); setIsPublicWorld(pub);
+        }); }}
         onSaveCurrentWorldToCloud={handleSaveCurrentWorldToCloud}
         onJoinCloudWorld={handleJoinCloudWorld}
         onRefreshCloudWorlds={handleRefreshCloudWorlds}
@@ -3532,7 +3155,31 @@ export default function App() {
         worldName={worldName}
         blocks={engineState.blocks}
         customBlocks={engineState.customBlocks}
+        studioDocument={editorSnapshot.document}
+        sourceToken={compatibilitySource.token}
+        selection={engineState.pos1 && engineState.pos2 ? { pos1: engineState.pos1, pos2: engineState.pos2 } : null}
+        isCurrentSource={token => token === JSON.stringify(editor.getToken()) && editor.getSnapshot().writable && !editor.getSnapshot().exclusive}
+        onOpenCompatibility={() => setActiveModal('compatibility')}
       />
+
+      <SelfTestingAuditorModal
+        isOpen={isAuditorModalOpen}
+        initialTab={auditorInitialTab}
+        onClose={() => setIsAuditorModalOpen(false)}
+        activeBlockCount={totalBlockCount}
+        unlockedChunksCount={chunkConfig.unlockedChunks.length}
+        activeToolMode={toolMode}
+        activeBlockId={activeBlockId}
+        lastCommands={commandLog.slice(-8).map((c) => c.cmd)}
+        openWindows={
+          activeModal === 'none'
+            ? isAuditorModalOpen
+              ? ['self_testing_auditor_modal']
+              : []
+            : [activeModal]
+        }
+      />
+      </div>
     </div>
   );
 }

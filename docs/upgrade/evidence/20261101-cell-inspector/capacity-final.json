@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-11-01T22:09:07.167Z",
+  "origin": "http://127.0.0.1:4174",
+  "caseFilter": null,
+  "assets": [
+    [
+      "http://127.0.0.1:4174/assets/index-BjocarM_.js",
+      "http://127.0.0.1:4174/assets/index-BxvGy-C2.css"
+    ],
+    [
+      "http://127.0.0.1:4174/assets/index-BjocarM_.js",
+      "http://127.0.0.1:4174/assets/index-BxvGy-C2.css"
+    ]
+  ],
+  "results": [
+    {
+      "name": "a project larger than the history allowance opens, makes small edits and reports bounded retained changes",
+      "ok": true,
+      "projectBytes": 20972951,
+      "history": {
+        "undo": 3,
+        "redo": 0,
+        "bytes": 804
+      }
+    },
+    {
+      "name": "large-project actual Undo and Redo restore full payloads with stable retained change accounting",
+      "ok": true,
+      "originalHash": "8c23d27b21ef743032bee6f4f4601e22fcda2f20191d78ae48e1e78009a56c3d",
+      "changedHash": "49f672e9e183d9effde9bccb2398c02735b3fdf584a97b9121353cee501dca3d"
+    },
+    {
+      "name": "complete large project and independent compact backup survive save and reload while live history restarts",
+      "ok": true,
+      "backupBytes": 20973052,
+      "backupSha256": "4e5dbea64ee191c6c7f80dd35baa1e4d0806f943ce18a1956740d9db6a035cdb"
+    },
+    {
+      "name": "near-limit admitted project downloads inside its own opening limit and reopens as an independent copy",
+      "ok": true,
+      "compactInputBytes": 33552384,
+      "formerPrettyBytes": 33598640,
+      "actualBackupBytes": 33552384,
+      "backupSha256": "49ec7f534e5e5d7ee5b197adfb64b5ff9e62c451cf3252a0132b5fd7fd154758",
+      "independentCopy": true
+    }
+  ],
+  "errors": [],
+  "storageErrors": [],
+  "limitations": [
+    "Disposable Chromium/software WebGL, with external/API traffic and service workers blocked. No user storage, provider or native game operation.",
+    "Named large-JSON correctness fixtures only. Does not qualify rendering capacity, latency, JavaScript/RAM usage, durable storage guarantees or other browsers.",
+    "Session Undo has a change-data/count allowance and is not persisted; a saved project/backup does not contain this live history."
+  ],
+  "finishedAt": "2026-11-01T22:10:35.023Z",
+  "ok": true
+}

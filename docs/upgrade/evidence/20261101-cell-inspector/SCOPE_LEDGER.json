@@ -1,0 +1,67 @@
+{
+  "recordedAtUTC": "2026-11-01T22:11:23.352413+00:00",
+  "candidate": {
+    "js": "index-BjocarM_.js",
+    "css": "index-BxvGy-C2.css",
+    "jsSha256": "dab8a9065e63dcb37da4682c71e9cee6e5e67f27bd5514786dc83d54c9301028",
+    "cssSha256": "d0c6a8594620ca5c40b379e71f54485ca766ee2e13065de6591e67c07ecaa1f6"
+  },
+  "domain": {
+    "passed": 312,
+    "files": 27,
+    "receipt": "contracts-final.txt"
+  },
+  "app": {
+    "properties": {
+      "passed": 10,
+      "receipt": "properties-final.json"
+    },
+    "menu": {
+      "passed": 9,
+      "receipt": "menu-final.json"
+    },
+    "authority": {
+      "passed": 8,
+      "receipt": "authority-final.json"
+    },
+    "navigation": {
+      "passed": 9,
+      "receipt": "navigation-final.json"
+    },
+    "java": {
+      "passed": 10,
+      "receipt": "java-final.json"
+    },
+    "compatibility": {
+      "passed": 15,
+      "receipt": "compatibility-final.json"
+    },
+    "resources": {
+      "passed": 9,
+      "receipt": "resources-final.json"
+    },
+    "catalogue": {
+      "passed": 6,
+      "receipt": "catalogue-final.json"
+    },
+    "brush": {
+      "passed": 13,
+      "receipt": "brush-final.json"
+    },
+    "options": {
+      "passed": 2,
+      "receipt": "options-final.json"
+    },
+    "recovery": {
+      "passed": 8,
+      "receipt": "recovery-final.json"
+    },
+    "capacity": {
+      "passed": 4,
+      "receipt": "capacity-final.json"
+    }
+  },
+  "appTotal": 103,
+  "historicalBackend": "107 prior Ca backend/component cases not rerun or promoted. Primary persistence files unchanged while transitive engine dependencies differ.",
+  "scope": "Disposable Chromium/software WebGL and actual App controls/downloads/native Tab; external/API and service workers blocked. Native Minecraft/WorldEdit NOT_RUN \u2014 skipped by user. No full-shell/physical/assistive/performance/provider/release acceptance."
+}

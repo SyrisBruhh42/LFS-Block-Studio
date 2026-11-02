@@ -68,7 +68,7 @@ export const CloudMultiplayerModal: React.FC<CloudMultiplayerModalProps> = ({
     setStatusMessage(null);
     try {
       await onSaveCurrentWorldToCloud();
-      setStatusMessage('Skyblock world synced to Google Firebase Cloud!');
+      setStatusMessage('Studio world synced to Google Firebase Cloud!');
     } catch (err) {
       setStatusMessage(err instanceof Error ? err.message : 'Failed to save world.');
     } finally {
@@ -82,7 +82,7 @@ export const CloudMultiplayerModal: React.FC<CloudMultiplayerModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Firebase Cloud Worlds & Live Co-Building"
-      subtitle="Persist your Skyblock worlds to Firestore and co-build in real time on shared islands"
+      subtitle="Persist your 3D studio worlds to Firestore and co-build in real time on shared plots"
       icon={<Cloud className="w-4 h-4 text-cyan-400" />}
       defaultWidth={780}
       defaultHeight={620}
@@ -142,7 +142,7 @@ export const CloudMultiplayerModal: React.FC<CloudMultiplayerModalProps> = ({
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-100">
-                Active Skyblock Session Configuration
+                Active Studio Session Configuration
               </h3>
               <span className="text-xs font-mono text-slate-400">
                 ID: {worldId} · {isLiveConnected ? 'Live Sync Active' : 'Local Mode'}
@@ -155,7 +155,7 @@ export const CloudMultiplayerModal: React.FC<CloudMultiplayerModalProps> = ({
                   htmlFor="cloud-world-name"
                   className="block text-xs font-medium text-slate-300 mb-1"
                 >
-                  Skyblock World Name
+                  Studio World Name
                 </label>
                 <input
                   id="cloud-world-name"

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "candidate readback preserves raw legacy sources and does not activate until promotion",
+    "ok": true
+  },
+  {
+    "name": "complete authored state saves and previous immutable revision remains recoverable",
+    "ok": true
+  },
+  {
+    "name": "competing tabs compare-and-swap; exactly one same-revision writer wins",
+    "ok": true
+  },
+  {
+    "name": "abort after write request success does not acknowledge save or move active pointer",
+    "ok": true
+  },
+  {
+    "name": "interrupted verification leaves staged candidate recoverable but non-activatable",
+    "ok": true
+  },
+  {
+    "name": "aborted activation is atomic and verified candidate can subsequently be promoted",
+    "ok": true
+  },
+  {
+    "name": "stale candidate cannot replace an intervening save; stale activation token cannot save into a new project",
+    "ok": true
+  },
+  {
+    "name": "injected quota failure remains explicit and retains previous active revision",
+    "ok": true
+  },
+  {
+    "name": "quota thrown inside a request callback aborts save and promotion without an uncaught exception",
+    "ok": true
+  },
+  {
+    "name": "versionchange closes cached connection and incompatible reopen fails instead of hanging",
+    "ok": true
+  },
+  {
+    "name": "legacy helpers distinguish missing/failed reads and wait for set/clear transaction completion",
+    "ok": true
+  }
+]

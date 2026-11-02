@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   CustomBlockDefinition,
   PlacedBlock,
@@ -7,6 +7,7 @@ import {
   WorldResetTemplateId,
 } from '../engine/types';
 import { countBlocksPerChunk } from '../engine/openSourceBlockMarket';
+import type { StudioEditorResult } from '../lib/studioEditorSession';
 import {
   StorageQuotaEstimate,
   estimateStudioStorageQuota,
@@ -27,11 +28,9 @@ import {
   ShieldAlert,
   ShieldCheck,
   Smartphone,
-  Trash2,
   Upload,
   Wifi,
   WifiOff,
-  X,
 } from 'lucide-react';
 
 interface MainMenuProjectModalProps {
@@ -43,11 +42,11 @@ interface MainMenuProjectModalProps {
   customBlocks: Record<string, CustomBlockDefinition>;
   chunkConfig: WorldChunkConfig;
   savedProjects: SavedStudioProject[];
-  onSaveProjectSlot: (name: string, description: string, overwriteId?: string) => void;
-  onLoadProjectSlot: (project: SavedStudioProject) => void;
-  onDeleteProjectSlot: (projectId: string) => void;
-  onImportProjectJson: (rawJson: string) => boolean;
-  onResetEntireWorld: (templateId: WorldResetTemplateId) => void;
+  onSaveProjectSlot: (name: string, description: string) => Promise<boolean>;
+  onLoadProjectSlot: (project: SavedStudioProject) => Promise<boolean>;
+  onDeleteProjectSlot?: (projectId: string) => void;
+  onImportProjectJson: (rawJson: string) => Promise<boolean>;
+  onResetEntireWorld: (templateId: WorldResetTemplateId) => StudioEditorResult;
   onResetSpecificChunk: (
     cx: number,
     cz: number,
@@ -57,7 +56,7 @@ interface MainMenuProjectModalProps {
       | 'stone_foundation'
       | 'timber_deck'
       | 'sandstone_plaza'
-  ) => void;
+  ) => StudioEditorResult;
   onOpenDriveBackupModal: () => void;
   onOpenBlockMarketModal: () => void;
   isSignedIn?: boolean;
@@ -115,13 +114,11 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
   isOpen,
   onClose,
   worldName,
-  onChangeWorldName,
   blocks,
   chunkConfig,
   savedProjects,
   onSaveProjectSlot,
   onLoadProjectSlot,
-  onDeleteProjectSlot,
   onImportProjectJson,
   onResetEntireWorld,
   onResetSpecificChunk,
@@ -132,7 +129,6 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
   reportedWorldIds = [],
   onReportOrBlockWorld,
   onClearReportedWorlds,
-  onPurgeLocalAndCloudAccountData,
 }) => {
   const [activeTab, setActiveTab] = useState<
     'projects' | 'reset' | 'compliance'
@@ -146,19 +142,26 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
     cx: 0,
     cz: 0,
   });
-  const [statusBanner, setStatusBanner] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ message: string; error: boolean } | null>(null);
+  const setStatusBanner = (message: string | null, error = false) => setStatus(message ? { message, error } : null);
+  const [busyOperation, setBusyOperation] = useState<string | null>(null);
+  const operationPending = useRef(false);
+  const fieldId = useId();
   const [storageEstimate, setStorageEstimate] =
     useState<StorageQuotaEstimate | null>(null);
   const [reportRoomInput, setReportRoomInput] = useState('');
-  const [confirmPurgeArmed, setConfirmPurgeArmed] = useState(false);
-  const [isPurgingData, setIsPurgingData] = useState(false);
 
   const isOnline = useOnlineStatus();
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
 
   useEffect(() => {
     if (!isOpen) return;
-    estimateStudioStorageQuota().then(setStorageEstimate);
+    let active = true;
+    setStorageEstimate(null);
+    void estimateStudioStorageQuota().then(estimate => {
+      if (active) setStorageEstimate(estimate);
+    }).catch(() => { if (active) setStorageEstimate(null); });
+    return () => { active = false; };
   }, [isOpen, savedProjects.length]);
 
   const chunkCounts = useMemo(
@@ -172,50 +175,97 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
   const selectedChunkKey = `${selectedChunk.cx},${selectedChunk.cz}`;
   const selectedChunkBlockCount = chunkCounts[selectedChunkKey] || 0;
 
-  const handleSaveNewProject = (e: React.FormEvent) => {
+  const runReset = (operation: () => StudioEditorResult, successMessage: string) => {
+    try {
+      const result = operation();
+      if (result.status === 'applied') setStatusBanner(successMessage);
+      else if (result.status === 'noop') setStatusBanner('No changes were needed. Your current build is unchanged.');
+      else setStatusBanner(result.message || 'Reset was not applied. Your current build is unchanged.', true);
+    } catch (error) {
+      setStatusBanner(error instanceof Error ? error.message : 'Reset was not applied. Please check the project notice and retry.', true);
+    }
+  };
+
+  const runProjectOperation = async (
+    pendingMessage: string,
+    operation: () => Promise<boolean>,
+    successMessage: string,
+    failureMessage: string,
+    onSuccess?: () => void,
+  ) => {
+    if (operationPending.current) return;
+    operationPending.current = true;
+    setBusyOperation(pendingMessage);
+    setStatusBanner(null);
+    try {
+      const ok = await operation();
+      if (ok !== true) {
+        setStatusBanner(failureMessage, true);
+        return;
+      }
+      setStatusBanner(successMessage);
+      onSuccess?.();
+    } catch {
+      setStatusBanner(failureMessage, true);
+    } finally {
+      operationPending.current = false;
+      setBusyOperation(null);
+    }
+  };
+
+  const handleSaveNewProject = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = projectTitleInput.trim() || worldName || 'Untitled Project';
-    onChangeWorldName(cleanName);
-    onSaveProjectSlot(cleanName, projectDescInput.trim());
-    setStatusBanner(`Saved project "${cleanName}" (${totalBlocks} blocks).`);
+    await runProjectOperation('Saving named copy…',
+      () => onSaveProjectSlot(cleanName, projectDescInput.trim()),
+      `Saved named copy "${cleanName}" (${totalBlocks} blocks).`,
+      'The named copy could not be verified as saved. Keep this menu open to retry, or download a project backup from the save bar.');
   };
 
   const handleExportProjectFile = (proj: SavedStudioProject) => {
-    const json = JSON.stringify(proj, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${proj.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.lfsproj.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (operationPending.current) return;
+    try {
+      const json = JSON.stringify(proj.completeDocument ?? proj, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${proj.name.toLowerCase().replace(/[^a-z0-9]+/g, '_') || 'project'}.lfsproj.json`;
+      a.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatusBanner(`Download requested for "${proj.name}". Check your browser's downloads.`);
+    } catch {
+      setStatusBanner('The project download could not be prepared. The saved copy remains available.', true);
+    }
   };
 
   return (
     <DraggableWindow
       windowId="main_menu_project_window"
-      title="LFS Block Studio — Main Menu, Project Manager & App Store Center"
-      subtitle={`${totalBlocks} blocks · IndexedDB High-Capacity Storage`}
+      title="LFS Block Studio — Projects & Settings"
+      subtitle={`${totalBlocks} blocks · Local named copies and project backups`}
       defaultWidth={980}
       defaultHeight={680}
       minWidth={350}
       minHeight={300}
-      onClose={onClose}
+      onClose={busyOperation ? undefined : () => { if (!operationPending.current) onClose(); }}
       testId="main-menu-project-modal"
       headerActions={
         <div className="flex items-center gap-1.5">
           <button
             type="button"
+            disabled={Boolean(busyOperation)}
             onClick={() => {
               onClose();
               onOpenBlockMarketModal();
             }}
             className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-[11px] font-semibold whitespace-nowrap hidden sm:inline-flex"
           >
-            CC0 Block Market
+            Local block catalogue
           </button>
           <button
             type="button"
+            disabled={Boolean(busyOperation)}
             onClick={() => {
               onClose();
               onOpenDriveBackupModal();
@@ -228,7 +278,7 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
         </div>
       }
     >
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <fieldset disabled={Boolean(busyOperation)} aria-busy={Boolean(busyOperation)} className="flex-1 min-w-0 flex flex-col overflow-hidden border-0 p-0 m-0">
         {/* Navigation Tabs */}
         <div className="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +293,7 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
               }`}
             >
               <FolderKanban className="w-3.5 h-3.5" />
-              <span>Save / Load Projects ({savedProjects.length})</span>
+              <span>Named Copies ({savedProjects.length})</span>
             </button>
 
             <button
@@ -271,13 +321,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Storage, Offline PWA & App Store Compliance</span>
+              <span>Storage & App Settings</span>
             </button>
           </div>
 
-          {statusBanner && (
-            <span className="text-xs font-mono text-emerald-400">
-              {statusBanner}
+          {(busyOperation || status) && (
+            <span role={status?.error ? 'alert' : 'status'} className={`text-xs font-mono ${status?.error ? 'text-amber-300' : 'text-emerald-400'}`}>
+              {busyOperation || status?.message}
             </span>
           )}
         </div>
@@ -295,7 +345,7 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                       <Save className="w-3.5 h-3.5" />
-                      Save Current Build to Project Slot
+                      Save a Named Copy
                     </h3>
                     <span className="text-[11px] font-mono text-slate-400">
                       {totalBlocks} blocks
@@ -303,10 +353,11 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">
+                    <label htmlFor={`${fieldId}-name`} className="text-[11px] text-slate-400 block mb-1">
                       Project Name
                     </label>
                     <input
+                      id={`${fieldId}-name`}
                       type="text"
                       value={projectTitleInput}
                       onChange={(e) => setProjectTitleInput(e.target.value)}
@@ -316,10 +367,11 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">
+                    <label htmlFor={`${fieldId}-description`} className="text-[11px] text-slate-400 block mb-1">
                       Notes / Description
                     </label>
                     <input
+                      id={`${fieldId}-description`}
                       type="text"
                       value={projectDescInput}
                       onChange={(e) => setProjectDescInput(e.target.value)}
@@ -333,8 +385,9 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                     className="w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    <span>Save as New Project Slot</span>
+                    <span>Save named copy</span>
                   </button>
+                  <p className="text-xs text-slate-400">Each save creates a separate recovery copy. Earlier copies remain unchanged. Download a project backup to keep a copy outside this browser.</p>
                 </form>
 
                 {/* Import Portable Project JSON */}
@@ -343,7 +396,9 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                     <Upload className="w-3.5 h-3.5" />
                     Import Project JSON (.lfsproj.json)
                   </h3>
+                  <label htmlFor={`${fieldId}-import`} className="block text-[11px] text-slate-400">Project JSON content</label>
                   <textarea
+                    id={`${fieldId}-import`}
                     rows={3}
                     value={importJsonText}
                     onChange={(e) => setImportJsonText(e.target.value)}
@@ -352,19 +407,18 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   />
                   <button
                     type="button"
-                    onClick={() => {
+                    disabled={!importJsonText.trim()}
+                    onClick={async () => {
                       if (!importJsonText.trim()) return;
-                      const ok = onImportProjectJson(importJsonText.trim());
-                      setStatusBanner(
-                        ok
-                          ? 'Imported project slot successfully!'
-                          : 'Invalid project JSON format.'
-                      );
-                      if (ok) setImportJsonText('');
+                      await runProjectOperation('Validating and importing project…',
+                        () => onImportProjectJson(importJsonText.trim()),
+                        'Project imported as a separate copy.',
+                        'The project could not be imported. Its contents may be unsupported, or local storage may be unavailable. The pasted JSON is still here for retry.',
+                        () => setImportJsonText(''));
                     }}
                     className="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-cyan-300"
                   >
-                    Import into Project Slots
+                    Import as a separate copy
                   </button>
                 </div>
               </div>
@@ -372,14 +426,14 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
               {/* Right 7 cols: Saved Project Slots List */}
               <div className="lg:col-span-7 space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  Saved Studio Projects ({savedProjects.length})
+                  Named Recovery Copies ({savedProjects.length})
                 </h3>
 
                 {savedProjects.length === 0 ? (
                   <div className="p-8 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
-                    No saved project slots yet. Click{' '}
+                    No named copies yet. Click{' '}
                     <strong className="text-amber-300">
-                      Save as New Project Slot
+                      Save named copy
                     </strong>{' '}
                     on the left to store your first named build!
                   </div>
@@ -413,33 +467,15 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             type="button"
-                            onClick={() => {
-                              onLoadProjectSlot(proj);
-                              setStatusBanner(`Loaded project "${proj.name}".`);
-                              onClose();
-                            }}
+                            onClick={() => void runProjectOperation('Opening project copy…',
+                              () => onLoadProjectSlot(proj),
+                              `Opened a copy of "${proj.name}".`,
+                              'The project could not be opened. Its contents may be unsupported, or local storage may be unavailable. The named copy remains available.',
+                              onClose)}
                             className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1"
                           >
                             <Play className="w-3 h-3" />
-                            <span>Load</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onSaveProjectSlot(
-                                proj.name,
-                                proj.description,
-                                proj.id
-                              );
-                              setStatusBanner(
-                                `Updated project "${proj.name}" with current build.`
-                              );
-                            }}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
-                            title="Overwrite this project slot with current world"
-                          >
-                            Overwrite
+                            <span>Open copy</span>
                           </button>
 
                           <button
@@ -447,18 +483,11 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                             onClick={() => handleExportProjectFile(proj)}
                             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300"
                             title="Download .lfsproj.json file"
+                            aria-label={`Download project copy ${proj.name}`}
                           >
                             <Download className="w-3.5 h-3.5" />
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => onDeleteProjectSlot(proj.id)}
-                            className="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400"
-                            title="Delete project slot"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -513,10 +542,7 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                         <button
                           type="button"
                           data-testid={`reset-world-template-${tpl.id}`}
-                          onClick={() => {
-                            onResetEntireWorld(tpl.id);
-                            setStatusBanner(`Reset world to ${tpl.name}.`);
-                          }}
+                          onClick={() => runReset(() => onResetEntireWorld(tpl.id), `Reset world to ${tpl.name}.`)}
                           className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-rose-300 font-bold text-xs shrink-0 transition-colors"
                         >
                           Reset World
@@ -605,16 +631,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                       <button
                         type="button"
                         data-testid="reset-chunk-clear-air-btn"
-                        onClick={() => {
-                          onResetSpecificChunk(
+                        onClick={() => runReset(() => onResetSpecificChunk(
                             selectedChunk.cx,
                             selectedChunk.cz,
                             'clear_air'
-                          );
-                          setStatusBanner(
+                          ),
                             `Cleared Chunk (${selectedChunk.cx}, ${selectedChunk.cz}) to open air.`
-                          );
-                        }}
+                          )}
                         className="py-2 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-rose-300 font-bold text-xs"
                       >
                         Clear Chunk to Open Air
@@ -622,16 +645,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          onResetSpecificChunk(
+                        onClick={() => runReset(() => onResetSpecificChunk(
                             selectedChunk.cx,
                             selectedChunk.cz,
                             'grass_island'
-                          );
-                          setStatusBanner(
+                          ),
                             `Reset Chunk (${selectedChunk.cx}, ${selectedChunk.cz}) to Grass Island Pad.`
-                          );
-                        }}
+                          )}
                         className="py-2 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-slate-950 border border-emerald-500/40 text-emerald-300 font-bold text-xs"
                       >
                         Reset to Grass Island Pad
@@ -639,16 +659,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          onResetSpecificChunk(
+                        onClick={() => runReset(() => onResetSpecificChunk(
                             selectedChunk.cx,
                             selectedChunk.cz,
                             'stone_foundation'
-                          );
-                          setStatusBanner(
+                          ),
                             `Reset Chunk (${selectedChunk.cx}, ${selectedChunk.cz}) to Stone Foundation.`
-                          );
-                        }}
+                          )}
                         className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs"
                       >
                         Reset to Stone Foundation
@@ -656,16 +673,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          onResetSpecificChunk(
+                        onClick={() => runReset(() => onResetSpecificChunk(
                             selectedChunk.cx,
                             selectedChunk.cz,
                             'timber_deck'
-                          );
-                          setStatusBanner(
+                          ),
                             `Reset Chunk (${selectedChunk.cx}, ${selectedChunk.cz}) to Timber Deck.`
-                          );
-                        }}
+                          )}
                         className="py-2 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/40 text-amber-300 font-semibold text-xs"
                       >
                         Reset to Timber Deck
@@ -678,7 +692,7 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
           )}
 
           {activeTab === 'compliance' && (
-            /* TAB 3: BOUNDLESS INDEXEDDB STORAGE, OFFLINE PWA & APP STORE COMPLIANCE */
+            /* TAB 3: OBSERVED STORAGE AND APP STATUS */
             <div
               data-testid="compliance-tab-panel"
               className="grid grid-cols-1 lg:grid-cols-12 gap-5"
@@ -689,28 +703,26 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
                       <Database className="w-4 h-4" />
-                      <span>IndexedDB High-Capacity Storage Engine</span>
+                      <span>Local Browser Storage</span>
                     </h3>
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono text-emerald-300">
-                      Active · Auto-Migrated
-                    </span>
                   </div>
 
                   <p className="text-xs text-slate-400">
-                    All multi-chunk worlds, custom 8×8×8 chiseled blocks, Git
-                    commits, and Copilot habit archives are persisted in
-                    asynchronous IndexedDB storage without the 5 MB
-                    localStorage ceiling.
+                    Projects and named copies use local browser storage. The save
+                    bar reports the current project's save result. Browser limits
+                    vary, and clearing site data can remove local copies. Keep
+                    downloaded backups outside this browser.
                   </p>
 
                   <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs font-mono">
-                    <span className="text-slate-300">Current Usage / Quota:</span>
+                    <span className="text-slate-300">Estimated site usage / quota:</span>
                     <span className="text-amber-400 font-bold">
                       {storageEstimate
                         ? `${storageEstimate.usageFormatted} / ${storageEstimate.quotaFormatted}`
-                        : '0.4 MB / 1.00 GB'}
+                        : 'Unknown / Unknown'}
                     </span>
                   </div>
+                  <p className="text-[11px] text-slate-400">This estimate covers this site's browser storage. It does not confirm a save, available disk space, or backup durability.</p>
                 </div>
 
                 {/* Offline-First PWA & Standalone App Installation */}
@@ -718,7 +730,7 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                       <Smartphone className="w-4 h-4" />
-                      <span>Standalone PWA & Offline Readiness</span>
+                      <span>App Installation & Connection</span>
                     </h3>
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 ${
@@ -730,28 +742,28 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                       {isOnline ? (
                         <>
                           <Wifi className="w-3 h-3" />
-                          <span>Online · SW Cached</span>
+                          <span>Browser reports online</span>
                         </>
                       ) : (
                         <>
                           <WifiOff className="w-3 h-3" />
-                          <span>Offline Mode Ready</span>
+                          <span>Browser reports offline</span>
                         </>
                       )}
                     </span>
                   </div>
 
                   <p className="text-xs text-slate-400">
-                    LFS Block Studio runs 100% offline with cached WebGL shaders,
-                    procedural 47-tile CTM textures, and local Spatial Copilot
-                    inference.
+                    The connection indicator does not verify service availability
+                    or cached resources. Offline launch has not been checked here.
+                    Cloud and Drive features need their services to be reachable.
                   </p>
 
                   {isInstalled ? (
                     <div className="p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 shrink-0" />
                       <span>
-                        Installed as Standalone App on your device.
+                        Standalone app mode or installation detected.
                       </span>
                     </div>
                   ) : isInstallable ? (
@@ -766,13 +778,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   ) : isIOS ? (
                     <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
                       On iOS/iPadOS Safari: tap <strong>Share</strong> →{' '}
-                      <strong>Add to Home Screen</strong> for full-screen native
-                      touch studio mode.
+                      <strong>Add to Home Screen</strong> if your browser offers it.
+                      Installation does not confirm offline availability.
                     </div>
                   ) : (
                     <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400">
-                      Service Worker shell & Web App Manifest registered for
-                      instant offline launch.
+                      This browser has not offered an installation prompt.
+                      Installation and offline availability may vary by browser.
                     </div>
                   )}
                 </div>
@@ -780,26 +792,15 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                 {/* CC0 Open-Source Texture & License Attribution */}
                 <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                    CC0 1.0 Public Domain Texture & Engine Attributions
+                    Local block presets and resource rights
                   </h3>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    All procedural 47-tile Connected Texture (CTM) atlases and
-                    curated block market definitions are inspired by CC0 1.0
-                    Universal Public Domain works from{' '}
-                    <strong className="text-slate-200">
-                      Kenney.nl Voxel Pack
-                    </strong>
-                    ,{' '}
-                    <strong className="text-slate-200">
-                      OpenGameArt CC0 Voxel Library
-                    </strong>
-                    ,{' '}
-                    <strong className="text-slate-200">PolyHaven CC0</strong>,
-                    and{' '}
-                    <strong className="text-slate-200">
-                      AmbientCG PBR Materials
-                    </strong>
-                    .
+                    The built-in catalogue contains procedural studio presets.
+                    Their external asset provenance is unverified. Provider-like
+                    IDs are retained for older saved projects; they do not prove
+                    that a provider supplied or licensed a preset. Check the
+                    exact downloaded asset and its license before adding outside
+                    resources. Oasis menu resources retain their own supplied notices.
                   </p>
                 </div>
               </div>
@@ -864,13 +865,13 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   )}
                 </div>
 
-                {/* Apple Guideline 5.1.1(v) & Google Play Data Safety Account & Cloud Data Deletion */}
+                {/* Coordinated deletion is unavailable until every active store is covered. */}
                 <div className="p-4 rounded-xl bg-slate-950 border border-rose-500/30 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
                       <ShieldAlert className="w-4 h-4" />
                       <span>
-                        Account & Cloud Data Deletion (App Store 5.1.1(v))
+                        Account & Local Data Deletion
                       </span>
                     </h3>
                     <span className="text-[10px] font-mono text-slate-400">
@@ -879,69 +880,17 @@ export const MainMenuProjectModal: React.FC<MainMenuProjectModalProps> = ({
                   </div>
 
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Permanently delete all of your published cloud worlds,
-                    cloud blueprints, IndexedDB project slots, and local studio
-                    archives, and revoke your active session.
+                    Deletion is unavailable in this version. A complete deletion
+                    flow must cover the current project store, recovery copies,
+                    older local records, and any cloud data together. No account
+                    or project data is deleted from this panel.
                   </p>
-
-                  {!confirmPurgeArmed ? (
-                    <button
-                      type="button"
-                      data-testid="arm-delete-account-data-btn"
-                      onClick={() => setConfirmPurgeArmed(true)}
-                      className="w-full py-2 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>
-                        Delete Account & Purge All Cloud / Local Studio Data...
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 space-y-2.5">
-                      <p className="text-xs text-rose-200 font-semibold">
-                        Confirm permanent deletion of all cloud worlds,
-                        blueprints, and local IndexedDB studio data?
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          data-testid="confirm-delete-account-data-btn"
-                          disabled={isPurgingData}
-                          onClick={async () => {
-                            if (!onPurgeLocalAndCloudAccountData) return;
-                            setIsPurgingData(true);
-                            try {
-                              const msg =
-                                await onPurgeLocalAndCloudAccountData();
-                              setStatusBanner(msg);
-                            } finally {
-                              setIsPurgingData(false);
-                              setConfirmPurgeArmed(false);
-                            }
-                          }}
-                          className="px-3.5 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs"
-                        >
-                          {isPurgingData
-                            ? 'Purging Data...'
-                            : 'Yes, Permanently Delete Everything'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmPurgeArmed(false)}
-                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </fieldset>
     </DraggableWindow>
   );
 };
-

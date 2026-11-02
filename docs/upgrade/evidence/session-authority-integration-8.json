@@ -1,0 +1,89 @@
+{
+  "startedAt": "2026-11-01T16:42:52.782Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-COgR8-4M.js",
+    "http://127.0.0.1:4174/assets/index-jR8-WG5e.css"
+  ],
+  "results": [
+    {
+      "name": "command and toolbar history cover complete world metadata and authored lighting",
+      "ok": true,
+      "authoredHash": "8b8d94639c70dc774b977f00a7fe0931b67a6917a0c46cc8a895e475edb8792c"
+    },
+    {
+      "name": "no-op and invalid commands preserve durable content, revision and redo availability",
+      "ok": true,
+      "revision": 8,
+      "historyEpoch": "history-9a0e81c9-1f7c-432c-9fe2-11543f135010",
+      "commands": [
+        "//help",
+        "//pos1 NaN 0 0",
+        "//sphere cobble_brick 1000000",
+        "//not-a-real-command"
+      ]
+    },
+    {
+      "name": "command block edit and Undo preserve the rest of the complete document",
+      "ok": true,
+      "coordinate": {
+        "x": 0,
+        "y": 20,
+        "z": 0
+      },
+      "blockDefId": "cobble_brick"
+    },
+    {
+      "name": "numeric placement and command history share the same edit authority",
+      "ok": true,
+      "coordinate": {
+        "x": 0,
+        "y": 20,
+        "z": 0
+      },
+      "authoredHash": "bb9266b8530d1766092448ee7149d67e69afa96f2855089aa1f9ba06015e10a6"
+    },
+    {
+      "name": "numeric paint is undoable and repeated identical paint preserves redo and saved counters",
+      "ok": true,
+      "coordinate": {
+        "x": 0,
+        "y": 20,
+        "z": 0
+      },
+      "unchangedRevision": 17
+    },
+    {
+      "name": "complete authored project and durable envelope survive explicit save and reload",
+      "ok": true,
+      "documentHash": "d27573b1ae0e0eb326a587573ee4391ae0f4a344d66b16724429c23e0583a84b",
+      "revision": 19
+    },
+    {
+      "name": "project replacement rotates identity and invalidates earlier Undo and Redo",
+      "ok": true,
+      "previousDocumentId": "project-911ea25f-9439-4436-a879-57841825566a",
+      "replacementDocumentId": "project-632b503f-b28c-4408-be11-d44169aff901",
+      "replacementEpoch": "history-98fa836f-f8e9-4490-befa-42a25183ba95"
+    },
+    {
+      "name": "no uncaught App exceptions or React update-depth errors",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "reactErrors": [],
+  "blockedRequests": [
+    "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel",
+    "https://www.google.com/images/cleardot.gif"
+  ],
+  "limitations": [
+    "Disposable desktop Chromium with software WebGL; no hardware, assistive-technology, multi-browser, provider or native game qualification.",
+    "Invalid-command counters are checked through durable document revision/historyEpoch/savedAt and visible Undo/Redo availability. The private live edit counter is not exposed by the UI and is not inspected.",
+    "Command and numeric placement compare visible block semantics; generated IDs and procedural appearance need not be identical between input routes."
+  ],
+  "initialDocumentHash": "a0849f248a20bb0712d8127faf0437648ad2e3d1f263798d99799a771e9d61e6",
+  "finishedAt": "2026-11-01T16:43:33.967Z",
+  "ok": true
+}

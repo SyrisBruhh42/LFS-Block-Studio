@@ -1,0 +1,24 @@
+{
+  "observedAt": "2026-11-01T20:12:35.008Z",
+  "fixtureBytes": 20992775,
+  "predecessor": "oasis-menu-checkpoint-20261101T191800Z",
+  "predecessorModuleSha256": "a9fac4de9fc983495304303594dd30a3d49d6b6ad37d8009f644f3db51b8386b",
+  "currentModuleSha256": "64136600930c0d89cafc917f4fa505ece583d052d8737fe0628c980d9bbdc424",
+  "previous": {
+    "status": "rejected",
+    "message": "The recoverable state exceeds the history byte budget; no edit was applied."
+  },
+  "previousUnchanged": true,
+  "next": {
+    "status": "applied"
+  },
+  "retainedBytes": 274,
+  "undo": {
+    "status": "applied"
+  },
+  "restoredExact": true,
+  "redo": {
+    "status": "applied"
+  },
+  "scope": "Direct historical/current session execution on the same validated fixture; not performance, browser, native or release acceptance."
+}

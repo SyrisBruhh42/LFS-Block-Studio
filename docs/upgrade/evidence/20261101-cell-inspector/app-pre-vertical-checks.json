@@ -1,0 +1,65 @@
+{
+  "startedAt": "2026-11-01T21:46:53.230Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-C8K-Zt4e.js",
+    "http://127.0.0.1:4174/assets/index-B86ezzgp.css"
+  ],
+  "results": [
+    {
+      "name": "scene discovery opens a modeless properties panel without changing the project, history or canvas",
+      "ok": true
+    },
+    {
+      "name": "reviewed position, type, rotation and scale apply in one step with stable identity and complete Undo/Redo",
+      "ok": true,
+      "fullAuthoredHash": "c8e32996364efd2d7af27d5e2edb7a105a206863e1cb6ef7c422d2d8e1b523ad",
+      "actualUndoRedo": true
+    },
+    {
+      "name": "occupied destination rejection preserves the full build and unfinished values",
+      "ok": true
+    },
+    {
+      "name": "close and resume retain drafts while scene switching requires explicit discard",
+      "ok": true
+    },
+    {
+      "name": "editing elsewhere then Undo invalidates a dirty review and retains its draft until reload",
+      "ok": true
+    },
+    {
+      "name": "shared Oasis appearance and independent properties width preserve a pending draft and review",
+      "ok": true
+    },
+    {
+      "name": "numeric inspect is source-neutral and a no-op review preserves pending Redo",
+      "ok": true,
+      "savedAndReopened": true
+    },
+    {
+      "name": "modeless keyboard edits and 200 percent properties text reflow at 320 CSS pixels",
+      "ok": true,
+      "viewportCssPixels": 320,
+      "textPercent": 200
+    },
+    {
+      "name": "Java locked properties expose only mapped blocks and preserve policy through reviewed editing",
+      "ok": true,
+      "nativeQualification": "NOT_RUN — skipped by user"
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/lfs-cell-properties.png",
+    "/tmp/lfs-cell-properties-narrow.png"
+  ],
+  "limitations": [
+    "Actual App controls and downloaded complete projects in disposable Chromium/software WebGL. External/API traffic and service workers blocked.",
+    "No App globals, React internals, hidden controller access or storage writes construct editing outcomes.",
+    "Scoped modeless-panel keyboard/reflow/token contrast checks; no physical touch/pen, assistive technology, other browser, large-world performance or full-shell accessibility qualification.",
+    "Native Minecraft/WorldEdit NOT_RUN — skipped by user. Locked editing checks are candidate policy evidence only."
+  ],
+  "finishedAt": "2026-11-01T21:47:30.164Z"
+}

@@ -1,0 +1,188 @@
+{
+  "startedAt": "2026-11-01T23:01:42.213Z",
+  "origin": "http://127.0.0.1:4173",
+  "browser": "156.0.8078.79",
+  "results": [
+    {
+      "name": "missing namespace returns not-found and recovery does not create it",
+      "ok": true
+    },
+    {
+      "name": "existing empty page and missing active record remain distinct",
+      "ok": true
+    },
+    {
+      "name": "future schema active document preserves exact text and pointer without downgrade",
+      "ok": true
+    },
+    {
+      "name": "unknown schema2 policy remains closed while raw text is exportable",
+      "ok": true
+    },
+    {
+      "name": "incomplete document JSON remains exact and independently downloadable",
+      "ok": true
+    },
+    {
+      "name": "malformed active pointer can be rescued without guessing a revision",
+      "ok": true
+    },
+    {
+      "name": "dangling active pointer is an explicit recoverable issue, not empty storage",
+      "ok": true
+    },
+    {
+      "name": "malformed candidate metadata stays discoverable and its sources remain exact",
+      "ok": true
+    },
+    {
+      "name": "valid document with mismatched stored identity cannot be opened from rescue",
+      "ok": true
+    },
+    {
+      "name": "non-string document field exports its envelope without coercion",
+      "ok": true
+    },
+    {
+      "name": "overlimit document is not parsed or truncated and retains a bounded envelope route",
+      "ok": true
+    },
+    {
+      "name": "malformed source entry does not hide independent bounded originals",
+      "ok": true
+    },
+    {
+      "name": "non-JSON envelope data is refused explicitly while valid source text remains available",
+      "ok": true
+    },
+    {
+      "name": "key-only pagination traverses more than100 revisions and candidates without whole-value scans",
+      "ok": true
+    },
+    {
+      "name": "policy checkpoint reference can be inspected without transition or activation",
+      "ok": true
+    },
+    {
+      "name": "cancelled and failed transactions produce errors rather than empty or partial records",
+      "ok": true
+    },
+    {
+      "name": "transaction setup failures and invalid page bounds do not become an empty list",
+      "ok": true
+    },
+    {
+      "name": "future database version is rescued read-only without enabling ordinary writers",
+      "ok": true
+    },
+    {
+      "name": "oversize record keys fail explicitly without skipped or silently partial pages",
+      "ok": true
+    },
+    {
+      "name": "page key-byte budget returns a continuation instead of retaining unbounded keys",
+      "ok": true
+    },
+    {
+      "name": "array metadata that JSON would omit is refused rather than silently lost",
+      "ok": true
+    },
+    {
+      "name": "unpaired surrogate text disables lossy UTF8 download while envelope preserves code units",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "blockedRequests": [],
+  "loadedModules": [
+    {
+      "path": "/src/lib/studioRecovery.browser-tests.ts",
+      "status": 200,
+      "sha256": "72d657d91ccacad2714950f06a2f62b597938e232b3e75f907852b29c07d2f61"
+    },
+    {
+      "path": "/src/lib/studioDocumentStore.ts?t=1793572539457",
+      "status": 200,
+      "sha256": "a4cc2cce55d1b9c21cea1275bb9714072e174b35c7fb60aee8c7c33b56224cd1"
+    },
+    {
+      "path": "/src/lib/studioDocument.ts?t=1793572539457",
+      "status": 200,
+      "sha256": "51331f6763b50fb52b52649d110061fb2f43adbd9c5f3a309cc517cd927918d7"
+    },
+    {
+      "path": "/src/lib/studioDocument.test-fixtures.ts?t=1793573817574",
+      "status": 200,
+      "sha256": "80e13de48789f8c27ffa63a97a95cc510c7f890b0bae9a901eefb853b8fa8dd9"
+    },
+    {
+      "path": "/src/lib/studioTargetPolicy.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "42d6e572ec07b35f920dcd87a9946efb2f1f3f0943e4c405d3ebe6cc087e56bf"
+    },
+    {
+      "path": "/src/lib/studioId.ts",
+      "status": 200,
+      "sha256": "cdc91f0c805a891cb033f0f8a2a7c05a9f8e852a0daa166bec169ca0e44a34a6"
+    },
+    {
+      "path": "/src/engine/chunkAndPatternEngine.ts?t=1793573817574",
+      "status": 200,
+      "sha256": "f433d33153ba7449b1e02c072a96c21e1ffacc3b396e67d4a70a5365b70dc64d"
+    },
+    {
+      "path": "/src/engine/worldEditEngine.ts?t=1793573817574",
+      "status": 200,
+      "sha256": "5365882640be8bd7497c1bcba66fe21f4b2b9c0db1691880cf0f5f3a77d98ddd"
+    },
+    {
+      "path": "/src/engine/javaCellMapping.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "808786764d411a533f470b5c4a86b2702abb24a9d9fb3e716b01dac87a298ef3"
+    },
+    {
+      "path": "/src/engine/placementContent.ts?t=1793572539461",
+      "status": 200,
+      "sha256": "cfbe1907925556f19db17a7fb9e4de8b70ef7c42cd150d5f8d0ab1e977f2cf16"
+    },
+    {
+      "path": "/src/engine/blueprintDefinitionSafety.ts?t=1793573817574",
+      "status": 200,
+      "sha256": "4af98a32a3dbeffc1a7c50605efe96e0af861b17fca56d600a00bc4df1406cd6"
+    },
+    {
+      "path": "/src/engine/javaProfile.ts",
+      "status": 200,
+      "sha256": "41683a8cf0c649d869b0a5fb25bb72f0dcd932e8d1d45a77a43d9127d4f28211"
+    }
+  ],
+  "sourceBefore": {
+    "src/lib/studioRecovery.browser-tests.ts": "b0963e74ee550ae2e3132e35a9ed544205e01760f5faa60f624f634d785fe74d",
+    "src/lib/studioDocumentStore.ts": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+    "src/lib/studioDocument.ts": "894c6db9a032fd8cccdee7f638c0bfc0c358fe001280a9aba56fdcdd7c980084",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioDocument.test-fixtures.ts": "b443dd45050b278c3d598b0c2898b3df931fa3582618cd38c61b29f4dc6d3971",
+    "src/engine/javaCellMapping.ts": "0faac1c2b3ce40b11ccb8076e35c0b93b65a4bd96444800c4f27beb4f4a2f285",
+    "src/engine/javaProfile.ts": "9e7a8f0cf27292f78d0dd5a8357d6f4449b188008e61ac133c1e3f267490ff73",
+    "src/engine/worldEditEngine.ts": "b9b80c392a830710e10158dfd534f25f544458aa7fee43f008a28e136a404d43",
+    "src/engine/chunkAndPatternEngine.ts": "d0da41ae9409edd1587e243ecf49e712fced718ab9bd05ee6144c558785b90d0"
+  },
+  "sourceAfter": {
+    "src/lib/studioRecovery.browser-tests.ts": "b0963e74ee550ae2e3132e35a9ed544205e01760f5faa60f624f634d785fe74d",
+    "src/lib/studioDocumentStore.ts": "b68af9ec49dbffae3ba1aa035274920cf6c70031ed942c1a037cc46e16c1d070",
+    "src/lib/studioDocument.ts": "894c6db9a032fd8cccdee7f638c0bfc0c358fe001280a9aba56fdcdd7c980084",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioDocument.test-fixtures.ts": "b443dd45050b278c3d598b0c2898b3df931fa3582618cd38c61b29f4dc6d3971",
+    "src/engine/javaCellMapping.ts": "0faac1c2b3ce40b11ccb8076e35c0b93b65a4bd96444800c4f27beb4f4a2f285",
+    "src/engine/javaProfile.ts": "9e7a8f0cf27292f78d0dd5a8357d6f4449b188008e61ac133c1e3f267490ff73",
+    "src/engine/worldEditEngine.ts": "b9b80c392a830710e10158dfd534f25f544458aa7fee43f008a28e136a404d43",
+    "src/engine/chunkAndPatternEngine.ts": "d0da41ae9409edd1587e243ecf49e712fced718ab9bd05ee6144c558785b90d0"
+  },
+  "sourceStable": true,
+  "limitations": [
+    "Real Chromium IndexedDB read-only rescue, injected abort/read failures, disposable unique test databases only.",
+    "No application UI, controller/hook, cross-browser, hardware, provider, native Minecraft, release or deployment qualification.",
+    "Single-record IndexedDB cloning is browser-owned; application parsing/envelope output and key pages are bounded. No retention deletion."
+  ],
+  "finishedAt": "2026-11-01T23:01:43.080Z"
+}

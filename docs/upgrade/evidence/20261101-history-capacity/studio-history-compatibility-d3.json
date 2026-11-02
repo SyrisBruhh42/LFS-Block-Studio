@@ -1,0 +1,140 @@
+{
+  "startedAt": "2026-11-01T20:10:46.096Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-D3c6GZoK.js",
+    "http://127.0.0.1:4174/assets/index-Bi0et0sU.css"
+  ],
+  "results": [
+    {
+      "name": "visible project import establishes a minimal complete Freeform fixture",
+      "ok": true,
+      "documentId": "project-5ab725be-610e-49b1-990f-15f9bcc3786d",
+      "contentHash": "f4c1623b4990448ffd9f9202f40a764082da1b2b1ee96d7c792f518abafd052c"
+    },
+    {
+      "name": "explicit mappings and acknowledged Apply persist candidate lock with retained checkpoint and new history",
+      "ok": true,
+      "revision": 2,
+      "epoch": "history-9fbbdb42-7b86-4481-9eef-adc26f9baf75",
+      "checkpoint": {
+        "documentId": "project-5ab725be-610e-49b1-990f-15f9bcc3786d",
+        "revision": 1,
+        "historyEpoch": "history-773dc498-78ff-4c3d-a85a-f4028f801901"
+      },
+      "profileId": "minecraft-java-1.21.1-worldedit-7.3.8-fabric-0.15.11-sponge3-candidate1"
+    },
+    {
+      "name": "numeric mapped placement is atomic and command Undo/Redo preserve the policy",
+      "ok": true,
+      "coordinate": {
+        "x": -3,
+        "y": 2,
+        "z": 4
+      },
+      "blockId": "block-84af79fd-e071-4e72-892c-aecfdf3fcc09"
+    },
+    {
+      "name": "locked numeric paint replaces mapped type without overrides and erase shares complete history",
+      "ok": true,
+      "paintedDefinition": "oak_plank",
+      "instanceOverrides": false
+    },
+    {
+      "name": "locked rotation control and rejected commands preserve complete state and history",
+      "ok": true,
+      "commands": [
+        "//island",
+        "//set qa_unknown_block_state"
+      ],
+      "note": "Unknown block alias is parser rejection; rotation control rejection is the candidate constraint."
+    },
+    {
+      "name": "save and reload retain complete authored content, mappings and locked state",
+      "ok": true,
+      "documentHash": "9cb3bf7cb52872a38f73070ec2c264953110695910f2a1cc1aa012eede2aa77c"
+    },
+    {
+      "name": "unlock retains read-only mappings, complete content and a new durable checkpoint",
+      "ok": true,
+      "revision": 13,
+      "epoch": "history-ed742577-a843-4729-818d-91573883a0d4",
+      "checkpoint": {
+        "documentId": "project-5ab725be-610e-49b1-990f-15f9bcc3786d",
+        "revision": 12,
+        "historyEpoch": "history-9fbbdb42-7b86-4481-9eef-adc26f9baf75"
+      }
+    },
+    {
+      "name": "unsupported unlocked edit blocks relock and preserves its fixed mappings and actual history",
+      "ok": true,
+      "invalidCoordinate": "40,3,-8",
+      "recoveredByActualUndoRedo": true
+    },
+    {
+      "name": "relock retains read-only mappings, complete content and a new durable checkpoint",
+      "ok": true,
+      "revision": 16,
+      "epoch": "history-9010447e-2899-4d5a-ab6c-26252295a315",
+      "checkpoint": {
+        "documentId": "project-5ab725be-610e-49b1-990f-15f9bcc3786d",
+        "revision": 15,
+        "historyEpoch": "history-ed742577-a843-4729-818d-91573883a0d4"
+      }
+    },
+    {
+      "name": "library preserves unmapped Freeform definition, but actual stamp rejects without changing authored data or history",
+      "ok": true,
+      "blueprintId": "blueprint-a5c262b9-d01b-4d32-9577-6b3fc442e968",
+      "sourceHash": "53cf3fcbac1d0d7fc695dc7832c36394dd5fe4e2952fd4de68349505c536eb09",
+      "candidateId": "candidate-72d64ce3-8288-4fff-83f8-5ceb7e6b6c5c"
+    },
+    {
+      "name": "library preserves rotated mapped instance, but actual stamp rejects without changing authored data or history",
+      "ok": true,
+      "blueprintId": "blueprint-86662601-dab0-4465-8b73-af46050a71a3",
+      "sourceHash": "eb1d1d57f0e227716831527eeb56f762948a5572883027e16f93cd05753292e5",
+      "candidateId": "candidate-3488d7d4-86a3-4935-987b-c4db0d3d30a5"
+    },
+    {
+      "name": "library preserves conflicting shared definition, but actual stamp rejects without changing authored data or history",
+      "ok": true,
+      "blueprintId": "blueprint-271bc956-b9c3-474c-92f1-ec67c04aecac",
+      "sourceHash": "bb16a5ed17b6caca403b0ec6704a382be690175e055776a773685d7ca39ce5b2",
+      "candidateId": "candidate-b8ee8f0d-7b3f-4acb-aa13-8e3dca18a974"
+    },
+    {
+      "name": "actual recovery UI downloads the locked active record and its policy checkpoint without mutation",
+      "ok": true,
+      "checkpoint": {
+        "documentId": "project-5ab725be-610e-49b1-990f-15f9bcc3786d",
+        "revision": 15,
+        "historyEpoch": "history-ed742577-a843-4729-818d-91573883a0d4"
+      },
+      "activeAndCheckpointTextExact": true
+    },
+    {
+      "name": "locked library resources and original checkpoints survive final save and reload",
+      "ok": true,
+      "documentHash": "ac7c3005d5b741550b9ba6376d118610806c5d63beae239120ae4b83cdbd54b1",
+      "checkpointCount": 20
+    },
+    {
+      "name": "no uncaught App exceptions or React update errors",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "reactErrors": [],
+  "blockedRequests": [],
+  "limitations": [
+    "Partial G2 desktop Chromium workflow coverage using software WebGL. Not every mutation route, browser, device or assistive technology is qualified.",
+    "Native Minecraft Java/WorldEdit import, post-tick behavior and native export qualification have not run. Candidate policy validation is not native proof.",
+    "External/API requests are blocked. UI actions and complete project backup downloads are observed; IndexedDB is inspected read-only.",
+    "Unknown command block aliases exercise parser rejection. Unsupported and rotated blueprint stamps exercise the actual locked-document commit boundary.",
+    "Generated savedAt in a live backup is excluded from live comparisons. Durable records and retained checkpoints are compared without exclusions."
+  ],
+  "finishedAt": "2026-11-01T20:11:51.403Z",
+  "ok": true
+}

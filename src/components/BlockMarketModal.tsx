@@ -15,6 +15,8 @@ import {
   serializeStudioDragPayload,
 } from '../engine/windowLayoutEngine';
 import { DraggableWindow } from './DraggableWindow';
+import { sameBlueprintData } from '../engine/blueprintDefinitionSafety';
+import type { StudioEditorResult } from '../lib/studioEditorSession';
 import {
   Check,
   Download,
@@ -24,7 +26,6 @@ import {
   PackagePlus,
   Search,
   Sparkles,
-  Star,
   Store,
   Trash2,
   X,
@@ -36,7 +37,7 @@ interface BlockMarketModalProps {
   customBlocks: Record<string, CustomBlockDefinition>;
   activeBlockId: string;
   onSelectBlockId: (id: string) => void;
-  onInstallMarketBlocks: (defs: CustomBlockDefinition[]) => void;
+  onInstallMarketBlocks: (defs: CustomBlockDefinition[]) => StudioEditorResult;
   onRemoveLibraryBlock?: (blockId: string) => void;
   hudConfig?: ModularHudConfig;
   usageCounts?: Record<string, number>;
@@ -78,6 +79,7 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
     'most_used' | 'custom_first' | 'name'
   >('most_used');
   const [assigningBlockId, setAssigningBlockId] = useState<string | null>(null);
+  const [installFeedback, setInstallFeedback] = useState<{ error: boolean; message: string } | null>(null);
 
   const effectiveUsageCounts = useMemo(
     () => hudConfig?.usageCounts || usageCounts || {},
@@ -119,19 +121,22 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
 
   if (!isOpen) return null;
 
+  const install = (definitions: CustomBlockDefinition[]) => {
+    const result = onInstallMarketBlocks(definitions);
+    setInstallFeedback({ error: result.status === 'rejected', message: result.message ?? (result.status === 'applied' ? 'Added to your library. Undo restores the previous library.' : 'These definitions are already in your library.') });
+    return result.status !== 'rejected';
+  };
   const handleInstallAllFiltered = () => {
     const toInstall = filteredMarketItems
       .map((m) => m.blockDef)
-      .filter((d) => !customBlocks[d.id]);
-    if (toInstall.length > 0) {
-      onInstallMarketBlocks(toInstall);
-    }
+      .filter((d) => !sameBlueprintData(customBlocks[d.id], d));
+    install(toInstall);
   };
 
   return (
     <DraggableWindow
       windowId="block_market_window"
-      title="LFS Double Market — Open-Source CC0 Texture Packs & Studio Library"
+      title="Block catalogue & Studio Library"
       subtitle="Drag any block onto a Hotbar slot or click to equip"
       icon={<Store className="w-4 h-4 text-amber-400" />}
       defaultWidth={1080}
@@ -156,16 +161,18 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
       }
     >
       <div className="flex-1 flex flex-col overflow-hidden">
+        {installFeedback && <p role={installFeedback.error ? 'alert' : 'status'} className="px-4 py-2 text-sm">{installFeedback.message}</p>}
         {/* Double-Market Two-Pane Split View */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
           {/* LEFT PANE (7 cols): OPEN-SOURCE TEXTURE CREATOR MARKET */}
           <div className="lg:col-span-7 border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col overflow-hidden bg-slate-950/50">
             {/* Market Filters Bar */}
             <div className="p-3.5 border-b border-slate-800 space-y-2.5 shrink-0">
+              <p className="text-xs text-slate-300">Built-in procedural presets with unverified provenance. These entries do not include downloaded provider texture packs.</p>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                   <PackagePlus className="w-4 h-4" />
-                  1. Open-Source Creator Packs ({filteredMarketItems.length}{' '}
+                  1. Local preset collections ({filteredMarketItems.length}{' '}
                   blocks)
                 </span>
 
@@ -191,7 +198,7 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
                       : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  All CC0 Creators
+                  All collections
                 </button>
                 {OPEN_SOURCE_CREATOR_PACKS.map((pack) => (
                   <button
@@ -245,7 +252,8 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
             {/* Market Block Cards Grid */}
             <div className="flex-1 overflow-y-auto p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 content-start">
               {filteredMarketItems.map((item: OpenSourceMarketBlock) => {
-                const isInstalled = Boolean(customBlocks[item.blockDef.id]);
+                const isInstalled = sameBlueprintData(customBlocks[item.blockDef.id], item.blockDef);
+                const hasCollision = Object.hasOwn(customBlocks, item.blockDef.id) && !isInstalled;
                 const isEquipped = activeBlockId === item.blockDef.id;
 
                 return (
@@ -254,7 +262,7 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
                     draggable
                     onDragStart={(e) => {
                       if (!isInstalled) {
-                        onInstallMarketBlocks([item.blockDef]);
+                        if (!install([item.blockDef])) { e.preventDefault(); return; }
                       }
                       const raw = serializeStudioDragPayload({
                         type: 'block',
@@ -286,10 +294,6 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
                           <h3 className="text-xs font-bold text-slate-100 truncate">
                             {item.blockDef.name}
                           </h3>
-                          <span className="text-[10px] font-mono text-amber-400 flex items-center gap-0.5 shrink-0">
-                            <Star className="w-2.5 h-2.5 fill-amber-400" />
-                            {item.rating.toFixed(1)}
-                          </span>
                         </div>
                         <p className="text-[10px] text-cyan-300 font-medium truncate">
                           {item.creatorName} • {item.blockDef.texturePattern}
@@ -302,7 +306,7 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
 
                     <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
                       <span className="text-[10px] font-mono text-slate-400">
-                        {item.license}
+                        {hasCollision ? 'Definition ID conflict: existing blocks are preserved.' : item.license}
                       </span>
 
                       <div className="flex items-center gap-1.5">
@@ -310,7 +314,7 @@ export const BlockMarketModal: React.FC<BlockMarketModalProps> = ({
                           <button
                             type="button"
                             onClick={() =>
-                              onInstallMarketBlocks([item.blockDef])
+                              install([item.blockDef])
                             }
                             className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] flex items-center gap-1"
                           >

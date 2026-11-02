@@ -1,0 +1,36 @@
+{
+  "testedAt": "2026-11-01T14:34:16.907Z",
+  "bundleAssets": [
+    "/assets/index-DNKQ5Fht.js",
+    "/assets/index-DZmKhezt.css"
+  ],
+  "results": [
+    {
+      "name": "truthful format labels and draft bytes",
+      "ok": true
+    },
+    {
+      "name": "clipboard denial is visible and never claims copied",
+      "ok": true
+    },
+    {
+      "name": "unknown AI target rejects without changing mappings (mock service only)",
+      "ok": true
+    },
+    {
+      "name": "manual mapping cancels and discards a late suggestion (mock service only)",
+      "ok": true
+    },
+    {
+      "name": "oversized sparse draft shows a recoverable error and disables download",
+      "ok": true
+    },
+    {
+      "name": "Godot draft keeps a multiline imported project name inside comments",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "providerRequests": "intercepted locally; no provider execution",
+  "nativeImport": "NOT_RUN"
+}

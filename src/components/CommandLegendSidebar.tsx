@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import {
   AdaptivePatternArchiveState,
   ArchitecturalObjectClassId,
@@ -85,6 +85,7 @@ interface CommandLegendSidebarProps {
   onChangeCopilotConfig?: (next: SpatialCopilotConfig) => void;
   walkabilityReport?: WalkabilityAuditReport | null;
   onAutoLightDarkSpots?: () => void;
+  autoLightUnavailableReason?: string;
   patternArchive?: AdaptivePatternArchiveState;
   detectedObjectClass?: DetectedArchitecturalObjectClass | null;
   onResetPatternArchive?: () => void;
@@ -294,11 +295,13 @@ export const CommandLegendSidebar: React.FC<CommandLegendSidebarProps> = ({
   onChangeCopilotConfig,
   walkabilityReport,
   onAutoLightDarkSpots,
+  autoLightUnavailableReason,
   patternArchive,
   detectedObjectClass,
   onResetPatternArchive,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const autoLightReasonId = useId();
   const [commitMessageInput, setCommitMessageInput] = useState('');
   const [expansionStyle, setExpansionStyle] =
     useState<ChunkExpansionStyle>('grass_island');
@@ -1030,9 +1033,12 @@ export const CommandLegendSidebar: React.FC<CommandLegendSidebarProps> = ({
                   </p>
                   {walkabilityReport.darkInteriorCoords.length > 0 &&
                     onAutoLightDarkSpots && (
+                      <div>
                       <button
                         type="button"
                         onClick={onAutoLightDarkSpots}
+                        disabled={Boolean(autoLightUnavailableReason)}
+                        aria-describedby={autoLightUnavailableReason ? autoLightReasonId : undefined}
                         className="w-full py-1 px-2 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-[10px] font-semibold flex items-center justify-center gap-1"
                       >
                         <Lightbulb className="w-3 h-3" />
@@ -1045,6 +1051,8 @@ export const CommandLegendSidebar: React.FC<CommandLegendSidebarProps> = ({
                             : 's'}
                         </span>
                       </button>
+                      {autoLightUnavailableReason && <p id={autoLightReasonId} className="mt-1 text-xs text-slate-300">{autoLightUnavailableReason}</p>}
+                      </div>
                     )}
                 </div>
               )}
@@ -1628,14 +1636,14 @@ export const CommandLegendSidebar: React.FC<CommandLegendSidebarProps> = ({
                         : 'bg-slate-800 text-slate-300'
                     }`}
                   >
-                    {patternConfig.autoEvolveLoop ? 'Looping ON' : 'Auto-Loop'}
+                    {patternConfig.autoEvolveLoop ? 'Preview ON' : 'Animate preview'}
                   </button>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="flex items-center justify-between text-[10px] text-slate-400">
-                  <span>Pattern Loop Phase (0°–360°)</span>
+                  <span>Saved Pattern Phase (0°–360°)</span>
                   <span className="font-mono text-slate-200">
                     {Math.round(
                       (patternConfig.evolutionPhase / (Math.PI * 2)) * 360

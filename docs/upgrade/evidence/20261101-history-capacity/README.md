@@ -1,0 +1,11 @@
+# History/capacity checkpoint evidence
+
+Final candidate: index-Ca-k58z3.js / index-Bi0et0sU.css. All nine final App lanes actually ran on this bundle: capacity4, compatibility15, menu 9, Java 10, authority8, resources9, navigation9, catalogue6 and recovery8 (78 named cases). Separately scoped backend/mounted lanes pass107: encoded 10, policy 21, raw recovery22, hook 36, recovery UI 7 and store 11. Domain277 / 25 files, type/build and diff checks pass. No phase or release acceptance follows from counts.
+
+The sealed258-file predecessor and current session were executed on the same 20 MiB fixture: the old rename rejects unchanged; the new change retains 274 bytes and complete serialized Undo/Redo agree. Actual App 20 MiB content retains 804 bytes for three edits. The actual33,552,384-byte compact backup reopens as a distinct copy with matching authored content; former pretty output would exceed32 MiB.
+
+Failed/intermediate results remain intact. Initial observer mistakes were error capitalization and assuming an empty-array slice is an edit; a fixture syntax error was fixed before browser execution. The near-limit storage serialization failure was real: 134,210,038 bytes against133,169,152. Conditional versioned UTF-8 normalized candidate data preserves exact original strings. Final verification/activation/policy comparisons check complete content, source/durable identity, state/metadata and bounded originals synchronously; changed-after-readback cases reject. Unknown/damaged codecs retain independent bytes/source-envelope rescue and cannot activate.
+
+D3/CJB/o71/CDoj and other intermediate receipts retain their own identity. The near-only o71 receipt proves one case, not the complete suite. Menu screenshots copied from the final Ca workflow were visually inspected; they show selected menu themes/reflow and do not establish full accessibility. Some component/UI events are controlled, not physical devices.
+
+Native Minecraft/WorldEdit remains NOT_RUN — skipped by user. Other browsers, actual assistive/physical hardware, performance/capacity, providers, offline/update/rollback and release remain unqualified. No normal user storage, native installation, provider call, durable pruning, commit, push, merge or deployment occurred.

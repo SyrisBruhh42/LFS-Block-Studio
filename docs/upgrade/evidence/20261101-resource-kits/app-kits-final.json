@@ -1,0 +1,167 @@
+{
+  "startedAt": "2026-11-02T00:18:34.526Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    [
+      "http://127.0.0.1:4174/assets/index-ChU-Vftz.js",
+      "http://127.0.0.1:4174/assets/index-N7aGP9Kv.css"
+    ],
+    [
+      "http://127.0.0.1:4174/assets/index-ChU-Vftz.js",
+      "http://127.0.0.1:4174/assets/index-N7aGP9Kv.css"
+    ]
+  ],
+  "results": [
+    {
+      "name": "native menu entry and starter review leave the complete authored project unchanged",
+      "ok": true,
+      "originalArchiveSha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82",
+      "sourceIntegrity": "Python ZIP/CRC/SHA-256/closure readback"
+    },
+    {
+      "name": "reviewed kit import preserves the original first and applies the exact decoded library and notices once",
+      "ok": true,
+      "completeAuthoredHash": "3cc20534ae270d9b26c5a201f53ed781d438e6b40ae938629eaf311883ba7a86"
+    },
+    {
+      "name": "one Undo and Redo restore the complete library, metadata and unchanged world",
+      "ok": true
+    },
+    {
+      "name": "library import retains the actual selection and clipboard used by a later paste",
+      "ok": true,
+      "clipboard": "Exercised with actual //copy and //paste, then Undo"
+    },
+    {
+      "name": "public recovery downloads the exact stored ZIP source envelope and re-reading it is an idempotent import",
+      "ok": true,
+      "recoveredSourceSha256": "58be5a67c403af3d0ba9ef1bf7bb16b66bab7369fbc1cc7a35aed4748f75dfcb",
+      "originalZipSha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82"
+    },
+    {
+      "name": "blueprint preview reports exact cells and destination chunks without changing the project",
+      "ok": true,
+      "changedCells": 57,
+      "revealedChunks": [
+        "-1,1"
+      ]
+    },
+    {
+      "name": "one reviewed placement exactly matches its downloaded patch and Undo/Redo includes chunk visibility",
+      "ok": true,
+      "fullAuthoredHash": "83862fbdc92b441aa74d34c5a4c822566401f4d41aff50f4b61ee517615f07b8",
+      "source": "Actual accepted placement report reconstructed against actual project download"
+    },
+    {
+      "name": "repeated final placement is a no-op and preserves pending Redo",
+      "ok": true
+    },
+    {
+      "name": "selected blueprint packaging closes definitions and retains source notices without changing the build",
+      "ok": true,
+      "archiveSha256": "37da7458a31d755e92628cdc88329e66ce4bead6796f07351f05754dc202440b",
+      "dependencies": "4 explicit definitions; one blueprint; original MIT notice retained"
+    },
+    {
+      "name": "Escape retains the text draft, and a source switch revokes reviews and export selection",
+      "ok": true,
+      "boundary": "Public file-input activation while modal is open; not a physical picker task"
+    },
+    {
+      "name": "a packaged subset imports into an independent project with full definitions, attributes and provenance",
+      "ok": true,
+      "fullAuthoredHash": "1f18536ebbba318b206f26698b1a438ddb5ecb4575c67cc9426c0b8f373ff8e3"
+    },
+    {
+      "name": "oversized and damaged file selections revoke the prior review and never change the library",
+      "ok": true
+    },
+    {
+      "name": "conflicting definition IDs reject instead of overwriting existing content",
+      "ok": true
+    },
+    {
+      "name": "failure to preserve the original blocks import, and an explicit fresh review can retry safely",
+      "ok": true,
+      "failure": "Controlled IndexedDB candidate-add quota injection; no authored partial import"
+    },
+    {
+      "name": "cancelling a delayed File read prevents its late result replacing a new starter review",
+      "ok": true
+    },
+    {
+      "name": "shared Oasis comfort and native Tab keep resource controls visible at 320 CSS pixels and 200 percent text",
+      "ok": true,
+      "viewportCssPixels": 320,
+      "textPercent": 200,
+      "pages": [
+        "kits",
+        "library",
+        "share"
+      ]
+    },
+    {
+      "name": "fresh-storage project copy retains kit resources offline in an already-loaded App and persists after a local-assets reload",
+      "ok": true,
+      "offline": "Already-loaded App only; reload uses loopback App assets",
+      "fullAuthoredHash": "dbe0ed179240db6d07cfd1ac129c856160a364218bb2077d7d07d2a32b343168"
+    },
+    {
+      "name": "locked Java imports unused kit resources, rejects unmapped placement and admits a mapped unit blueprint with unchanged policy",
+      "ok": true,
+      "native": "NOT_RUN — skipped by user"
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/lfs-kit-app-fixture2.png",
+    "/tmp/lfs-kit-app-fixture2-narrow.png"
+  ],
+  "files": [
+    {
+      "path": "/tmp/lfs-kit-starter-fixture2.zip",
+      "bytes": 17929,
+      "sha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82"
+    },
+    {
+      "path": "/tmp/lfs-detached-kit-import-summary.json",
+      "bytes": 1313,
+      "sha256": "ab85177d9bf46321707b4c8c23dfb9993e21896302258d2a378be1a897982fe4"
+    },
+    {
+      "path": "/tmp/lfs-kit-import-summary-fixture2.json",
+      "bytes": 1313,
+      "sha256": "ab85177d9bf46321707b4c8c23dfb9993e21896302258d2a378be1a897982fe4"
+    },
+    {
+      "path": "/tmp/lfs-kit-source-fixture2.json",
+      "bytes": 24123,
+      "sha256": "58be5a67c403af3d0ba9ef1bf7bb16b66bab7369fbc1cc7a35aed4748f75dfcb"
+    },
+    {
+      "path": "/tmp/lfs-detached-prefab-review.json",
+      "bytes": 10334,
+      "sha256": "164fdd33b463eacc5a5da3651f59823523ff57ffa95f45d75f9ea37e745aa6c1"
+    },
+    {
+      "path": "/tmp/lfs-kit-placement-accepted-fixture2.json",
+      "bytes": 10334,
+      "sha256": "75c7fc9fc53cbe36a5a98e5712cd0cf95fbf5fc7f64d89df95a64af80d29b72f"
+    },
+    {
+      "path": "/tmp/lfs-kit-travel-fixture2.zip",
+      "bytes": 12302,
+      "sha256": "37da7458a31d755e92628cdc88329e66ce4bead6796f07351f05754dc202440b"
+    }
+  ],
+  "limitations": [
+    "Actual App controls/downloads/public file inputs in disposable Chromium/software WebGL; external/API and service workers blocked. No App globals/private React access or storage writes construct editing outcomes.",
+    "Source switching while a native modal is open is a public-file event-boundary fixture, not a physical picker journey.",
+    "Controlled File.arrayBuffer delay and IndexedDB candidate-add quota injection qualify named cancellation/failure behavior only.",
+    "Independent ZIP decoding uses Python standard-library zipfile/JSON/hashlib with no production App imports.",
+    "Offline work uses an already-loaded App; reload afterwards serves loopback App assets. This does not qualify PWA offline cold start/update/rollback.",
+    "Scoped native keyboard/reflow only; no whole-shell/assistive/physical-device/performance/provider or release acceptance. Native Minecraft/WorldEdit NOT_RUN — skipped by user."
+  ],
+  "finishedAt": "2026-11-02T00:19:51.586Z"
+}

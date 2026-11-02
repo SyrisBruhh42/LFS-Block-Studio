@@ -1,0 +1,128 @@
+{
+  "recordedAtUTC": "2026-11-02T00:38:21.404738+00:00",
+  "candidate": {
+    "js": "index-ChU-Vftz.js",
+    "css": "index-N7aGP9Kv.css",
+    "jsSha256": "3267fefd5ad4c394d79d28056833a18b260a6681b8a7670a866b86deec98304a",
+    "cssSha256": "224743bf05ff335d132c51c570419b8f8dec4c6144da63bc3ea47fbcce3393aa"
+  },
+  "domain": {
+    "passed": 395,
+    "files": 31,
+    "receipt": "contracts-final.txt"
+  },
+  "app": {
+    "kits": {
+      "passed": 18,
+      "receipt": "app-kits-final.json"
+    },
+    "recipes": {
+      "passed": 14,
+      "receipt": "app-recipes-final.json"
+    },
+    "menu": {
+      "passed": 9,
+      "receipt": "app-menu-final.json"
+    },
+    "authority": {
+      "passed": 8,
+      "receipt": "app-authority-final.json"
+    },
+    "navigation": {
+      "passed": 9,
+      "receipt": "app-navigation-final.json"
+    },
+    "java": {
+      "passed": 10,
+      "receipt": "app-java-final.json"
+    },
+    "compatibility": {
+      "passed": 15,
+      "receipt": "app-compatibility-final.json"
+    },
+    "resources": {
+      "passed": 9,
+      "receipt": "app-resources-final.json"
+    },
+    "catalogue": {
+      "passed": 6,
+      "receipt": "app-catalogue-final.json"
+    },
+    "brush": {
+      "passed": 13,
+      "receipt": "app-brush-final.json"
+    },
+    "options": {
+      "passed": 2,
+      "receipt": "app-options-final.json"
+    },
+    "properties": {
+      "passed": 10,
+      "receipt": "app-properties-final.json"
+    },
+    "recovery": {
+      "passed": 8,
+      "receipt": "app-recovery-final.json"
+    },
+    "capacity": {
+      "passed": 4,
+      "receipt": "app-capacity-final.json"
+    }
+  },
+  "backend": {
+    "encoded": {
+      "passed": 10,
+      "receipt": "backend-encoded-final.json"
+    },
+    "policy": {
+      "passed": 21,
+      "receipt": "backend-policy-final.json"
+    },
+    "raw-recovery": {
+      "passed": 22,
+      "receipt": "backend-raw-recovery-final.json"
+    },
+    "hook": {
+      "passed": 36,
+      "receipt": "backend-hook-final.json"
+    },
+    "recovery-ui": {
+      "passed": 7,
+      "receipt": "backend-recovery-ui-final.json"
+    },
+    "store": {
+      "passed": 11,
+      "receipt": "backend-store-final.json"
+    }
+  },
+  "appTotal": 135,
+  "backendTotal": 107,
+  "scope": "Disposable Chromium/software WebGL, actual controls/downloads and scoped native Tab; controlled source/IO/storage fixtures. External/API and service workers blocked. Offline operations use an already-loaded App; reload serves loopback App assets. No PWA cold-start/physical/assistive/performance/provider/release acceptance. Native Minecraft/WorldEdit NOT_RUN \u2014 skipped by user.",
+  "artifacts": {
+    "starter": {
+      "file": "lfs-kit-starter-fixture2.zip",
+      "bytes": 17929,
+      "sha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82"
+    },
+    "selectedKit": {
+      "file": "lfs-kit-travel-fixture2.zip",
+      "bytes": 12302,
+      "sha256": "37da7458a31d755e92628cdc88329e66ce4bead6796f07351f05754dc202440b"
+    },
+    "acceptedImport": {
+      "file": "lfs-kit-import-summary-fixture2.json",
+      "bytes": 1313,
+      "sha256": "ab85177d9bf46321707b4c8c23dfb9993e21896302258d2a378be1a897982fe4"
+    },
+    "acceptedPlacement": {
+      "file": "lfs-kit-placement-accepted-fixture2.json",
+      "bytes": 10334,
+      "sha256": "75c7fc9fc53cbe36a5a98e5712cd0cf95fbf5fc7f64d89df95a64af80d29b72f"
+    },
+    "originalSourceEnvelope": {
+      "file": "lfs-kit-source-fixture2.json",
+      "bytes": 24123,
+      "sha256": "58be5a67c403af3d0ba9ef1bf7bb16b66bab7369fbc1cc7a35aed4748f75dfcb"
+    }
+  }
+}

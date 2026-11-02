@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: complete recipe review is detached, exact, chunk-aware and commits one full document/workspace Undo
+ok 1 - complete recipe review is detached, exact, chunk-aware and commits one full document/workspace Undo
+  ---
+  duration_ms: 28.131158
+  ...
+# Subtest: unchanged final cells keep original IDs and preserve source, history and pending Redo
+ok 2 - unchanged final cells keep original IDs and preserve source, history and pending Redo
+  ---
+  duration_ms: 4.211142
+  ...
+# Subtest: an updated cell reports appearance loss and exact before/after rather than a net block count
+ok 3 - an updated cell reports appearance loss and exact before/after rather than a net block count
+  ---
+  duration_ms: 4.03812
+  ...
+# Subtest: removed cells, selection-only and clipboard-only recipes expose their independent effects
+ok 4 - removed cells, selection-only and clipboard-only recipes expose their independent effects
+  ---
+  duration_ms: 7.740426
+  ...
+# Subtest: material totals expose exact positive and negative changes including unchanged cells
+ok 5 - material totals expose exact positive and negative changes including unchanged cells
+  ---
+  duration_ms: 1.676131
+  ...
+# Subtest: explicit cursor is captured for omitted command coordinates and does not inherit a later hover
+ok 6 - explicit cursor is captured for omitted command coordinates and does not inherit a later hover
+  ---
+  duration_ms: 4.171572
+  ...
+# Subtest: partial errors, unknown commands and undo/redo leave all source and history unchanged
+ok 7 - partial errors, unknown commands and undo/redo leave all source and history unchanged
+  ---
+  duration_ms: 2.818985
+  ...
+# Subtest: the locked profile validates every intermediate command, not only a later repaired final result
+ok 8 - the locked profile validates every intermediate command, not only a later repaired final result
+  ---
+  duration_ms: 7.559894
+  ...
+# Subtest: invalid script, parameters, material and cursor reject without coercion or source mutation
+ok 9 - invalid script, parameters, material and cursor reject without coercion or source mutation
+  ---
+  duration_ms: 2.129726
+  ...
+# Subtest: draft and saved-macro admission reject getters, sparse arrays and unknown draft fields before reading them
+ok 10 - draft and saved-macro admission reject getters, sparse arrays and unknown draft fields before reading them
+  ---
+  duration_ms: 0.496707
+  ...
+# Subtest: the shared step validator rejects before any later command or progress and exposes no result
+ok 11 - the shared step validator rejects before any later command or progress and exposes no result
+  ---
+  duration_ms: 1.319786
+  ...
+# Subtest: a final history admission failure rolls back cells, selection, clipboard and chunks after review
+ok 12 - a final history admission failure rolls back cells, selection, clipboard and chunks after review
+  ---
+  duration_ms: 7.994969
+  ...
+# Subtest: model preview and Cancel are read-only and keep the commands for a fresh preview
+ok 13 - model preview and Cancel are read-only and keep the commands for a fresh preview
+  ---
+  duration_ms: 3.374752
+  ...
+# Subtest: model Apply executes once and old Apply callbacks cannot target a new review after close/reopen
+ok 14 - model Apply executes once and old Apply callbacks cannot target a new review after close/reopen
+  ---
+  duration_ms: 2.616582
+  ...
+# Subtest: dirty close/reopen and shelf replacement preserve drafts until replacement is explicit
+ok 15 - dirty close/reopen and shelf replacement preserve drafts until replacement is explicit
+  ---
+  duration_ms: 1.390717
+  ...
+# Subtest: intervening edits, selection changes, edit-to-Undo ABA and project activation revoke prepared Apply
+ok 16 - intervening edits, selection changes, edit-to-Undo ABA and project activation revoke prepared Apply
+  ---
+  duration_ms: 3.268411
+  ...
+# Subtest: Cancel during a cooperative delay prevents further steps and preserves all authored effects
+ok 17 - Cancel during a cooperative delay prevents further steps and preserves all authored effects
+  ---
+  duration_ms: 1.288976
+  ...
+# Subtest: editing while preparation is delayed cancels the old job and a cached draft callback cannot overwrite a new one
+ok 18 - editing while preparation is delayed cancels the old job and a cached draft callback cannot overwrite a new one
+  ---
+  duration_ms: 1.787462
+  ...
+# Subtest: a producer ignoring cancellation cannot publish late progress/results into a newer job or closed context
+ok 19 - a producer ignoring cancellation cannot publish late progress/results into a newer job or closed context
+  ---
+  duration_ms: 1.833453
+  ...
+# Subtest: source change cancels delayed preparation and unavailable write authority blocks Preview/Apply
+ok 20 - source change cancels delayed preparation and unavailable write authority blocks Preview/Apply
+  ---
+  duration_ms: 1.403818
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 96.595874

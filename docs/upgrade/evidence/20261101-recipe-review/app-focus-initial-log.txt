@@ -1,0 +1,10 @@
+{"name":"native recipe focus, editing, preview and complete review download preserve the build, history and canvas","ok":true,"reviewHash":"5eb0ffa64277617f26fa472a05998a3a86bbcdf03f07588f1823596f462e2151","exactChangedCells":27}
+{"name":"changed-cell paging, filtering and resolved trace expose exact before/after data without executing it","ok":true}
+{"name":"Apply commits complete recipe cells, revealed chunks, selection and clipboard as one Undo and Redo","ok":true,"fullAuthoredHash":"5eccb5cb2e45e65531fc71da77f098f8bd5deee7ee378a0acf377051171dc2c8","oneRecipeUndo":true,"clipboardExercisedByActualPaste":true}
+{"name":"an identical recipe keeps stable cell identities, source content and pending Redo","ok":true}
+{"name":"a failed later command exposes no partial live changes and retains the editable script","ok":true}
+{"name":"Cancel and editing during cooperative preparation retain commands and never publish a partial step","ok":true}
+{"name":"Escape retains an unfinished draft, revokes Apply and requires an explicit preset replacement","ok":true}
+{"name":"the existing HUD macro entry opens the review workspace without immediately changing the build","ok":true,"entry":"existing Room Shell HUD slot"}
+{"name":"activation through the public project-file route cancels the old review while retaining its commands","ok":true}
+{"stage":"shared Oasis preferences and native keyboard reflow preserve source at 320 CSS pixels and 200 percent text","message":"Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}","stack":"AssertionError [ERR_ASSERTION]: Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/recipe-workspace.mjs:78:363"}

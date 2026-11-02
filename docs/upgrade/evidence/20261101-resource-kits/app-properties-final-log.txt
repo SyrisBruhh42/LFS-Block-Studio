@@ -1,0 +1,10 @@
+{"name":"scene discovery opens a modeless properties panel without changing the project, history or canvas","ok":true}
+{"name":"reviewed position, type, rotation and scale apply in one step with stable identity and complete Undo/Redo","ok":true,"fullAuthoredHash":"70c7c664846c4dee7e7624b775d70ebb7f98e955ff4815cd5eac266300085ff8","actualUndoRedo":true}
+{"name":"occupied destination rejection preserves the full build and unfinished values","ok":true}
+{"name":"close and resume retain drafts while scene switching requires explicit discard","ok":true}
+{"name":"editing elsewhere then Undo invalidates a dirty review and retains its draft until reload","ok":true}
+{"name":"shared Oasis appearance and independent properties width preserve a pending draft and review","ok":true}
+{"name":"numeric inspect is source-neutral and a no-op review preserves pending Redo","ok":true,"savedAndReopened":true}
+{"name":"modeless keyboard edits and 200 percent properties text reflow at 320 CSS pixels","ok":true,"viewportCssPixels":320,"textPercent":200}
+{"name":"short desktop windows keep the complete properties panel scrollable with visible native Tab focus","ok":true,"viewport":[1600,500]}
+{"name":"Java locked properties expose only mapped blocks and preserve policy through reviewed editing","ok":true,"nativeQualification":"NOT_RUN — skipped by user"}

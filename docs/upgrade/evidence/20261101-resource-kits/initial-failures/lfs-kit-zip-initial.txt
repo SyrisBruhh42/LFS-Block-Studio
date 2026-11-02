@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: independent Python ZIP fixture: STORE, descriptor=false
+ok 1 - independent Python ZIP fixture: STORE, descriptor=false
+  ---
+  duration_ms: 1.494798
+  ...
+# Subtest: independent Python ZIP fixture: STORE, descriptor=true
+ok 2 - independent Python ZIP fixture: STORE, descriptor=true
+  ---
+  duration_ms: 0.304114
+  ...
+# Subtest: independent Python ZIP fixture: DEFLATE, descriptor=false
+ok 3 - independent Python ZIP fixture: DEFLATE, descriptor=false
+  ---
+  duration_ms: 16.435649
+  ...
+# Subtest: independent Python ZIP fixture: DEFLATE, descriptor=true
+ok 4 - independent Python ZIP fixture: DEFLATE, descriptor=true
+  ---
+  duration_ms: 2.834474
+  ...
+# Subtest: writer produces complete STORE files with known CRC-32 and returns detached reader bytes
+ok 5 - writer produces complete STORE files with known CRC-32 and returns detached reader bytes
+  ---
+  duration_ms: 6.536749
+  ...
+# Subtest: writer rejects unsafe paths, empty/oversized archives and excess entries instead of truncating
+ok 6 - writer rejects unsafe paths, empty/oversized archives and excess entries instead of truncating
+  ---
+  duration_ms: 53.321853
+  ...
+# Subtest: bad payload checksum, truncated end and trailing bytes cannot be read
+ok 7 - bad payload checksum, truncated end and trailing bytes cannot be read
+  ---
+  duration_ms: 0.731469
+  ...
+# Subtest: local and central path disagreement and duplicate paths reject before extraction
+ok 8 - local and central path disagreement and duplicate paths reject before extraction
+  ---
+  duration_ms: 0.438126
+  ...
+# Subtest: encrypted, symbolic-link and ZIP64 records reject
+ok 9 - encrypted, symbolic-link and ZIP64 records reject
+  ---
+  duration_ms: 0.610228
+  ...
+# Subtest: reader refuses prefixed local records, central gaps, bad disk and excess entry counts
+ok 10 - reader refuses prefixed local records, central gaps, bad disk and excess entry counts
+  ---
+  duration_ms: 0.957171
+  ...
+# Subtest: a forged small DEFLATE expansion size is stopped and descriptor corruption rejects
+ok 11 - a forged small DEFLATE expansion size is stopped and descriptor corruption rejects
+  ---
+  duration_ms: 11.419548
+  ...
+# Subtest: declared per-entry and aggregate expansion budgets reject before inflation
+ok 12 - declared per-entry and aggregate expansion budgets reject before inflation
+  ---
+  duration_ms: 0.391554
+  ...
+# Subtest: cancellation before or during native decompression rejects without returning partial files
+ok 13 - cancellation before or during native decompression rejects without returning partial files
+  ---
+  duration_ms: 1.125844
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 103.047533

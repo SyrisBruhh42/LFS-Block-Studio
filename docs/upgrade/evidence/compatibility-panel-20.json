@@ -1,0 +1,104 @@
+{
+  "startedAt": "2026-11-01T16:16:46.772Z",
+  "origin": "http://127.0.0.1:4173",
+  "browser": "156.0.8078.79",
+  "sourceHashes": {
+    "../../src/components/StudioCompatibilityPanel.tsx": "9c0fbed691cee3a6825903a65ac4b1156cc206e3830fe6c9efde0591555d0564",
+    "../../src/components/StudioCompatibilityPanel.css": "5ffaca909e7e9bc4bbea7fd578a2cbe5c90e897bb3a514c0f46d905c73fb2f75",
+    "./compatibility-panel.mjs": "7c29d80a3d7aec8edd2535e8f4cb4562c7468d463dae7efe363fecc6a5eae540"
+  },
+  "results": [
+    {
+      "name": "no default or air mappings; exact target and native hold visible",
+      "ok": true
+    },
+    {
+      "name": "4096 definitions page and search without losing offscreen explicit choices",
+      "ok": true
+    },
+    {
+      "name": "Apply requires both explicit acknowledgements and passes exact reviewed object once",
+      "ok": true
+    },
+    {
+      "name": "grouped issues expose paths counts and sampled IDs; truncated report blocks Apply",
+      "ok": true
+    },
+    {
+      "name": "changing a mapping discards review and acknowledgements while retaining the new choice",
+      "ok": true
+    },
+    {
+      "name": "opaque source-token change invalidates review even when visible content is equal",
+      "ok": true
+    },
+    {
+      "name": "async review cannot apply after a source change",
+      "ok": true
+    },
+    {
+      "name": "async review result is discarded when choices change",
+      "ok": true
+    },
+    {
+      "name": "dismiss and reopen fences old review results and errors",
+      "ok": true
+    },
+    {
+      "name": "rejected Apply preserves choices and requires fresh review",
+      "ok": true
+    },
+    {
+      "name": "stale Apply preserves choices and requires fresh review",
+      "ok": true
+    },
+    {
+      "name": "throw Apply preserves choices and requires fresh review",
+      "ok": true
+    },
+    {
+      "name": "pending Apply stays exclusive across close/reopen; late success cannot replace the new session",
+      "ok": true
+    },
+    {
+      "name": "unmounted callback settlement does not produce a React error",
+      "ok": true
+    },
+    {
+      "name": "existing Java locked mappings are readonly and only opposite lock is reviewed",
+      "ok": true
+    },
+    {
+      "name": "existing Java unlocked mappings are readonly and only opposite lock is reviewed",
+      "ok": true
+    },
+    {
+      "name": "parent disabled gate blocks review and Apply while allowing inspection",
+      "ok": true
+    },
+    {
+      "name": "discard review preserves choices and causes no Apply",
+      "ok": true
+    },
+    {
+      "name": "native dialog enters focus, keeps Tab inside, and Escape restores trigger focus",
+      "ok": true
+    },
+    {
+      "name": "narrow viewport keeps labeled controls within the dialog width",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Actual mounted React component with controlled callbacks. Does not qualify App integration, authoritative policy validation, persistence atomicity, native exports, assistive technology or physical devices.",
+    "Keyboard focus and narrow-layout checks cover this isolated Chromium fixture only."
+  ],
+  "finalSourceHashes": {
+    "../../src/components/StudioCompatibilityPanel.tsx": "9c0fbed691cee3a6825903a65ac4b1156cc206e3830fe6c9efde0591555d0564",
+    "../../src/components/StudioCompatibilityPanel.css": "5ffaca909e7e9bc4bbea7fd578a2cbe5c90e897bb3a514c0f46d905c73fb2f75",
+    "./compatibility-panel.mjs": "7c29d80a3d7aec8edd2535e8f4cb4562c7468d463dae7efe363fecc6a5eae540"
+  },
+  "sourcesUnchanged": true,
+  "finishedAt": "2026-11-01T16:16:54.588Z"
+}

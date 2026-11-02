@@ -1,0 +1,72 @@
+{
+  "startedAt": "2026-11-01T20:30:52.262Z",
+  "origin": "http://127.0.0.1:4174",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-Ca-k58z3.js",
+    "http://127.0.0.1:4174/assets/index-Bi0et0sU.css"
+  ],
+  "results": [
+    {
+      "name": "real project import and explicit game compatibility review establish the source",
+      "ok": true,
+      "mappingsAreDeliberatelyDifferentFromAppearance": true
+    },
+    {
+      "name": "locked export mounts the typed binary path and requires an explicit anchor and review",
+      "ok": true
+    },
+    {
+      "name": "numeric window layout preserves the mounted canvas, project and reviewed export inputs",
+      "ok": true
+    },
+    {
+      "name": "downloaded world .schem independently decodes exact axes, offsets, states, air and Unicode name",
+      "ok": true,
+      "sha256": "d029b72b3d835f8683c2364f2809ca9a17d66afd917bc31bf6d3fbe6a396ec1a",
+      "dimensions": [
+        3,
+        2,
+        4
+      ],
+      "offset": [
+        -5,
+        7,
+        -3
+      ]
+    },
+    {
+      "name": "separate export report identifies the exact downloaded bytes and captured source without modifying storage",
+      "ok": true,
+      "reportSha256": "b9e05185b67d2ab684a29ee9d8dbe0e346ac23df66b327bcc3bdd86a3cd796b9"
+    },
+    {
+      "name": "export leaves both real Undo and Redo payloads available",
+      "ok": true
+    },
+    {
+      "name": "selection export excludes only explicit outside scope and preserves selected air",
+      "ok": true
+    },
+    {
+      "name": "explicit empty selection exports an air-only region and parameter edits invalidate review",
+      "ok": true
+    },
+    {
+      "name": "clear selection is undoable and never invents a region for a later edit",
+      "ok": true
+    },
+    {
+      "name": "exported project and typed mappings survive save and reload",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "nativeQualification": "NOT_RUN",
+  "limitations": [
+    "Desktop Chromium/software WebGL; no physical-device, assistive technology or performance qualification.",
+    "Independent test-only NBT reader; no native Minecraft/WorldEdit paste, persistence or export-back.",
+    "External/provider requests blocked; only product UI, downloads and read-only IndexedDB observations."
+  ],
+  "finishedAt": "2026-11-01T20:31:30.080Z",
+  "ok": true
+}

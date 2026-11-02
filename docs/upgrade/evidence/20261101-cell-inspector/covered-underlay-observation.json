@@ -1,0 +1,15 @@
+{
+  "recordedAtUTC": "2026-11-01T21:59:51.658090+00:00",
+  "candidate": {
+    "js": "index-BjocarM_.js",
+    "css": "index-BxvGy-C2.css",
+    "jsSha256": "dab8a9065e63dcb37da4682c71e9cee6e5e67f27bd5514786dc83d54c9301028",
+    "cssSha256": "d0c6a8594620ca5c40b379e71f54485ca766ee2e13065de6591e67c07ecaa1f6"
+  },
+  "evidenceType": "Observation reconstructed from actual tool return, not a successful test receipt",
+  "exit": 1,
+  "stage": "modeless keyboard edits and 200 percent properties text reflow at 320 CSS pixels",
+  "message": "Project backup click timed out because the narrow properties overlay covered it. A pending download waiter subsequently rejected during receipt write, leaving a zero-byte receipt.",
+  "previousCompletedCases": 7,
+  "correction": "Close properties, use the actual backup control, then resume the retained draft through the menu. Await click/download together to contain both failures. No force click or hidden source access."
+}

@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: detached review preserves source and exact one-cell selection/chunk edit restores through Undo and Redo
+ok 1 - detached review preserves source and exact one-cell selection/chunk edit restores through Undo and Redo
+  ---
+  duration_ms: 10.510917
+  ...
+# Subtest: unrelated region selection and clipboard remain unchanged when a cell moves
+ok 2 - unrelated region selection and clipboard remain unchanged when a cell moves
+  ---
+  duration_ms: 2.451575
+  ...
+# Subtest: occupied rounded anchors reject without replacing cells, history or source
+ok 3 - occupied rounded anchors reject without replacing cells, history or source
+  ---
+  duration_ms: 1.43326
+  ...
+# Subtest: Freeform fractional positions retain exact values and follow the schema rounded key
+ok 4 - Freeform fractional positions retain exact values and follow the schema rounded key
+  ---
+  duration_ms: 2.330275
+  ...
+# Subtest: numeric boundaries reject empty, hex, nonfinite and out of range data
+ok 5 - numeric boundaries reject empty, hex, nonfinite and out of range data
+  ---
+  duration_ms: 1.757161
+  ...
+# Subtest: definition scale is displayed truthfully and absent override remains a no-op with Redo intact
+ok 6 - definition scale is displayed truthfully and absent override remains a no-op with Redo intact
+  ---
+  duration_ms: 2.588207
+  ...
+# Subtest: instance scale identity remains explicit until definition source is deliberately chosen
+ok 7 - instance scale identity remains explicit until definition source is deliberately chosen
+  ---
+  duration_ms: 2.565996
+  ...
+# Subtest: definition changes preserve instance appearance unless its removal is explicitly reviewed
+not ok 8 - definition changes preserve instance appearance unless its removal is explicitly reviewed
+  ---
+  duration_ms: 1.505479
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:1:7099'
+  failureType: 'testCodeFailure'
+  error: 'Unsupported value.'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    validateDocument (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.ts:91:25)
+    new StudioEditorSession (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.ts:179:47)
+    session (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:28:68)
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:84:11)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: locked Java accepts mapped whole cell edits and rejects scale, rotation, fractions and unknown definitions
+ok 9 - locked Java accepts mapped whole cell edits and rejects scale, rotation, fractions and unknown definitions
+  ---
+  duration_ms: 5.772787
+  ...
+# Subtest: stable cell identity follows moves and Undo without capturing a replacement at the former anchor
+ok 10 - stable cell identity follows moves and Undo without capturing a replacement at the former anchor
+  ---
+  duration_ms: 2.689407
+  ...
+# Subtest: review rejects current preimage changes and edit-to-Undo ABA before entering commit
+ok 11 - review rejects current preimage changes and edit-to-Undo ABA before entering commit
+  ---
+  duration_ms: 2.322065
+  ...
+# Subtest: history-capacity failure rolls back the cell, revealed chunk, selection and token
+ok 12 - history-capacity failure rolls back the cell, revealed chunk, selection and token
+  ---
+  duration_ms: 1.818281
+  ...
+# Subtest: draft validation rejects unknown fields, accessors and oversized values without invoking getters
+ok 13 - draft validation rejects unknown fields, accessors and oversized values without invoking getters
+  ---
+  duration_ms: 1.789331
+  ...
+# Subtest: opening, reviewing, canceling and closing properties do not change authored data or history
+ok 14 - opening, reviewing, canceling and closing properties do not change authored data or history
+  ---
+  duration_ms: 1.425239
+  ...
+# Subtest: close preserves a draft and revokes old controls/reviews through reopen and a newer review
+ok 15 - close preserves a draft and revokes old controls/reviews through reopen and a newer review
+  ---
+  duration_ms: 1.817081
+  ...
+# Subtest: an unfinished draft prevents switching targets until explicit reload/discard
+ok 16 - an unfinished draft prevents switching targets until explicit reload/discard
+  ---
+  duration_ms: 0.961436
+  ...
+# Subtest: external source changes retain dirty values, invalidate reviews, and require explicit reload after ABA
+ok 17 - external source changes retain dirty values, invalidate reviews, and require explicit reload after ABA
+  ---
+  duration_ms: 1.600571
+  ...
+# Subtest: clean views follow external moves and deletions/Undo while dirty drafts cannot cross a replacement project
+not ok 18 - clean views follow external moves and deletions/Undo while dirty drafts cannot cross a replacement project
+  ---
+  duration_ms: 5.419024
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:1:12472'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'applied'
+    - 'rejected'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'rejected'
+  actual: 'applied'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:129:173)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: failed commits retain the draft; recovery/exclusive gates prevent a review without changing source
+ok 19 - failed commits retain the draft; recovery/exclusive gates prevent a review without changing source
+  ---
+  duration_ms: 1.691271
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 17
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67.710852

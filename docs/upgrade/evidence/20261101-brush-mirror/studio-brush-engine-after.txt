@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: valid brush fixtures retain exact shapes, hollow shells, and radius-zero behavior
+ok 1 - valid brush fixtures retain exact shapes, hollow shells, and radius-zero behavior
+  ---
+  duration_ms: 1.628102
+  ...
+# Subtest: brush config rejects negative, fractional, nonfinite, extreme, and unknown settings without clamping
+ok 2 - brush config rejects negative, fractional, nonfinite, extreme, and unknown settings without clamping
+  ---
+  duration_ms: 4.158166
+  ...
+# Subtest: brush placement validates its entire destination and scale before mutating or creating history
+ok 3 - brush placement validates its entire destination and scale before mutating or creating history
+  ---
+  duration_ms: 6.927075
+  ...
+# Subtest: valid brushes retain one undo, exact negative coordinates, erase behavior, and air-only no-op history
+ok 4 - valid brushes retain one undo, exact negative coordinates, erase behavior, and air-only no-op history
+  ---
+  duration_ms: 2.254421
+  ...
+# Subtest: repeating an identical brush preserves cell identities, state and pending Redo
+ok 5 - repeating an identical brush preserves cell identities, state and pending Redo
+  ---
+  duration_ms: 2.531925
+  ...
+# Subtest: chunk expansion rejects unsafe indices, dimensions, and styles before snapshot or generation
+ok 6 - chunk expansion rejects unsafe indices, dimensions, and styles before snapshot or generation
+  ---
+  duration_ms: 10.95118
+  ...
+# Subtest: negative chunk indices remain valid and fixed templates retain their original cells
+ok 7 - negative chunk indices remain valid and fixed templates retain their original cells
+  ---
+  duration_ms: 0.73774
+  ...
+# Subtest: selection transforms retain valid shifts, contractions, ordering, and null-corner fallback
+ok 8 - selection transforms retain valid shifts, contractions, ordering, and null-corner fallback
+  ---
+  duration_ms: 0.264794
+  ...
+# Subtest: selection transform rejection preserves supplied corners for invalid steps, bounds, or destinations
+ok 9 - selection transform rejection preserves supplied corners for invalid steps, bounds, or destinations
+  ---
+  duration_ms: 0.323125
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38.432656

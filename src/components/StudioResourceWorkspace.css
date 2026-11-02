@@ -1,0 +1,39 @@
+.studio-resource-workspace h4 { font-size:1.05em; font-weight:650; margin-block:.4em .7em; }
+.studio-resource-workspace :is(button,input,select,textarea,summary,pre) { scroll-margin-block:8px; }
+.studio-resource-workspace h2:focus-visible { outline:3px solid var(--lds-color-border-focus); outline-offset:3px; }
+.studio-resource-columns { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.5em; margin-block:.75em; }
+.studio-resource-columns > * { min-inline-size:0; }
+.studio-resource-card,.studio-resource-impact { min-inline-size:0; padding:1em; border:1px solid var(--lds-color-text-muted); border-radius:var(--lds-radius-md); background:var(--lds-color-bg-surface); }
+.studio-resource-card > button { margin-block-start:.7em; margin-inline-end:.4em; }
+.studio-resource-starter { border-block-start:4px solid var(--lds-color-accent-primary); margin-block-end:1.3em; }
+.studio-resource-eyebrow { letter-spacing:.12em; font-size:.7em; color:var(--lds-color-accent-primary); }
+.studio-resource-swatches { display:flex; gap:.3em; margin-block:.8em; }
+.studio-resource-swatches span { flex:1; block-size:1.7em; border:1px solid var(--lds-color-text-muted); border-radius:.3em; }
+.studio-resource-workspace input[type="file"] { inline-size:100%; min-inline-size:0; font-size:.8em; }
+.studio-resource-workspace input::file-selector-button { max-inline-size:100%; white-space:normal; font:inherit; padding:.4em; }
+.studio-resource-workspace textarea { font:inherit; inline-size:100%; min-inline-size:0; border:1px solid var(--lds-color-text-muted); border-radius:var(--lds-radius-sm); padding:.6em; background:var(--lds-color-bg-surface); color:var(--lds-color-text-primary); resize:vertical; }
+.studio-resource-workspace textarea:focus-visible,.studio-resource-workspace pre:focus-visible { outline:3px solid var(--lds-color-border-focus); outline-offset:3px; }
+.studio-resource-workspace pre { max-block-size:12em; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:.6em; border:1px solid var(--lds-color-text-muted); font:.8em/1.5 ui-monospace,monospace; margin-block:.7em; }
+.studio-resource-workspace details { margin-block:.8em; }
+.studio-resource-workspace ul { list-style:disc; padding-inline-start:1.2em; }
+.studio-resource-counts { display:flex; flex-wrap:wrap; gap:1em; }
+.studio-resource-counts dt { font-size:.8em; color:var(--lds-color-text-secondary); }
+.studio-resource-counts dd { font-size:1.5em; margin:0; }
+.studio-resource-list,.studio-resource-cell-list { list-style:none!important; padding:0!important; display:grid; gap:.8em; margin-block:1em; }
+.studio-resource-cell-list li { padding:.6em; border:1px solid var(--lds-color-border-default); border-radius:var(--lds-radius-sm); font-size:.85em; }
+.studio-resource-block-color { inline-size:3em; block-size:3em; border:1px solid var(--lds-color-text-muted); border-radius:var(--lds-radius-sm); margin-block:.5em; }
+.studio-resource-plan { margin:0 0 .8em; }
+.studio-resource-plan svg { inline-size:100%; max-block-size:160px; background:var(--lds-color-bg-elevated); border:1px solid var(--lds-color-border-default); border-radius:var(--lds-radius-sm); }
+.studio-resource-plan figcaption { font-size:.7em; color:var(--lds-color-text-secondary); }
+.studio-resource-coordinates { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,80px),1fr)); gap:.6em; }
+.studio-resource-coordinates input { min-inline-size:0; inline-size:100%; }
+.studio-resource-rights,.studio-resource-choices label { display:flex; align-items:flex-start; gap:.5em; margin-block:.75em; }
+.studio-resource-rights { font-size:.85em; }
+.studio-resource-rights input,.studio-resource-choices input { flex-shrink:0; accent-color:var(--lds-color-accent-primary); }
+.studio-resource-choices { list-style:none!important; padding:0!important; }
+.studio-resource-choices li { padding:.5em; border-block-end:1px solid var(--lds-color-border-default); }
+.studio-resource-choices small { display:block; font-size:.75em; color:var(--lds-color-text-secondary); }
+.studio-resource-choices span { min-inline-size:0; }
+.studio-resource-project-notices { margin-block-start:1.5em!important; }
+@media(max-width:900px) { .studio-resource-columns { grid-template-columns:minmax(0,1fr); gap:1em; } }
+@media(forced-colors:active) { .studio-resource-workspace :is(textarea,pre) { border-color:CanvasText; } .studio-resource-swatches span { forced-color-adjust:none; } }

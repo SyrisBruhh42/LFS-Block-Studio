@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CustomBlockDefinition, PlacedBlock } from '../engine/types';
 import {
   MINECRAFT_BLOCK_CATALOG,
@@ -25,7 +25,11 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+import { preflightLegacyExport, boundLegacyExportText } from '../engine/exportPreflight';
 import { DraggableWindow } from './DraggableWindow';
+import { StudioJavaExportModal } from './StudioJavaExportModal';
+import type { StudioDocument } from '../lib/studioDocument';
+import type { GridCoord } from '../engine/types';
 
 interface SchematicExportModalProps {
   isOpen: boolean;
@@ -33,6 +37,11 @@ interface SchematicExportModalProps {
   worldName: string;
   blocks: Record<string, PlacedBlock>;
   customBlocks: Record<string, CustomBlockDefinition>;
+  studioDocument?: StudioDocument;
+  sourceToken?: string;
+  selection?: { pos1: GridCoord; pos2: GridCoord } | null;
+  isCurrentSource?: (token: string) => boolean;
+  onOpenCompatibility?: () => void;
 }
 
 type ExportFormatTab =
@@ -43,12 +52,31 @@ type ExportFormatTab =
   | 'godot_gd'
   | 'gltf';
 
-export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
+/** A locked Java project never mounts the independent heuristic/AI draft mapper. */
+export const SchematicExportModal: React.FC<SchematicExportModalProps> = props => {
+  const [otherDrafts, setOtherDrafts] = useState(false);
+  const target = props.studioDocument?.targetPolicy?.target;
+  const java = target?.kind === 'minecraft-java' ? target : null;
+  useEffect(() => { setOtherDrafts(false); }, [props.studioDocument?.documentId, target?.kind, java?.locked]);
+  if (props.studioDocument?.schemaVersion === 2 && target?.kind !== 'freeform' && target?.kind !== 'minecraft-java') {
+    return props.isOpen ? <DraggableWindow windowId="export_unavailable" title="Export unavailable" onClose={props.onClose}><p role="alert">The target policy is unknown. Preserve the original project; export cannot assume Freeform.</p></DraggableWindow> : null;
+  }
+  if (java && (!otherDrafts || java.locked)) {
+    if (!props.sourceToken || !props.isCurrentSource) return props.isOpen ? <DraggableWindow windowId="export_unavailable" title="Export unavailable" onClose={props.onClose}><p role="alert">Java export requires a current editor-session capture.</p></DraggableWindow> : null;
+    return <StudioJavaExportModal key={props.studioDocument!.documentId} isOpen={props.isOpen} onClose={props.onClose} document={props.studioDocument!} sourceToken={props.sourceToken} selection={props.selection ?? null} isCurrentSource={props.isCurrentSource} onOpenCompatibility={props.onOpenCompatibility} onShowDrafts={!java.locked ? () => setOtherDrafts(true) : undefined} />;
+  }
+  const exportContext = java ? <section className="rounded-lg border border-amber-500/50 p-3 text-sm text-amber-100"><p>The Java profile is unlocked. These approximate drafts do not use its reviewed mappings.</p><button type="button" onClick={() => setOtherDrafts(false)} className="mt-2 rounded border px-3 py-2">Return to reviewed Java export</button></section>
+    : props.onOpenCompatibility ? <section className="rounded-lg border border-emerald-500/50 p-3 text-sm"><p>Native Java schematic export uses a reviewed game target and explicit block mappings.</p><button type="button" onClick={props.onOpenCompatibility} className="mt-2 rounded border px-3 py-2">Choose Java target and mappings</button></section> : undefined;
+  return <LegacySchematicExportModal {...props} exportContext={exportContext} />;
+};
+
+const LegacySchematicExportModal: React.FC<SchematicExportModalProps & { exportContext?: React.ReactNode }> = ({
   isOpen,
   onClose,
   worldName,
   blocks,
   customBlocks,
+  exportContext,
 }) => {
   const [mappings, setMappings] = useState<SchematicBlockMapping[]>([]);
   const [isEvaluatingAi, setIsEvaluatingAi] = useState(false);
@@ -59,13 +87,24 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
   const [activeFormat, setActiveFormat] = useState<ExportFormatTab>('schem');
   const [copied, setCopied] = useState(false);
 
-  // Compute baseline closest-block mappings whenever modal opens or blocks change
-  useEffect(() => {
-    if (!isOpen) return;
-    const initial = computeInitialBlockMappings(blocks, customBlocks);
-    setMappings(initial);
-    setAiStatusMessage(null);
+  const request = useRef<AbortController | null>(null);
+  const live = useRef({ isOpen, blocks, customBlocks, mappings });
+  live.current = { isOpen, blocks, customBlocks, mappings };
+  const sourceError = useMemo(() => {
+    if (!isOpen) return null;
+    try { preflightLegacyExport(blocks, { definitions: customBlocks }); return null; }
+    catch (error) { return error instanceof Error ? error.message : 'The export source is invalid.'; }
   }, [isOpen, blocks, customBlocks]);
+
+  useEffect(() => {
+    request.current?.abort(); request.current = null;
+    setIsEvaluatingAi(false); setCopied(false);
+    if (!isOpen) return;
+    try { setMappings(sourceError ? [] : computeInitialBlockMappings(blocks, customBlocks)); }
+    catch { setMappings([]); }
+    setAiStatusMessage(null);
+    return () => { request.current?.abort(); request.current = null; };
+  }, [isOpen, blocks, customBlocks, sourceError]);
 
   const mappingByBlockId = useMemo(() => {
     const map: Record<string, string> = {};
@@ -75,58 +114,57 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
     return map;
   }, [mappings]);
 
-  const previewOutput = useMemo(() => {
-    if (!isOpen) return '';
-    if (activeFormat === 'schem') {
-      return exportSpongeSchematicJson(worldName, blocks, mappingByBlockId);
+  const preview = useMemo(() => {
+    if (!isOpen) return { output: '', error: null };
+    try {
+      if (sourceError) throw new Error(sourceError);
+      let output: string;
+      if (activeFormat === 'schem') output = exportSpongeSchematicJson(worldName, blocks, mappingByBlockId);
+      else if (activeFormat === 'mcfunction') output = exportMinecraftFunction(worldName, blocks, mappingByBlockId);
+      else if (activeFormat === 'ldraw') output = exportBrickLDraw(worldName, blocks, customBlocks, mappingByBlockId);
+      else if (activeFormat === 'godot_tscn') output = exportToGodotTscn(worldName, blocks, customBlocks);
+      else if (activeFormat === 'godot_gd') output = exportToGodotScript(worldName, blocks, customBlocks);
+      else output = exportToGltfJson(worldName, blocks, customBlocks);
+      return { output: boundLegacyExportText(output), error: null };
+    } catch (error) {
+      return { output: '', error: error instanceof Error ? error.message : 'Could not prepare this draft.' };
     }
-    if (activeFormat === 'mcfunction') {
-      return exportMinecraftFunction(worldName, blocks, mappingByBlockId);
-    }
-    if (activeFormat === 'ldraw') {
-      return exportBrickLDraw(worldName, blocks, customBlocks, mappingByBlockId);
-    }
-    if (activeFormat === 'godot_tscn') {
-      return exportToGodotTscn(worldName, blocks, customBlocks);
-    }
-    if (activeFormat === 'godot_gd') {
-      return exportToGodotScript(worldName, blocks, customBlocks);
-    }
-    return exportToGltfJson(worldName, blocks, customBlocks);
-  }, [isOpen, activeFormat, worldName, blocks, customBlocks, mappingByBlockId]);
+  }, [isOpen, sourceError, activeFormat, worldName, blocks, customBlocks, mappingByBlockId]);
+  const previewOutput = preview.output;
+  const formatNote: Record<ExportFormatTab, string> = {
+    schem: 'Diagnostic JSON only. WorldEdit needs a binary .schem file; this draft is not importable as one. Native export is awaiting profile integration and game testing.',
+    mcfunction: 'Approximate command draft. Shapes, scales, material overrides and complete block states are not preserved. Test in a disposable world before use.',
+    ldraw: 'Approximate brick draft using two part shapes. It does not preserve the complete studio geometry or materials.',
+    godot_tscn: 'Generated Godot scene draft. Geometry, materials and native loading have not been independently qualified.',
+    godot_gd: 'Generated Godot script draft. Review before running; native behaviour has not been independently qualified.',
+    gltf: 'Embedded glTF 2.0 unit-cube mesh & PBR material draft with per-node customScale. Detailed brick studs and custom profile cutouts are simplified to unit boxes.',
+  };
 
   if (!isOpen) return null;
 
   const handleRunAiEvaluation = async () => {
+    if (sourceError || isEvaluatingAi) return;
+    const controller = new AbortController();
+    request.current?.abort(); request.current = controller;
+    const source = { blocks, customBlocks, mappings };
+    const current = () => request.current === controller && !controller.signal.aborted && live.current.isOpen && live.current.blocks === source.blocks && live.current.customBlocks === source.customBlocks && live.current.mappings === source.mappings;
     setIsEvaluatingAi(true);
-    setAiStatusMessage({
-      text: 'Evaluating block colors, geometry shapes, and surface materials with AI...',
-      type: 'info',
-    });
+    setAiStatusMessage({ text: 'Requesting approximate mapping suggestions. Similarity does not establish game compatibility.', type: 'info' });
     try {
-      const updated = await evaluateBlockMappingsWithAI(
-        mappings,
-        'minecraft_1_20_schematic'
-      );
+      const updated = await evaluateBlockMappingsWithAI(mappings, 'minecraft_1_20_schematic', controller.signal);
+      if (!current()) return;
       setMappings(updated);
-      setAiStatusMessage({
-        text: `AI evaluated ${updated.length} block types and mapped each to its closest schematic equivalent! Use any dropdown below to customize.`,
-        type: 'success',
-      });
-    } catch (err) {
-      setAiStatusMessage({
-        text:
-          err instanceof Error
-            ? err.message
-            : 'AI evaluation encountered an error; using deterministic RGB + shape matches.',
-        type: 'error',
-      });
+      setAiStatusMessage({ text: 'Suggestions received and checked against the draft catalogue. Review each mapping; native compatibility remains unverified.', type: 'success' });
+    } catch (error) {
+      if (current()) setAiStatusMessage({ text: error instanceof Error ? error.message : 'The suggestion request failed. Existing mappings were retained.', type: 'error' });
     } finally {
-      setIsEvaluatingAi(false);
+      if (request.current === controller) { request.current = null; setIsEvaluatingAi(false); }
     }
   };
 
   const handleChangeTargetId = (sourceBlockId: string, newTargetId: string) => {
+    request.current?.abort(); request.current = null; setIsEvaluatingAi(false);
+    if (!MINECRAFT_BLOCK_CATALOG.some(option => option.id === newTargetId)) return;
     setMappings((prev) =>
       prev.map((m) =>
         m.sourceBlockId === sourceBlockId
@@ -137,6 +175,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
   };
 
   const handleDownloadSchematic = () => {
+    if (preview.error || !previewOutput) return;
     const safeSlug =
       worldName
         .toLowerCase()
@@ -145,7 +184,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
 
     if (activeFormat === 'schem') {
       triggerDownloadFile(
-        `${safeSlug}.schem.json`,
+        `${safeSlug}.schematic-draft.json`,
         previewOutput,
         'application/json'
       );
@@ -174,10 +213,15 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
     }
   };
 
-  const handleCopyPreview = () => {
-    navigator.clipboard.writeText(previewOutput);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+  const handleCopyPreview = async () => {
+    if (preview.error || !previewOutput) return;
+    try {
+      await navigator.clipboard.writeText(previewOutput);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setAiStatusMessage({ text: 'Copy failed. Use Download draft or select the preview text.', type: 'error' });
+    }
   };
 
   // Group catalog options by category for clean <optgroup> dropdowns
@@ -190,8 +234,8 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
       windowId="schematic_export_window"
       isOpen={isOpen}
       onClose={onClose}
-      title="Universal Schematic Exporter & AI Closest-Block Mapper"
-      subtitle="Export to Minecraft Schematics (WorldEdit .schem, Litematica, .mcfunction), Brick Studio (.ldr), Godot 4 (.tscn), and GLTF"
+      title="Export drafts & mapping preview"
+      subtitle="Review format limits. Project backup preserves the complete editable project."
       icon={<Layers className="w-4 h-4 text-amber-400" />}
       defaultWidth={980}
       defaultHeight={680}
@@ -201,24 +245,25 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
     >
       <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden">
         <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto">
+          {exportContext}
           {/* AI Block Comparison Header Bar */}
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-400" />
                 <h3 className="text-sm font-bold text-slate-100">
-                  AI Closest-Block Comparison & Interactive Value Mapper
+                  Approximate block mapping
                 </h3>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Evaluates your custom and studio blocks by RGB color, shape (Cube, Stair, Slab, Pillar, Arch), and material finish, with click dropdowns to override any target ID.
+                Suggestions compare color, shape and finish. Similarity scores are not compatibility probabilities. AI suggestions send these block descriptions to the configured service.
               </p>
             </div>
 
             <button
               type="button"
               data-testid="ai-evaluate-blocks-btn"
-              disabled={isEvaluatingAi}
+              disabled={isEvaluatingAi || !!sourceError || !mappings.length}
               onClick={handleRunAiEvaluation}
               className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-bold flex items-center gap-2 shadow-lg transition-colors shrink-0"
             >
@@ -229,8 +274,8 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
               )}
               <span>
                 {isEvaluatingAi
-                  ? 'Evaluating Closest Blocks...'
-                  : 'Evaluate Closest Blocks with AI'}
+                  ? 'Requesting suggestions...'
+                  : 'Request AI suggestions'}
               </span>
             </button>
           </div>
@@ -261,7 +306,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
             <div className="grid grid-cols-12 gap-2 px-4 py-2.5 bg-slate-900 border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               <div className="col-span-4">Studio Block (Source)</div>
               <div className="col-span-2">Shape & Finish</div>
-              <div className="col-span-1 text-center">Match</div>
+              <div className="col-span-1 text-center">Similarity</div>
               <div className="col-span-5">
                 Target Schematic Block ID (Click Dropdown to Map / Change)
               </div>
@@ -362,7 +407,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                   [
                     {
                       id: 'schem',
-                      label: 'Minecraft Sponge Schematic (.schem.json)',
+                      label: 'Schematic JSON draft',
                     },
                     {
                       id: 'mcfunction',
@@ -382,14 +427,15 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                     },
                     {
                       id: 'gltf',
-                      label: '3D Model (.gltf)',
+                      label: 'Layout JSON (no mesh)',
                     },
                   ] as const
                 ).map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setActiveFormat(tab.id)}
+                    onClick={() => { setActiveFormat(tab.id); setCopied(false); }}
+                    aria-pressed={activeFormat === tab.id}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                       activeFormat === tab.id
                         ? 'bg-amber-500 text-slate-950'
@@ -405,6 +451,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyPreview}
+                  disabled={!!preview.error || !previewOutput}
                   className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5"
                 >
                   {copied ? (
@@ -415,7 +462,7 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Schematic</span>
+                      <span>Copy draft</span>
                     </>
                   )}
                 </button>
@@ -423,29 +470,32 @@ export const SchematicExportModal: React.FC<SchematicExportModalProps> = ({
                 <button
                   type="button"
                   onClick={handleDownloadSchematic}
+                  disabled={!!preview.error || !previewOutput}
                   className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download Schematic File</span>
+                  <span>Download draft</span>
                 </button>
               </div>
             </div>
 
+            <p className="text-xs text-amber-200" role="status">{formatNote[activeFormat]}</p>
+            {preview.error && <p className="text-sm text-rose-200" role="alert">{preview.error}</p>}
             <div className="relative rounded-xl bg-slate-950 border border-slate-800 p-3">
               <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5 pb-1.5 border-b border-slate-900">
                 <span className="flex items-center gap-1.5">
                   <FileCode2 className="w-3.5 h-3.5 text-amber-400" />
                   <span>
-                    Live Schematic Output Preview ({Object.keys(blocks).length}{' '}
+                    Draft preview ({Object.keys(blocks).length}{' '}
                     blocks mapped)
                   </span>
                 </span>
-                <span>Compatible with WorldEdit, Litematica, Axiom, Brickadia & Godot 4</span>
+                <span>Native compatibility unverified</span>
               </div>
               <pre className="text-[11px] font-mono text-slate-300 max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
                 {previewOutput.slice(0, 3500)}
                 {previewOutput.length > 3500
-                  ? '\n... [Preview truncated — Click Download Schematic File for full file]'
+                  ? '\n... [Preview shortened — Download draft contains the full output]'
                   : ''}
               </pre>
             </div>

@@ -1,0 +1,73 @@
+{
+  "startedAt": "2026-11-01T17:05:12.365Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-D2ll2dOf.js",
+    "http://127.0.0.1:4174/assets/index-DTFwzooM.css"
+  ],
+  "results": [
+    {
+      "name": "Orbit/Fly/C/F/Home and legacy ribbon labels share one mode",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    },
+    {
+      "name": "temporary Alt look restores the orthographic camera after flight movement",
+      "ok": true,
+      "referenceCameraHash": "4ac9a77dc005331b3bd9af388c9f1565751396248ed7e4ac4bb43dca08f6d1cf",
+      "restoredCameraHash": "6c49cf853cd5af5dc3110d7cf8ea840a5065e49532896f3bfa7c04f6a86430ef",
+      "maxCameraMatrixDifference": 5.935140167894859e-15,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    },
+    {
+      "name": "ordinary navigation cancels temporary look; stale and coalesced releases are harmless",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    },
+    {
+      "name": "Pan, frame/view/home/previous actions preserve authored content",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    },
+    {
+      "name": "native Tab traverses controls without accepting ghosts or changing camera",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    },
+    {
+      "name": "project dialog text/shortcuts and command drops cannot fly or mutate authored content",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147",
+      "dropFixture": "synthetic command drop while actual project dialog is open"
+    },
+    {
+      "name": "hotkey capture preserves Tab, stops for composition and does not survive close",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    },
+    {
+      "name": "single-click camera steps change perspective and orthographic views, Previous restores each, and authored state stays equal",
+      "ok": false,
+      "error": "perspective Pan left did not move the rendered camera"
+    },
+    {
+      "name": "native keyboard activation of step controls moves the camera without triggering edits or flight",
+      "ok": true,
+      "authoredHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147"
+    }
+  ],
+  "pageErrors": [],
+  "blockedExternalOrigins": [],
+  "limitations": [
+    "Disposable desktop Chromium context with software WebGL; no native touch, pen, trackpad, gamepad, screen-reader or OS shortcut qualification.",
+    "Composition and coalesced Alt events include synthetic DOM fixtures, not a real IME device.",
+    "Camera matrices are observed through pass-through WebGL uniform instrumentation; no production source/test seam is added.",
+    "External requests and service workers are blocked; cloud/provider behavior is not exercised."
+  ],
+  "cameraMatrixAbsoluteTolerance": 0.000001,
+  "initialDocumentHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147",
+  "finalDocumentHash": "2a42297e919966383273f143770410153b043280ef3f963bb2085bf5fe8ef147",
+  "finishedAt": "2026-11-01T17:05:35.577Z",
+  "ok": false
+}

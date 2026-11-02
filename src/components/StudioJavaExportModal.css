@@ -1,0 +1,21 @@
+.studio-java-export { overflow: auto; min-height: 0; padding: 1rem; background: #0f172a; color: #e2e8f0; font: 0.875rem/1.5 system-ui, sans-serif; }
+.studio-java-export h3 { font-size: 1rem; margin: 0 0 0.5rem; font-weight: 650; }
+.studio-java-export p { margin: 0.5rem 0; }
+.studio-java-export fieldset, .studio-java-export__review, .studio-java-export__notice { min-width: 0; border: 1px solid #64748b; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; }
+.studio-java-export__notice { background: #172033; }
+.studio-java-export legend { padding: 0 0.4rem; font-weight: 650; }
+.studio-java-export label { display: flex; flex-direction: column; gap: 0.25rem; margin: 0.5rem 0; }
+.studio-java-export input, .studio-java-export select, .studio-java-export button { box-sizing: border-box; max-width: 100%; min-height: 36px; font: inherit; border: 1px solid #64748b; border-radius: 0.4rem; color: inherit; background: #1e293b; padding: 0.4rem 0.6rem; }
+.studio-java-export button { min-width: 36px; cursor: pointer; }
+.studio-java-export button:disabled { opacity: 0.5; cursor: default; }
+.studio-java-export :is(input, select, button, summary):focus-visible { outline: 3px solid #6ee7b7; outline-offset: 3px; }
+.studio-java-export code { overflow-wrap: anywhere; white-space: normal; }
+.studio-java-export__actions, .studio-java-export__coordinates { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.studio-java-export__coordinates label { flex: 1 1 6rem; min-width: 0; }
+.studio-java-export__coordinates input { width: 100%; }
+.studio-java-export .studio-java-export__check { flex-direction: row; align-items: center; gap: 0.6rem; }
+.studio-java-export__check input { flex: 0 0 1.2rem; width: 1.2rem; }
+.studio-java-export__materials { list-style: none; margin: 0.75rem 0; padding: 0; }
+.studio-java-export__materials li { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem 0; border-bottom: 1px solid #475569; }
+@media (any-pointer: coarse) { .studio-java-export :is(input, select, button, summary) { min-height: 48px; } }
+@media (forced-colors: active) { .studio-java-export :is(input, select, button, summary):focus-visible { outline-color: Highlight; } }

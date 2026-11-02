@@ -1,0 +1,89 @@
+TAP version 13
+# Subtest: four mirrored brushes commit complete cells/chunks as one history step with exact Undo and Redo
+not ok 1 - four mirrored brushes commit complete cells/chunks as one history step with exact Undo and Redo
+  ---
+  duration_ms: 19.400565
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioBrushEdit.test.ts:1:2570'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioBrushEdit.test.ts:48:62)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.start (node:internal/test_runner/test:877:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: overlapping mirrors count unique final cells and repeat without identity/history/Redo churn
+ok 2 - overlapping mirrors count unique final cells and repeat without identity/history/Redo churn
+  ---
+  duration_ms: 12.850235
+  ...
+# Subtest: brush erase exposes actual removed cells once, including non-center linger-watch cells
+ok 3 - brush erase exposes actual removed cells once, including non-center linger-watch cells
+  ---
+  duration_ms: 6.255115
+  ...
+# Subtest: final mirrored extent failure leaves document/workspace/token/history/effects unchanged
+ok 4 - final mirrored extent failure leaves document/workspace/token/history/effects unchanged
+  ---
+  duration_ms: 1.076224
+  ...
+# Subtest: negative brush coordinates retain every in-bounds layer without a hidden floor clip
+ok 5 - negative brush coordinates retain every in-bounds layer without a hidden floor clip
+  ---
+  duration_ms: 2.334182
+  ...
+# Subtest: whole and half-cell reflection is exact and other pivots reject without rounding
+ok 6 - whole and half-cell reflection is exact and other pivots reject without rounding
+  ---
+  duration_ms: 1.201277
+  ...
+# Subtest: Freeform retains reflected rotations while the exact locked directionless profile keeps rotation zero
+ok 7 - Freeform retains reflected rotations while the exact locked directionless profile keeps rotation zero
+  ---
+  duration_ms: 12.956227
+  ...
+# Subtest: locked unmapped, scaled and rotated proposals reject atomically without effects or policy changes
+ok 8 - locked unmapped, scaled and rotated proposals reject atomically without effects or policy changes
+  ---
+  duration_ms: 9.135805
+  ...
+# Subtest: all brush shapes, hollow and empty-only flags preserve exact cell sets and erase no-ops
+ok 9 - all brush shapes, hollow and empty-only flags preserve exact cell sets and erase no-ops
+  ---
+  duration_ms: 13.078239
+  ...
+# Subtest: radius-zero placement and erasure share mirrored cells without legacy engine snapshots
+ok 10 - radius-zero placement and erasure share mirrored cells without legacy engine snapshots
+  ---
+  duration_ms: 1.665363
+  ...
+# Subtest: cached source tokens reject after edit-to-Undo ABA and project replacement before preparation
+ok 11 - cached source tokens reject after edit-to-Undo ABA and project replacement before preparation
+  ---
+  duration_ms: 1.869696
+  ...
+# Subtest: invalid brush/mirror/mode inputs reject before any history or feedback is published
+ok 12 - invalid brush/mirror/mode inputs reject before any history or feedback is published
+  ---
+  duration_ms: 4.717275
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 11
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 95.606626

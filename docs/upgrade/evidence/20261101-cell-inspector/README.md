@@ -1,0 +1,9 @@
+# Contextual properties evidence
+
+Final exact assets/hashes, named lanes and counts are in SCOPE_LEDGER.json. Domain312/27 files, type/build and103 App cases passed. Every final App receipt names both final JS/CSS assets. Browser contexts/storage were disposable; external/API and service workers were blocked. No user profile, provider, native game, physical/assistive or performance qualification.
+
+Initial domain fixtures used an unsupported texture and attempted verified installation without exclusive authority. The corrected fixtures assert the result of installation. app-selector-initial.json retains an incorrectly scoped test locator. app-fractional-selection-failure.json reproduces a real mismatch between fractional selected positions and integer region commands; the fix retains authored position but tracks integer selection anchors. pre-vertical-candidate retains the C8/B86 receipts, build hashes and a screenshot where horizontal reflow passed while the body was visually unusable. A full-height/short-window fallback and body-height/native Tab visibility checks qualify the final layout.
+
+covered-underlay-observation.json records an actual strengthened test failure reconstructed from the tool return. The test clicked a backup control covered by the narrow overlay; its pending download rejection interrupted JSON write. The zero-byte artifact is retained as .bin and is not a valid receipt. The corrected workflow closes properties, downloads through the visible control and resumes the retained draft through the menu; no force click or hidden source access. Current strengthened cases passed with these real controls.
+
+Primary source continuity is recorded separately from changed dependencies. Earlier Ca backend/component107 were not rerun/promoted. Full P0–P8, source convergence, accessibility/device and release gates remain open. Native Minecraft/WorldEdit stays NOT_RUN — skipped by user. Counts do not close a phase.

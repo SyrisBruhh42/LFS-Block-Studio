@@ -1,4 +1,7 @@
 import { CustomBlockDefinition, PlacedBlock } from './types';
+import { LEGACY_EXPORT_LIMITS, preflightLegacyExport, exportCommentName } from './exportPreflight';
+
+export const MAX_SAFE_SCHEMATIC_VOLUME = LEGACY_EXPORT_LIMITS.volume;
 
 export interface TargetBlockOption {
   id: string;
@@ -191,92 +194,83 @@ export function computeInitialBlockMappings(
   });
 }
 
-export async function evaluateBlockMappingsWithAI(
-  currentMappings: SchematicBlockMapping[],
-  targetPlatform = 'minecraft_1_20'
-): Promise<SchematicBlockMapping[]> {
-  const blocksPayload = currentMappings.map((m) => ({
-    id: m.sourceBlockId,
-    name: m.sourceBlockName,
-    color: m.sourceHex,
-    shape: m.sourceShape,
-    texturePattern: m.sourceTexture,
-    materialFinish: m.sourceFinish,
-  }));
-
-  const res = await fetch('/api/ai/block-mapping', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ blocks: blocksPayload, targetPlatform }),
-  });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `AI mapping request failed (${res.status})`);
-  }
-
-  const data = await res.json();
-  if (!Array.isArray(data.mappings)) return currentMappings;
-
-  const aiMap = new Map<
-    string,
-    {
-      recommendedTargetId: string;
-      confidence: number;
-      reasoning: string;
-      alternatives: string[];
+/** Suggestions are not compatibility evidence. Reject the entire response on an unknown row/state. */
+export function validateMappingSuggestions(currentMappings: SchematicBlockMapping[], value: unknown): SchematicBlockMapping[] {
+  const allowedTargets = new Set(MINECRAFT_BLOCK_CATALOG.map(item => item.id));
+  const known = new Set(currentMappings.map(item => item.sourceBlockId));
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Array.isArray((value as any).mappings)) throw new Error('The mapping response is not a mapping list.');
+  const suggestions = (value as { mappings: unknown[] }).mappings;
+  if (suggestions.length > currentMappings.length || suggestions.length > 4096) throw new Error('The mapping response exceeds the requested block set.');
+  const byId = new Map<string, { recommendedTargetId: string; confidence: number; reasoning: string; alternatives: string[] }>();
+  for (const item of suggestions) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error('An AI mapping is invalid.');
+    const row = item as Record<string, any>;
+    if (!known.has(row.sourceBlockId) || byId.has(row.sourceBlockId) || !allowedTargets.has(row.recommendedTargetId) ||
+      !Number.isFinite(row.confidence) || row.confidence < 0 || row.confidence > 100 ||
+      typeof row.reasoning !== 'string' || row.reasoning.length > 2000 ||
+      !Array.isArray(row.alternatives) || row.alternatives.length > 4 || row.alternatives.some((id: unknown) => typeof id !== 'string' || !allowedTargets.has(id))) {
+      throw new Error('An AI suggestion has an unknown block, invalid score, duplicate row or unsupported alternative. Existing mappings were retained.');
     }
-  >();
-  for (const item of data.mappings) {
-    if (item && item.sourceBlockId) {
-      aiMap.set(item.sourceBlockId, item);
-    }
+    byId.set(row.sourceBlockId, { recommendedTargetId: row.recommendedTargetId, confidence: row.confidence, reasoning: row.reasoning, alternatives: [...row.alternatives] });
   }
-
-  return currentMappings.map((m) => {
-    const aiResult = aiMap.get(m.sourceBlockId);
-    if (!aiResult) return m;
-    return {
-      ...m,
-      recommendedTargetId: aiResult.recommendedTargetId || m.recommendedTargetId,
-      selectedTargetId: aiResult.recommendedTargetId || m.selectedTargetId,
-      confidence:
-        typeof aiResult.confidence === 'number'
-          ? Math.max(50, Math.min(100, aiResult.confidence))
-          : m.confidence,
-      reasoning: aiResult.reasoning || m.reasoning,
-      alternatives:
-        Array.isArray(aiResult.alternatives) && aiResult.alternatives.length > 0
-          ? aiResult.alternatives
-          : m.alternatives,
-      evaluatedByAi: true,
-    };
+  return currentMappings.map(mapping => {
+    const result = byId.get(mapping.sourceBlockId);
+    return result ? { ...mapping, ...result, selectedTargetId: result.recommendedTargetId, evaluatedByAi: true } : { ...mapping, alternatives: [...mapping.alternatives] };
   });
 }
 
-/**
- * Exports a Sponge Schematic v2 (.schem.json) structure compatible with WorldEdit, FAWE, Litematica & Axiom tools
- */
+export async function evaluateBlockMappingsWithAI(
+  currentMappings: SchematicBlockMapping[],
+  targetPlatform = 'minecraft_1_20',
+  signal?: AbortSignal
+): Promise<SchematicBlockMapping[]> {
+  if (!currentMappings.length || currentMappings.length > 4096) throw new Error('Choose between 1 and 4096 block types for suggestions.');
+  const snapshot = structuredClone(currentMappings);
+  const body = JSON.stringify({ blocks: snapshot.map(m => ({ id: m.sourceBlockId, name: m.sourceBlockName, color: m.sourceHex, shape: m.sourceShape, texturePattern: m.sourceTexture, materialFinish: m.sourceFinish })), targetPlatform });
+  const maxBytes = 2 * 1024 * 1024;
+  if (new TextEncoder().encode(body).byteLength > maxBytes) throw new Error('The mapping request exceeds the size budget.');
+  const res = await fetch('/api/ai/block-mapping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal });
+  if (!res.ok) throw new Error(`AI mapping request failed (${res.status}). Existing mappings were retained.`);
+  if (!res.body) throw new Error('The mapping response is empty.');
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8', { fatal: true });
+  let raw = '', bytes = 0;
+  try {
+    while (true) {
+      signal?.throwIfAborted();
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > maxBytes) throw new Error('The mapping response exceeds the size budget.');
+      raw += decoder.decode(chunk.value, { stream: true });
+    }
+    raw += decoder.decode();
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+  signal?.throwIfAborted();
+  return validateMappingSuggestions(snapshot, JSON.parse(raw));
+}
+
+function checkedMapping(mapping: Record<string, string>, sourceId: string): string {
+  const descriptor = Object.getOwnPropertyDescriptor(mapping, sourceId);
+  const target = descriptor && 'value' in descriptor ? descriptor.value : undefined;
+  if (typeof target !== 'string' || !MINECRAFT_BLOCK_CATALOG.some(option => option.id === target)) throw new Error(`Choose a known target for ${sourceId}. No fallback block was substituted.`);
+  return target;
+}
+
+/** Diagnostic JSON only: this is not gzip/NBT and cannot be advertised as a WorldEdit .schem. */
 export function exportSpongeSchematicJson(
   worldName: string,
   blocks: Record<string, PlacedBlock>,
   mappingByBlockId: Record<string, string>
 ): string {
-  const placedList = Object.values(blocks);
+  const { placedList, min, width, height, length } = preflightLegacyExport(blocks, { integerGrid: true, dense: true });
+  worldName = exportCommentName(worldName);
+  const { x: minX, y: minY, z: minZ } = min;
   if (placedList.length === 0) {
-    return JSON.stringify({ Version: 2, Width: 1, Height: 1, Length: 1, Palette: { 'minecraft:air': 0 }, BlockData: [0] }, null, 2);
+    return JSON.stringify({ Format: 'Diagnostic JSON only; not a native schematic', Version: 2, Width: 1, Height: 1, Length: 1, Palette: { 'minecraft:air': 0 }, BlockData: [0] }, null, 2);
   }
-
-  const minX = Math.min(...placedList.map((b) => b.position.x));
-  const maxX = Math.max(...placedList.map((b) => b.position.x));
-  const minY = Math.min(...placedList.map((b) => b.position.y));
-  const maxY = Math.max(...placedList.map((b) => b.position.y));
-  const minZ = Math.min(...placedList.map((b) => b.position.z));
-  const maxZ = Math.max(...placedList.map((b) => b.position.z));
-
-  const width = maxX - minX + 1;
-  const height = maxY - minY + 1;
-  const length = maxZ - minZ + 1;
+  // Validate every mapping before allocating the dense buffer.
+  for (const block of placedList) checkedMapping(mappingByBlockId, block.blockDefId);
 
   const palette: Record<string, number> = {
     'minecraft:air': 0,
@@ -286,7 +280,7 @@ export function exportSpongeSchematicJson(
   const blockData = new Array<number>(width * height * length).fill(0);
 
   for (const blk of placedList) {
-    const targetId = mappingByBlockId[blk.blockDefId] || 'minecraft:stone_bricks';
+    const targetId = checkedMapping(mappingByBlockId, blk.blockDefId);
     if (palette[targetId] === undefined) {
       palette[targetId] = nextPaletteIdx++;
     }
@@ -300,10 +294,15 @@ export function exportSpongeSchematicJson(
 
   return JSON.stringify(
     {
-      Format: 'Sponge Schematic v2 (WorldEdit / FAWE / Axiom / Litematica)',
+      Format: 'Diagnostic JSON only; not a native schematic',
+      Disclaimer:
+        'Not an official Minecraft, LEGO, or Godot product. Not approved by or associated with Mojang, Microsoft, or The LEGO Group.',
+      Limitations: 'Approximate material mapping; shape, scale, overrides and full block state are not preserved. Use a project backup for lossless recovery.',
       Metadata: {
         Name: worldName,
-        Author: 'BrickForge Studio',
+        Author: 'LFS Block Studio',
+        Disclaimer:
+          'Not an official Minecraft, LEGO, or Godot product. Not approved by or associated with Mojang, Microsoft, or The LEGO Group.',
         CreatedAt: new Date().toISOString(),
         TotalBlocks: placedList.length,
       },
@@ -323,33 +322,31 @@ export function exportSpongeSchematicJson(
 }
 
 /**
- * Exports a Vanilla Minecraft .mcfunction script that builds the entire structure in any Minecraft world
+ * Generates an approximate command draft. Native behaviour and complete block states are unqualified.
  */
 export function exportMinecraftFunction(
   worldName: string,
   blocks: Record<string, PlacedBlock>,
   mappingByBlockId: Record<string, string>
 ): string {
-  const placedList = Object.values(blocks);
-  if (placedList.length === 0) {
-    return '# Empty schematic';
-  }
-
-  const minX = Math.min(...placedList.map((b) => b.position.x));
-  const minY = Math.min(...placedList.map((b) => b.position.y));
-  const minZ = Math.min(...placedList.map((b) => b.position.z));
+  const { placedList, min } = preflightLegacyExport(blocks, { integerGrid: true });
+  worldName = exportCommentName(worldName);
+  const { x: minX, y: minY, z: minZ } = min;
+  if (!placedList.length) return '# Empty build draft';
+  for (const block of placedList) checkedMapping(mappingByBlockId, block.blockDefId);
 
   const lines: string[] = [
     `# ====================================================================`,
     `# BrickForge Studio — Minecraft Schematic Function (.mcfunction)`,
     `# Structure: ${worldName} (${placedList.length} blocks)`,
+    `# Approximate draft: geometry, scale, overrides and complete states are not preserved; native import is unqualified.`,
     `# Usage: Place in datapack functions/ folder and run /function`,
     `# ====================================================================`,
     ``,
   ];
 
   for (const blk of placedList) {
-    const targetId = mappingByBlockId[blk.blockDefId] || 'minecraft:stone_bricks';
+    const targetId = checkedMapping(mappingByBlockId, blk.blockDefId);
     const rx = blk.position.x - minX;
     const ry = blk.position.y - minY;
     const rz = blk.position.z - minZ;
@@ -375,7 +372,7 @@ export function exportMinecraftFunction(
 }
 
 /**
- * Exports an LDraw (.ldr) brick model compatible with BrickLink Studio, LDraw, and brick-building games
+ * Generates a two-part LDraw approximation. Native geometry/material fidelity is unqualified.
  */
 export function exportBrickLDraw(
   worldName: string,
@@ -383,7 +380,8 @@ export function exportBrickLDraw(
   customBlocks: Record<string, CustomBlockDefinition>,
   mappingByBlockId: Record<string, string> = {}
 ): string {
-  const placedList = Object.values(blocks);
+  const { placedList } = preflightLegacyExport(blocks, { definitions: customBlocks });
+  worldName = exportCommentName(worldName);
   const lines: string[] = [
     `0 BrickForge Studio Universal Brick Schematic`,
     `0 ${worldName}`,

@@ -1,0 +1,1175 @@
+{
+  "$schema": "https://tr.designtokens.org/format/",
+  "meta": {
+    "name": "Lewis Design System (LDS) Canonical W3C Design Tokens",
+    "version": "1.0.0",
+    "task_id": "X10",
+    "authority": "DA-06",
+    "default_pack": "evergreen-dark",
+    "theme_packs": [
+      "evergreen-dark",
+      "evergreen-light",
+      "high-contrast",
+      "calm"
+    ],
+    "conflict_resolutions": {
+      "LDS-CONFLICT-01": {
+        "title": "Divergent Dark Background Canvas Tokens across Web, GTK3, Android Compose, and Weightless",
+        "status": "RESOLVED",
+        "canonical_tokens": {
+          "evergreen-dark.color.bg.canvas": "#0F1714",
+          "evergreen-dark.color.bg.surface": "#141F1B",
+          "calm.color.bg.canvas": "#0B1113",
+          "calm.color.bg.surface": "#101719"
+        },
+        "note": "Unifies chrome background roles across Web, GTK3, Android Compose, and Weightless while keeping game world canvases independent."
+      },
+      "LDS-CONFLICT-02": {
+        "title": "Divergent Primary Brand / Accent Green Tokens across Stacks",
+        "status": "RESOLVED",
+        "canonical_tokens": {
+          "evergreen-dark.color.accent.primary": "#6EE7B7",
+          "evergreen-light.color.accent.primary": "#165B36",
+          "high-contrast.color.accent.primary": "#00FFFF",
+          "calm.color.accent.primary": "#B8E4CF"
+        },
+        "note": "Semantic color.accent.* and color.status.* tokens verified against WCAG 2.2 AA (>=4.5:1) and High-Contrast AAA (>=7.0:1)."
+      },
+      "LDS-CONFLICT-03": {
+        "title": "43 Hardcoded Hex Colors in aegis_hub.py and 214 Raw Cairo RGB/RGBA Calls in lfs_pet.py",
+        "status": "RESOLVED",
+        "canonical_tokens": {
+          "gtk3_css_output": "core/companion/clients/linux/lds_tokens.css",
+          "cairo_python_output": "core/companion/clients/linux/lds_tokens.py"
+        },
+        "note": "Deterministic GTK3 CSS and normalized float RGBA Cairo palette generated from W3C tokens."
+      },
+      "LDS-CONFLICT-04": {
+        "title": "High-Contrast Focus Ring & Border Token Mismatch",
+        "status": "RESOLVED",
+        "canonical_tokens": {
+          "high-contrast.color.border.focus": "#00FFFF",
+          "high-contrast.color.border.default": "#FFFFFF",
+          "high-contrast.focus.ring_width": "3px"
+        },
+        "note": "Standardizes High Contrast pack tokens (>=7:1 text contrast, 3px solid focus ring, zero transparency)."
+      },
+      "LDS-CONFLICT-05": {
+        "title": "Godot 4 Game Capsules Lack Shared Menu Theme Resource (.tres)",
+        "status": "RESOLVED",
+        "canonical_tokens": {
+          "godot_tres_output": "core/lds/aegis_lds_theme.tres"
+        },
+        "note": "Generates shared Godot 4.3 Theme resource for pause/settings/launcher chrome while preserving game-world shaders."
+      },
+      "LDS-CONFLICT-06": {
+        "title": "U1 Sanctuary Offline HTML and NetPulse Use Standalone Inline Hex Colors Outside LDS Tokens",
+        "status": "RESOLVED",
+        "canonical_tokens": {
+          "u1_css_output": "core/anchor-edge/infra/hetzner-anchor-staging/lds-tokens.css"
+        },
+        "note": "Compiles offline-capable LDS stylesheet for U1 Sanctuary and NetPulse surfaces."
+      }
+    }
+  },
+  "packs": {
+    "evergreen-dark": {
+      "$description": "Default Evergreen Dark palette resolving LDS-CONFLICT-01..06 with WCAG 2.2 AA (>=4.5:1) contrast.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#0F1714",
+            "$description": "Primary window and page canvas background"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#141F1B",
+            "$description": "Card, panel, and drawer surface background"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#1B2924",
+            "$description": "Dialog, modal, and popover surface background"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#ECF4F0",
+            "$description": "Primary body and heading text"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#B6C9BF",
+            "$description": "Secondary descriptive text"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#96ADA2",
+            "$description": "Muted captions and metadata labels (>=4.5:1 on elevated)"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#6EE7B7",
+            "$description": "Primary brand sage/emerald accent"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#72C9D4",
+            "$description": "Secondary cyan interactive accent"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#4ADE80",
+            "$description": "Positive/verified status indicator"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#FACC15",
+            "$description": "Cautionary/step-up status indicator"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#F87171",
+            "$description": "Error/quarantine status indicator"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#60A5FA",
+            "$description": "Informational status indicator"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#2A3C35",
+            "$description": "Standard container divider border"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#6EE7B7",
+            "$description": "Keyboard focus ring indicator"
+          }
+        }
+      }
+    },
+    "evergreen-light": {
+      "$description": "Daylight high-legibility Evergreen Light palette with WCAG 2.2 AA (>=4.5:1) contrast.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#F6FAF8",
+            "$description": "Daylight page canvas background"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#FFFFFF",
+            "$description": "Daylight card and panel surface"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#EBF3EE",
+            "$description": "Daylight secondary/elevated container"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#0F1D17",
+            "$description": "Daylight primary ink"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#284237",
+            "$description": "Daylight secondary ink"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#3D5A4E",
+            "$description": "Daylight muted ink (>=4.5:1 on elevated)"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#165B36",
+            "$description": "Daylight deep forest primary accent"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#0E5866",
+            "$description": "Daylight deep teal secondary accent"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#145E32",
+            "$description": "Daylight verified status"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#784506",
+            "$description": "Daylight warning status"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#991B1B",
+            "$description": "Daylight danger status"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#1E40AF",
+            "$description": "Daylight info status"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#B8CCC2",
+            "$description": "Daylight container border"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#165B36",
+            "$description": "Daylight focus ring"
+          }
+        }
+      }
+    },
+    "high-contrast": {
+      "$description": "WCAG 2.2 AAA (>=7.0:1) High-Contrast pack with zero transparency and 3px solid focus rings.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#000000",
+            "$description": "Pure black canvas"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#000000",
+            "$description": "Pure black surface (zero transparency)"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#0A0A0A",
+            "$description": "Near-black elevated modal surface"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#FFFFFF",
+            "$description": "Pure white primary text (>19:1)"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#FFFF00",
+            "$description": "High-visibility yellow secondary text (>18:1)"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#E0F2FE",
+            "$description": "High-contrast ice blue muted text (>17:1)"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#00FFFF",
+            "$description": "High-contrast cyan primary accent (>15:1)"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#FFE600",
+            "$description": "High-contrast amber secondary accent (>16:1)"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#4ADE80",
+            "$description": "AAA high-contrast green status (>11:1)"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#FFE600",
+            "$description": "AAA high-contrast yellow status (>16:1)"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#FF8A8A",
+            "$description": "AAA high-contrast coral-red status (>8.5:1)"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#7DD3FC",
+            "$description": "AAA high-contrast sky status (>12:1)"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#FFFFFF",
+            "$description": "Solid white border"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#00FFFF",
+            "$description": "3px solid cyan focus ring"
+          }
+        }
+      }
+    },
+    "calm": {
+      "$description": "Low-arousal sensory palette for Weightless & low-stimulation mode (O-2 / PA-13).",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#0B1113",
+            "$description": "Deep calm night canvas"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#101719",
+            "$description": "Weightless calm panel surface"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#162023",
+            "$description": "Calm drawer/dialog surface"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#EDF2ED",
+            "$description": "Soft sage-white primary text"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#C2D0CD",
+            "$description": "Calm secondary text"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#A0AFAC",
+            "$description": "Weightless calm muted text (>=4.5:1)"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#B8E4CF",
+            "$description": "Weightless soft mint primary accent"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#72C9D4",
+            "$description": "Weightless soft cyan secondary accent"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#9BD8B9",
+            "$description": "Low-arousal soft green status"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#E6C875",
+            "$description": "Low-arousal warm sand status"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#E58E8E",
+            "$description": "Low-arousal rose status"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#89C4E1",
+            "$description": "Low-arousal mist blue status"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#273335",
+            "$description": "Weightless subtle border"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#B8E4CF",
+            "$description": "Soft mint focus indicator"
+          }
+        }
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "sans": {
+        "$type": "fontFamily",
+        "$value": "'Inter', 'Noto Sans', system-ui, -apple-system, sans-serif"
+      },
+      "mono": {
+        "$type": "fontFamily",
+        "$value": "'JetBrains Mono', 'Fira Code', monospace"
+      }
+    },
+    "fontSize": {
+      "xs": {
+        "$type": "dimension",
+        "$value": "12px"
+      },
+      "sm": {
+        "$type": "dimension",
+        "$value": "14px"
+      },
+      "base": {
+        "$type": "dimension",
+        "$value": "16px"
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "18px"
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": "22px"
+      },
+      "2xl": {
+        "$type": "dimension",
+        "$value": "28px"
+      }
+    },
+    "lineHeight": {
+      "tight": {
+        "$type": "number",
+        "$value": 1.25
+      },
+      "relaxed": {
+        "$type": "number",
+        "$value": 1.5
+      }
+    }
+  },
+  "spacing": {
+    "xs": {
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "sm": {
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": "12px"
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": "16px"
+    },
+    "xl": {
+      "$type": "dimension",
+      "$value": "24px"
+    },
+    "2xl": {
+      "$type": "dimension",
+      "$value": "32px"
+    }
+  },
+  "radius": {
+    "sm": {
+      "$type": "dimension",
+      "$value": "6px"
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": "10px"
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": "14px"
+    },
+    "pill": {
+      "$type": "dimension",
+      "$value": "9999px"
+    }
+  },
+  "solarpunk_packs": {
+    "evergreen-dark": {
+      "$description": "Stage-2 Eye-Care Calibrated Biophilic Forest & Solarpunk Dark Sanctuary (L* 11.49..16.58, step 1.06..1.08:1, divider <=1.35:1).",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#15201C"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#192621"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#1E2D27"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#F0EDE4"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#C6D4CB"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#96ADA2"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#7ED9A8"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#72C9D4"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#6AD48E"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#E8B954"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#EB8A78"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#76B5E8"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#263831"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#7ED9A8"
+          }
+        }
+      }
+    },
+    "evergreen-light": {
+      "$description": "Stage-2 Eye-Care Calibrated Daylight Botanical Linen & Cedar Ink (L* 92.60..95.89, step 1.04..1.09:1, divider <=1.36:1).",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#EFECE3"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#F5F2EA"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#ECE8DF"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#18241E"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#2B4036"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#425C50"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#1D593B"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#145561"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#1B5E37"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#7A480D"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#8F241E"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#1C4785"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#D3CEC0"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#1D593B"
+          }
+        }
+      }
+    },
+    "high-contrast": {
+      "$description": "WCAG 2.2 AAA (>=7.0:1) High-Contrast pack with zero transparency and 3px solid focus rings.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#000000"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#000000"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#0A0A0A"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#FFFFFF"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#FFFF00"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#E0F2FE"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#00FFFF"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#FFE600"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#4ADE80"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#FFE600"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#FF8A8A"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#7DD3FC"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#FFFFFF"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#00FFFF"
+          }
+        }
+      }
+    },
+    "calm": {
+      "$description": "Stage-2 Eye-Care Calibrated Weightless Calm Sanctuary (L* 11.11..16.43, step 1.06..1.08:1, divider <=1.33:1).",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#162023"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#1A2529"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#1E2C30"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#EAEFE9"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#C1CFCC"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#9BA9A6"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#A8D8C3"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#7CC4CE"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#92CFAF"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#DFC278"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#DF8E88"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#88BEDA"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#26353B"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#A8D8C3"
+          }
+        }
+      }
+    }
+  },
+  "atmospheric_presets": {
+    "twilight-hearth": {
+      "$description": "Evening Hearth Amber & Roasted Peat Sanctuary (Circadian melanopsin-safe evening preset).",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#211D19"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#27221E"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#2E2823"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#F4ECE1"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#D6C9B8"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#AE9F8E"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#EBB36C"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#8CC9B5"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#84CFA0"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#F0C265"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#EB8D7A"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#88BCE0"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#38302A"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#EBB36C"
+          }
+        }
+      }
+    },
+    "warm-parchment-atelier": {
+      "$description": "Archival Cotton Rag & Sepia Walnut Ink for long-form reading, lore, and creative studios.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#EFEAE0"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#F5F0E7"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#EDE8DF"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#221D17"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#3D342A"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#594D3F"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#7A3E18"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#1F574C"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#1F5C35"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#75460A"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#8C221C"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#1F487E"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#D4CDBF"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#7A3E18"
+          }
+        }
+      }
+    },
+    "mist-and-moss": {
+      "$description": "Overcast Lichen & Rainwater Slate for bright rooms and low-contrast sensory calm.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#E8EFEA"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#EEF4F0"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#E3EBE6"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#1A2420"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#2F4039"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#465C53"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#215942"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#1B5661"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#1E5E3A"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#78480E"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#8C2622"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#214980"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#C8D6CE"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#215942"
+          }
+        }
+      }
+    },
+    "midnight-cedar": {
+      "$description": "Deep Old-Growth Cedar Bark & Lichen Cream for late-night coding and SRE command.",
+      "color": {
+        "bg": {
+          "canvas": {
+            "$type": "color",
+            "$value": "#17201D"
+          },
+          "surface": {
+            "$type": "color",
+            "$value": "#1B2622"
+          },
+          "elevated": {
+            "$type": "color",
+            "$value": "#202C28"
+          }
+        },
+        "text": {
+          "primary": {
+            "$type": "color",
+            "$value": "#EDEAE2"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#C4CFC8"
+          },
+          "muted": {
+            "$type": "color",
+            "$value": "#98A89F"
+          }
+        },
+        "accent": {
+          "primary": {
+            "$type": "color",
+            "$value": "#8AD4A4"
+          },
+          "secondary": {
+            "$type": "color",
+            "$value": "#82C4CE"
+          }
+        },
+        "status": {
+          "success": {
+            "$type": "color",
+            "$value": "#78D198"
+          },
+          "warning": {
+            "$type": "color",
+            "$value": "#E6BD6A"
+          },
+          "danger": {
+            "$type": "color",
+            "$value": "#E68E7E"
+          },
+          "info": {
+            "$type": "color",
+            "$value": "#82B8E2"
+          }
+        },
+        "border": {
+          "default": {
+            "$type": "color",
+            "$value": "#283732"
+          },
+          "focus": {
+            "$type": "color",
+            "$value": "#8AD4A4"
+          }
+        }
+      }
+    }
+  },
+  "circadian_flux": {
+    "kelvin_stops": [
+      6500,
+      5000,
+      4200,
+      3400,
+      2700,
+      1900
+    ],
+    "default_kelvin": 6500,
+    "studio_bypass_kelvin": 6500,
+    "min_wcag_aa_contrast": 4.5,
+    "min_wcag_aaa_contrast": 7.0
+  },
+  "scrim": {
+    "surface_min_alpha": 0.9,
+    "bubble_min_alpha": 0.94,
+    "high_contrast_alpha": 1.0,
+    "min_metadata_font_px": 12,
+    "min_body_font_px": 14,
+    "max_uppercase_tracking_em": 0.06
+  },
+  "motion": {
+    "duration": {
+      "instant": {
+        "$type": "duration",
+        "$value": "0ms"
+      },
+      "reduced-motion": {
+        "$type": "duration",
+        "$value": "0ms"
+      },
+      "fast": {
+        "$type": "duration",
+        "$value": "120ms"
+      },
+      "normal": {
+        "$type": "duration",
+        "$value": "220ms"
+      },
+      "spring-snappy": {
+        "$type": "duration",
+        "$value": "160ms"
+      },
+      "spring-fluid": {
+        "$type": "duration",
+        "$value": "260ms"
+      },
+      "spring-delight": {
+        "$type": "duration",
+        "$value": "340ms"
+      },
+      "calm-breath-inhale": {
+        "$type": "duration",
+        "$value": "4000ms"
+      },
+      "calm-breath-exhale": {
+        "$type": "duration",
+        "$value": "6000ms"
+      }
+    },
+    "easing": {
+      "spring-snappy": {
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.22, 1.0, 0.36, 1.0)"
+      },
+      "spring-fluid": {
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.18, 1.08, 0.32, 1.0)"
+      },
+      "spring-delight": {
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.34, 1.32, 0.64, 1.0)"
+      },
+      "calm-linear": {
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.22, 1.0, 0.36, 1.0)"
+      }
+    }
+  },
+  "tapTarget": {
+    "androidMinDp": {
+      "$type": "dimension",
+      "$value": "48dp"
+    },
+    "desktopMinPx": {
+      "$type": "dimension",
+      "$value": "36px"
+    },
+    "focusRingWidthPx": {
+      "$type": "dimension",
+      "$value": "3px"
+    }
+  }
+}

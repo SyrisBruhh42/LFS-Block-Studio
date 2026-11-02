@@ -1,0 +1,9 @@
+{"name":"command and toolbar history cover complete world metadata and authored lighting","ok":true,"authoredHash":"c9b6299d42e40e2a70b58139c289fae4b3243067c8387d2195ad438b8c784001"}
+{"name":"no-op and invalid commands preserve durable content, revision and redo availability","ok":true,"revision":8,"historyEpoch":"history-daae483f-ca4b-4ee0-aaf6-1ea266997251","commands":["//help","//pos1 NaN 0 0","//sphere cobble_brick 1000000","//not-a-real-command"]}
+{"name":"command block edit and Undo preserve the rest of the complete document","ok":true,"coordinate":{"x":0,"y":20,"z":0},"blockDefId":"cobble_brick"}
+{"name":"numeric placement and command history share the same edit authority","ok":true,"coordinate":{"x":0,"y":20,"z":0},"authoredHash":"6e6e70f3cfd211806765c2c646b786cff3dc3292b7db2825880d20bcdb59680f"}
+{"name":"numeric paint is undoable and repeated identical paint preserves redo and saved counters","ok":true,"coordinate":{"x":0,"y":20,"z":0},"unchangedRevision":17}
+{"name":"complete authored project and durable envelope survive explicit save and reload","ok":true,"documentHash":"0bce96dbbe370cb210c30f9d22412f22daf45ad33d420d5e8c4012919cb0f693","revision":19}
+{"name":"project replacement rotates identity and invalidates earlier Undo and Redo","ok":true,"previousDocumentId":"project-9b39fe74-243e-4be9-a13d-d6b193b5b6c9","replacementDocumentId":"project-fed957f3-4802-4b56-930c-d49323df8cc3","replacementEpoch":"history-d8e60b27-d8c3-4e98-81e7-2e92d2ae6e05"}
+{"name":"no uncaught App exceptions or React update-depth errors","ok":true}
+{"ok":true,"checks":8,"failures":[],"bundleAssets":["http://127.0.0.1:4174/assets/index-DFll7Gh7.js","http://127.0.0.1:4174/assets/index-BDAYFgj1.css"]}

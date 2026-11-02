@@ -1,0 +1,77 @@
+{
+  "recordedAtUTC": "2026-11-01T20:39:17.404242+00:00",
+  "candidate": {
+    "js": "index-Ca-k58z3.js",
+    "css": "index-Bi0et0sU.css"
+  },
+  "domain": {
+    "passed": 277,
+    "files": 25,
+    "receipt": "studio-history-contracts-transaction-final.txt"
+  },
+  "app": {
+    "capacity": {
+      "passed": 4,
+      "receipt": "studio-history-capacity-ca.json"
+    },
+    "compatibility": {
+      "passed": 15,
+      "receipt": "studio-history-compatibility-ca.json"
+    },
+    "menu": {
+      "passed": 9,
+      "receipt": "studio-history-menu-ca.json"
+    },
+    "java": {
+      "passed": 10,
+      "receipt": "studio-history-java-ca.json"
+    },
+    "authority": {
+      "passed": 8,
+      "receipt": "studio-history-authority-ca.json"
+    },
+    "resources": {
+      "passed": 9,
+      "receipt": "studio-history-resources-ca.json"
+    },
+    "navigation": {
+      "passed": 9,
+      "receipt": "studio-history-navigation-ca.json"
+    },
+    "catalogue": {
+      "passed": 6,
+      "receipt": "studio-history-catalogue-ca.json"
+    },
+    "recovery-app": {
+      "passed": 8,
+      "receipt": "studio-history-recovery-app-ca.json"
+    }
+  },
+  "backend": {
+    "encoded": {
+      "passed": 10,
+      "receipt": "studio-history-encoded-ca.json"
+    },
+    "policy": {
+      "passed": 21,
+      "receipt": "studio-history-policy-ca.json"
+    },
+    "raw-recovery": {
+      "passed": 22,
+      "receipt": "studio-history-raw-recovery-ca.json"
+    },
+    "hook": {
+      "passed": 36,
+      "receipt": "studio-history-hook-ca.json"
+    },
+    "recovery-ui": {
+      "passed": 7,
+      "receipt": "studio-history-recovery-ui-ca.json"
+    },
+    "store": {
+      "passed": 11,
+      "receipt": "studio-history-store-ca.log"
+    }
+  },
+  "scope": "Named disposable Chromium/controlled fixtures only. No native, physical/assistive, performance, provider, merge or release acceptance."
+}

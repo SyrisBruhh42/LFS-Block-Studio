@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-11-01T21:03:50.756Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "bundleAssets": [
+    "http://127.0.0.1:4174/assets/index-DnOzWERi.js",
+    "http://127.0.0.1:4174/assets/index-D3u5_oEE.css"
+  ],
+  "results": [
+    {
+      "name": "visible project import establishes a minimal complete Freeform fixture",
+      "ok": true,
+      "documentId": "project-5c37369e-eff5-427d-9026-5d9ec7ddbdfc",
+      "contentHash": "f4c1623b4990448ffd9f9202f40a764082da1b2b1ee96d7c792f518abafd052c"
+    },
+    {
+      "name": "explicit mappings and acknowledged Apply persist candidate lock with retained checkpoint and new history",
+      "ok": true,
+      "revision": 2,
+      "epoch": "history-260d77df-b32f-479d-8a64-0bf54f859307",
+      "checkpoint": {
+        "documentId": "project-5c37369e-eff5-427d-9026-5d9ec7ddbdfc",
+        "revision": 1,
+        "historyEpoch": "history-521dc3db-ab69-481b-88e9-a2ee95c4b423"
+      },
+      "profileId": "minecraft-java-1.21.1-worldedit-7.3.8-fabric-0.15.11-sponge3-candidate1"
+    },
+    {
+      "name": "numeric mapped placement is atomic and command Undo/Redo preserve the policy",
+      "ok": false,
+      "error": "locator.click: Error: strict mode violation: locator('details').filter({ has: getByRole('form', { name: 'Coordinate editor', exact: true, includeHidden: true }) }).locator('summary') resolved to 2 elements:\n    1) <summary class=\"cursor-pointer py-1 font-medium\">Coordinate tools</summary> aka getByText('Coordinate tools', { exact: true })\n    2) <summary class=\"min-h-11 cursor-pointer py-2 font-medium\">Brush and mirror settings</summary> aka getByText('Brush and mirror settings')\n\nCall log:\n\u001b[2m  - waiting for locator('details').filter({ has: getByRole('form', { name: 'Coordinate editor', exact: true, includeHidden: true }) }).locator('summary')\u001b[22m\n"
+    }
+  ],
+  "pageErrors": [],
+  "reactErrors": [],
+  "blockedRequests": [],
+  "limitations": [
+    "Partial G2 desktop Chromium workflow coverage using software WebGL. Not every mutation route, browser, device or assistive technology is qualified.",
+    "Native Minecraft Java/WorldEdit import, post-tick behavior and native export qualification have not run. Candidate policy validation is not native proof.",
+    "External/API requests are blocked. UI actions and complete project backup downloads are observed; IndexedDB is inspected read-only.",
+    "Unknown command block aliases exercise parser rejection. Unsupported and rotated blueprint stamps exercise the actual locked-document commit boundary.",
+    "Generated savedAt in a live backup is excluded from live comparisons. Durable records and retained checkpoints are compared without exclusions."
+  ],
+  "failureUiExcerpt": "Compatibility workflow fixture\nSaved locally · 4:04:07 PM\nSave\nProject backup\nRecovery\nOpen project copy\nJava candidate · Locked\nReview game compatibility\nActive mapped block \nQA Cobble Unit\nQA Oak Unit\nNative Minecraft export is not qualified.\n\nCandidate rules: mapped unit blocks, zero rotation and no instance appearance overrides. Paint replaces the mapped block type. Freeform scale/rotation preferences are retained for use after unlocking; smart appearance predictions are inactive while locked.\n\nCoordinate tools\nL\nLFS Block Studio\nFind actions\nProjects & Reset\nBlock Market\nBiomes & Contracts\n150 XP\nCinema\nCompatibility workflow fixture\n·\nSaved 04:04 PM\nHome & Paint\nBlueprints (0)\nChunks & Smart Art\nLighting\nGit (1)\nExport drafts\nLegend\nEdit HUD Bars\nReset Windows\nStylus\nUI 100%\nHotkeys\nDrive Backup\nMultiplayer\nCopy\nCut\nPaste\nCLIPBOARD\nPlace (B)\nErase (X)\n3D Brush+ (Y)\n3D Brush- (O)\nPaint (G)\nPicker (I)\nSelect Region (E)\n0° (R)\nFill Region (//set)\nBuild Walls (//walls)\nHollow (//hollow)\nStack +1Y (//stack)\nReset World / Chunk\nBlock catalogue\nBlock Workshop\nExport drafts\nMouse: Pan/Zoom (C)\nWASD Fly: OFF\nIso View\nLegend\nPAINT & BUILD TOOLS\n0°\nPlace (B)\nErase (X)\n3D Place (Y)\n3D Erase (O)\nPaint (G)\nPicker (I)\nWand (E)\nStamp\nCOLOR SWATCHES\nQA Cobble Unit\nCube · Cobblestone\nSTUDIO LIBRARY (2)\nNew Block\nTip: Drag any block or tool onto any Hotbar slot\nBrowse local block catalogue\nQA Cobble Unit\nCube · Matte\n1\nQA Oak Unit\nCube · Matte\n2\nCamera\nOrbit\nPan\nFly\nFrame selection\nFrame all\nHome\nPrevious\nViews\nTop\nFront\nSide\nPerspective\nMove camera without dragging\n\nOrbit: drag to rotate; click to use your building tool. Choose Pan to move the camera without building. Mouse wheel or trackpad scroll zooms.\n\nMouse: Studio Orbit & Zoom\nStylus: Off\nToggle: C · Hold: Alt\nShift+Scroll: 1×1×1\n-\n+\nSNAP\nXYZ All\nW×D Flat\nHeight Y\nWidth X\nDepth Z\nSymmetry: Off (V)\nUI & Stylus\nProjects\nMarket\nHUD Bars\nSnap\nBar 1\n1×N\n100%\n1\nQCU\n2\nQOU\n3\nBLK\n4\nBLK\n5\nBLK\n6\nBLK\n7\nBLK\n8\nBLK\n9\nBLK\nBar 2\n1×N\n95%\nB\nPlace\nX\nErase\nY\n3D Brush+\nO\n3D Brush-\nE\nWand\nTower Loop\nRoom Shell\n⌃Z\nUndo\nLegend\nChunks & Art\nGit\nLight\n3D MOUSE & CAMERA LEGEND\nKey C (Toggle)\nSwitch Free-Look Fly Builder ↔ Studio Pan\nHold Alt\nHold to momentarily look around or pan\nLeft Click\nPlace block, Erase, Paint, or set Pos1\nRight Drag\nOrbit 3D camera (or set Pos2 with Wand)\nScroll Wheel\nZoom camera in / out smoothly\nKey R\nRotate block or stair orientation 90°\nMINECRAFT WASD FLIGHT LEGEND\nRemap Keys\nW / A / S / D\nStrafe & fly horizontally\nSpace / Shift\nFly Up (+Y) / Down (-Y)\nHold Ctrl\nSprint Flight Speed Boost\n1 – 9 Keys\nSelect quick block slot\nWORLDEDIT COMMAND LEGEND (20)\n//wand\nRun\n\nEquips the Region Wand tool. Left-click any block to set Pos1; Right-click to set Pos2.\n\nRegion Selection · Drag to Hotbar\n//wand\n//pos1 [x y z]\nRun\n\nSets selection corner 1 (Pos1) to your current cursor coordinate or explicit X Y Z.\n\nRegion Selection · Drag to Hotbar\n//pos1\n//pos2 [x y z]\nRun\n\nSets selection corner 2 (Pos2) to your current cursor coordinate or explicit X Y Z.\n\nRegion Selection · Drag to Hotbar\n//pos2\n//expand <amount> [up|down|north|south|east|west]\nRun\n\nExpands the active Pos1–Pos2 bounding box outward in the specified direction.\n\nRegion Selection · Drag to Hotbar\n//expand 2 up\n//set <block_id>\nRun\n\nFills every voxel inside the Pos1–Pos2 selection region with the specified block.\n\nBlock Operations · Drag to Hotbar\n//set cobble_brick\n//replace [from_block] <to_block>\nRun\n\nReplaces all non-air blocks (or a specific block type) inside the selection with the active block.\n\nBlock Operations · Drag to Hotbar\n//replace cobble_brick\n//walls <block_id>\nRun\n\nBuilds 4 vertical perimeter walls around the Pos1–Pos2 region (leaves roof and floor open).\n\nBlock Operations · Drag to Hotbar\n//walls cobble_brick\n//box <block_id>\nRun\n\nConstructs a hollow 6-sided architectural room shell around the Pos1–Pos2 selection.\n\nBlock Operations · Drag to Hotbar\n//box cobble_brick\n//hollow\nRun\n\nHollows out the interior of a solid structure inside Pos1–Pos2, keeping a 1-block outer shell.\n\nBlock Operations · Drag to Hotbar\n//hollow\n//clear\nRun\n\nDeletes all blocks within the selected Pos1–Pos2 region (same as //set air).\n\nBlock Operations · Drag to Hotbar\n//set air\n//sphere <block_id> <radius>\nRun\n\nGenerates a solid 3D voxel sphere centered at Pos1 with the given radius.\n\nGeometry Generators · Drag to Hotbar\n//sphere cobble_brick 3\n//hsphere <block_id> <radius>\nRun\n\nGenerates a hollow geodesic dome / sphere shell centered at Pos1.\n\nGeometry Generators · Drag to Hotbar\n//hsphere cobble_brick 4\n//cyl <block_id> <radius> [height]\nRun\n\nGenerates a vertical cylindrical tower or circular floor pad centered at Pos1.\n\nGeometry Generators · Drag to Hotbar\n//cyl cobble_brick 3 4\n//copy\nRun\n\nCopies all blocks within the Pos1–Pos2 selection into your WorldEdit clipboard.\n\nClipboard & Transform · Drag to Hotbar\n//copy\n//cut\nRun\n\nCopies the Pos1–Pos2 selection to the clipboard and clears the original region.\n\nClipboard & Transform · Drag to Hotbar\n//cut\n//paste\nRun\n\nPastes the copied structure from the clipboard anchored at Pos1.\n\nClipboard & Transform · Drag to Hotbar\n//paste\n//stack <count> [up|down|north|south|east|west]\nRun\n\nRepeats and stacks the selected structure N times along an axis (ideal for multi-story buildings or bridges).\n\nClipboard & Transform · Drag to Hotbar\n//stack 2 up\n//move <distance> [up|down|north|south|east|west]\nRun\n\nShifts all blocks inside the selection by N units in the given direction.\n\nClipboard & Transform · Drag to Hotbar\n//move 2 up\n//undo\nRun\n\nReverts the last block placement, paint action, or WorldEdit operation (Ctrl+Z).\n\nHistory · Drag to Hotbar\n//undo\n//redo\nRun\n\nRe-applies a previously undone operation (Ctrl+Shift+Z).\n\nHistory · Drag to Hotbar\n//redo\nRun\n//redoNothing to redo.\nXYZ: (0, 1, 0)\n|\nSel: None\n|\nmain@a1f8c20\n|\n13:30\n|\n2 blocks",
+  "finishedAt": "2026-11-01T21:04:08.309Z",
+  "ok": false
+}

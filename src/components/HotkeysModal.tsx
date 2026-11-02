@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   HOTKEY_ACTIONS_META,
   HotkeyActionId,
@@ -29,6 +29,19 @@ interface HotkeysModalProps {
   onToggleMouseLookMode?: () => void;
 }
 
+type CaptureKeyEvent = Pick<KeyboardEvent, 'code' | 'key' | 'isComposing' | 'keyCode' | 'repeat'>;
+export type HotkeyCaptureDecision = 'inactive' | 'composition' | 'reserved-tab' | 'cancel' | 'ignore' | 'bind';
+
+/** Capture never owns IME input or native focus traversal. Existing saved bindings are not changed here. */
+export function classifyHotkeyCapture(isOpen: boolean, listening: boolean, event: CaptureKeyEvent): HotkeyCaptureDecision {
+  if (!isOpen || !listening) return 'inactive';
+  if (event.isComposing || event.keyCode === 229 || event.key === 'Process' || event.key === 'Dead') return 'composition';
+  if (event.code === 'Tab' || event.key === 'Tab') return 'reserved-tab';
+  if (event.code === 'Escape' || event.key === 'Escape') return 'cancel';
+  if (event.repeat || !(event.code || event.key)) return 'ignore';
+  return 'bind';
+}
+
 export const HotkeysModal: React.FC<HotkeysModalProps> = ({
   isOpen,
   onClose,
@@ -44,20 +57,50 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
   const [activeCategory, setActiveCategory] = useState<'all' | HotkeyCategory>(
     'all'
   );
+  const [captureNotice, setCaptureNotice] = useState<string | null>(null);
+  const captureActive = useRef(false);
+
+  const closeModal = () => {
+    captureActive.current = false;
+    setListeningActionId(null);
+    onClose();
+  };
 
   useEffect(() => {
-    if (!listeningActionId) return;
+    if (!isOpen) setListeningActionId(null);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !listeningActionId) return;
+    captureActive.current = true;
+
+    const stopForComposition = () => {
+      captureActive.current = false;
+      setListeningActionId(null);
+      setCaptureNotice('Key capture stopped for text composition. Finish typing, then select a key badge to try again.');
+    };
 
     const handleKeyCapture = (e: KeyboardEvent) => {
+      const decision = classifyHotkeyCapture(isOpen, captureActive.current, e);
+      if (decision === 'inactive' || decision === 'ignore') return;
+      if (decision === 'composition') { stopForComposition(); return; }
+      if (decision === 'reserved-tab') {
+        captureActive.current = false;
+        setListeningActionId(null);
+        setCaptureNotice('Tab is reserved for moving focus. Your saved binding has not changed; choose a different key to rebind.');
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
 
-      if (e.code === 'Escape') {
+      if (decision === 'cancel') {
+        captureActive.current = false;
         setListeningActionId(null);
         return;
       }
 
       const nextCode = e.code || e.key;
+      captureActive.current = false;
       onChangeHotkeyConfig({
         ...hotkeyConfig,
         bindings: {
@@ -66,11 +109,17 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
         },
       });
       setListeningActionId(null);
+      setCaptureNotice(`Binding changed to ${formatKeyCode(nextCode)}. Any duplicate bindings are marked below.`);
     };
 
     window.addEventListener('keydown', handleKeyCapture, true);
-    return () => window.removeEventListener('keydown', handleKeyCapture, true);
-  }, [listeningActionId, hotkeyConfig, onChangeHotkeyConfig]);
+    window.addEventListener('compositionstart', stopForComposition, true);
+    return () => {
+      captureActive.current = false;
+      window.removeEventListener('keydown', handleKeyCapture, true);
+      window.removeEventListener('compositionstart', stopForComposition, true);
+    };
+  }, [isOpen, listeningActionId, hotkeyConfig, onChangeHotkeyConfig]);
 
   if (!isOpen) return null;
 
@@ -80,6 +129,8 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
     if (!code) continue;
     codeCounts[code] = (codeCounts[code] || 0) + 1;
   }
+  const tabBindings = HOTKEY_ACTIONS_META.filter(action => hotkeyConfig.bindings[action.id] === 'Tab');
+  const conflictingCodes = Object.keys(codeCounts).filter(code => codeCounts[code] > 1);
 
   const visibleActions = HOTKEY_ACTIONS_META.filter((item) =>
     activeCategory === 'all' ? true : item.category === activeCategory
@@ -94,7 +145,7 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
     <DraggableWindow
       windowId="hotkeys_window"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={closeModal}
       title="Controls, Mouse Free-Look & Hotkey Mapping"
       subtitle="Customize Minecraft-style Free-Look Fly Building vs. Studio Pan/Zoom, WASD flight, and shortcuts"
       icon={<Keyboard className="w-4 h-4 text-amber-400" />}
@@ -397,12 +448,19 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
           </div>
 
           {/* Keybinding List */}
+          {(tabBindings.length > 0 || conflictingCodes.length > 0) && <div className="rounded-xl border border-amber-500/50 bg-amber-950/20 p-3 text-xs text-amber-200">
+            {tabBindings.length > 0 && <p>Tab is reserved for keyboard focus. Saved Tab bindings are inactive: {tabBindings.map(action => action.label).join(', ')}. Select their key badges to assign another key.</p>}
+            {conflictingCodes.length > 0 && <p className={tabBindings.length ? 'mt-2' : ''}>Duplicate bindings: {conflictingCodes.map(formatKeyCode).join(', ')}. More than one action uses these keys. Select a marked badge to resolve each conflict.</p>}
+            <p className="mt-2">Existing bindings are preserved until you change them or choose Reset Defaults.</p>
+          </div>}
+          {captureNotice && <p role="status" className="text-xs text-amber-200">{captureNotice}</p>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {visibleActions.map((action) => {
               const boundCode = hotkeyConfig.bindings[action.id];
               const isListening = listeningActionId === action.id;
               const hasConflict =
                 Boolean(boundCode) && (codeCounts[boundCode] || 0) > 1;
+              const isReserved = boundCode === 'Tab';
 
               return (
                 <div
@@ -410,7 +468,7 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
                   className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
                     isListening
                       ? 'bg-amber-500/10 border-amber-400'
-                      : hasConflict
+                      : hasConflict || isReserved
                         ? 'bg-rose-950/30 border-rose-500/50'
                         : 'bg-slate-950 border-slate-800'
                   }`}
@@ -429,6 +487,7 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
                           Conflict
                         </span>
                       )}
+                      {isReserved && <span className="text-[10px] font-mono text-amber-300">Reserved · Rebind</span>}
                     </div>
                     <p className="text-[11px] text-slate-400 truncate mt-0.5">
                       {action.description}
@@ -438,13 +497,15 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
                   <button
                     type="button"
                     data-testid={`hotkey-bind-${action.id}`}
-                    onClick={() =>
-                      setListeningActionId(isListening ? null : action.id)
-                    }
+                    onClick={() => {
+                      setCaptureNotice(null);
+                      setListeningActionId(isListening ? null : action.id);
+                    }}
+                    aria-label={`Change ${action.label} shortcut, currently ${formatKeyCode(boundCode)}${isReserved ? ', reserved for focus' : ''}`}
                     className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border whitespace-nowrap shrink-0 transition-all ${
                       isListening
                         ? 'bg-amber-500 text-slate-950 border-amber-300'
-                        : hasConflict
+                        : hasConflict || isReserved
                           ? 'bg-rose-500/20 text-rose-200 border-rose-500/50 hover:bg-rose-500/30'
                           : 'bg-slate-900 text-amber-300 border-slate-700 hover:border-amber-400'
                     }`}
@@ -467,7 +528,7 @@ export const HotkeysModal: React.FC<HotkeysModalProps> = ({
             </span>
             <button
               type="button"
-              onClick={onClose}
+              onClick={closeModal}
               className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
             >
               Done

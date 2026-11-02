@@ -1,0 +1,66 @@
+.studio-navigation {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  color: #e2e8f0;
+  background: #0f172a;
+  border-bottom: 1px solid #475569;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.studio-navigation__controls,
+.studio-navigation__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+.studio-navigation__controls { gap: 0.5rem 1rem; }
+.studio-navigation__label { margin-right: 0.125rem; font-weight: 600; }
+
+.studio-navigation__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  max-width: 100%;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid #64748b;
+  border-radius: 0.5rem;
+  background: #1e293b;
+  color: #f1f5f9;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.studio-navigation__button:hover:not(:disabled) { background: #334155; }
+.studio-navigation__button[aria-pressed="true"] { background: #064e3b; border-color: #6ee7b7; color: #ecfdf5; font-weight: 700; }
+.studio-navigation__button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.studio-navigation__button:disabled { opacity: 0.5; cursor: default; }
+.studio-navigation__state { margin-left: auto; color: #cbd5e1; font-size: 0.75rem; }
+.studio-navigation__help { margin: 0.5rem 0 0; color: #cbd5e1; overflow-wrap: anywhere; }
+.studio-navigation__steps { margin-top: 0.5rem; }
+.studio-navigation__steps summary { width: fit-content; min-height: 36px; padding: 0.5rem 0; cursor: pointer; font-weight: 600; }
+.studio-navigation__steps summary:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.studio-navigation__steps > p { margin: 0.5rem 0 0; overflow-wrap: anywhere; }
+
+@media (max-width: 40rem) {
+  .studio-navigation { padding: 0.5rem; }
+  .studio-navigation__controls { gap: 0.5rem; }
+  .studio-navigation__state { margin-left: 0; }
+}
+
+@media (any-pointer: coarse) {
+  .studio-navigation__button { min-width: 48px; min-height: 48px; }
+}
+
+@media (forced-colors: active) {
+  .studio-navigation__button[aria-pressed="true"] { border: 3px solid Highlight; }
+  .studio-navigation__button:focus-visible { outline-color: Highlight; }
+}

@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: detached review preserves source and exact one-cell selection/chunk edit restores through Undo and Redo
+ok 1 - detached review preserves source and exact one-cell selection/chunk edit restores through Undo and Redo
+  ---
+  duration_ms: 12.036989
+  ...
+# Subtest: unrelated region selection and clipboard remain unchanged when a cell moves
+ok 2 - unrelated region selection and clipboard remain unchanged when a cell moves
+  ---
+  duration_ms: 3.289014
+  ...
+# Subtest: a fractional Freeform cell selected by its integer anchor remains usable by region commands after moving
+ok 3 - a fractional Freeform cell selected by its integer anchor remains usable by region commands after moving
+  ---
+  duration_ms: 3.133664
+  ...
+# Subtest: occupied rounded anchors reject without replacing cells, history or source
+ok 4 - occupied rounded anchors reject without replacing cells, history or source
+  ---
+  duration_ms: 1.732073
+  ...
+# Subtest: Freeform fractional positions retain exact values and follow the schema rounded key
+ok 5 - Freeform fractional positions retain exact values and follow the schema rounded key
+  ---
+  duration_ms: 1.870184
+  ...
+# Subtest: numeric boundaries reject empty, hex, nonfinite and out of range data
+ok 6 - numeric boundaries reject empty, hex, nonfinite and out of range data
+  ---
+  duration_ms: 1.594762
+  ...
+# Subtest: definition scale is displayed truthfully and absent override remains a no-op with Redo intact
+ok 7 - definition scale is displayed truthfully and absent override remains a no-op with Redo intact
+  ---
+  duration_ms: 4.136141
+  ...
+# Subtest: instance scale identity remains explicit until definition source is deliberately chosen
+ok 8 - instance scale identity remains explicit until definition source is deliberately chosen
+  ---
+  duration_ms: 2.79229
+  ...
+# Subtest: definition changes preserve instance appearance unless its removal is explicitly reviewed
+ok 9 - definition changes preserve instance appearance unless its removal is explicitly reviewed
+  ---
+  duration_ms: 2.68128
+  ...
+# Subtest: locked Java accepts mapped whole cell edits and rejects scale, rotation, fractions and unknown definitions
+ok 10 - locked Java accepts mapped whole cell edits and rejects scale, rotation, fractions and unknown definitions
+  ---
+  duration_ms: 5.919584
+  ...
+# Subtest: stable cell identity follows moves and Undo without capturing a replacement at the former anchor
+ok 11 - stable cell identity follows moves and Undo without capturing a replacement at the former anchor
+  ---
+  duration_ms: 2.017235
+  ...
+# Subtest: review rejects current preimage changes and edit-to-Undo ABA before entering commit
+ok 12 - review rejects current preimage changes and edit-to-Undo ABA before entering commit
+  ---
+  duration_ms: 1.578091
+  ...
+# Subtest: history-capacity failure rolls back the cell, revealed chunk, selection and token
+ok 13 - history-capacity failure rolls back the cell, revealed chunk, selection and token
+  ---
+  duration_ms: 1.740154
+  ...
+# Subtest: draft validation rejects unknown fields, accessors and oversized values without invoking getters
+ok 14 - draft validation rejects unknown fields, accessors and oversized values without invoking getters
+  ---
+  duration_ms: 1.324789
+  ...
+# Subtest: opening, reviewing, canceling and closing properties do not change authored data or history
+ok 15 - opening, reviewing, canceling and closing properties do not change authored data or history
+  ---
+  duration_ms: 1.2798
+  ...
+# Subtest: close preserves a draft and revokes old controls/reviews through reopen and a newer review
+ok 16 - close preserves a draft and revokes old controls/reviews through reopen and a newer review
+  ---
+  duration_ms: 2.019785
+  ...
+# Subtest: an unfinished draft prevents switching targets until explicit reload/discard
+ok 17 - an unfinished draft prevents switching targets until explicit reload/discard
+  ---
+  duration_ms: 0.910927
+  ...
+# Subtest: external source changes retain dirty values, invalidate reviews, and require explicit reload after ABA
+ok 18 - external source changes retain dirty values, invalidate reviews, and require explicit reload after ABA
+  ---
+  duration_ms: 1.432131
+  ...
+# Subtest: clean views follow external moves and deletions/Undo while dirty drafts cannot cross a replacement project
+ok 19 - clean views follow external moves and deletions/Undo while dirty drafts cannot cross a replacement project
+  ---
+  duration_ms: 3.165513
+  ...
+# Subtest: failed commits retain the draft; recovery/exclusive gates prevent a review without changing source
+ok 20 - failed commits retain the draft; recovery/exclusive gates prevent a review without changing source
+  ---
+  duration_ms: 1.28103
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 66.18339

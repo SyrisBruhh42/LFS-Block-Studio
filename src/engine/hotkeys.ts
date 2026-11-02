@@ -138,9 +138,9 @@ export const HOTKEY_ACTIONS_META: HotkeyActionMeta[] = [
   {
     id: 'resetCamera',
     label: 'Reset Isometric View',
-    description: 'Snap camera back to starter Skyblock isometric angle',
+    description: 'Snap camera back to starter studio plot isometric angle',
     category: 'flight',
-    defaultKey: 'KeyV',
+    defaultKey: 'KeyZ',
   },
 
   // Building & Tools
@@ -337,11 +337,11 @@ export const HOTKEY_ACTIONS_META: HotkeyActionMeta[] = [
   },
   {
     id: 'acceptCopilotGhost',
-    label: 'Accept Spatial Copilot Ghost (Tab)',
+    label: 'Accept Spatial Copilot Ghost',
     description:
       'Instantly place the predicted 3D ghost auto-complete run or recommended selection preview',
     category: 'tools',
-    defaultKey: 'Tab',
+    defaultKey: 'Enter',
   },
   {
     id: 'toggleSymmetryMirror',
@@ -352,6 +352,8 @@ export const HOTKEY_ACTIONS_META: HotkeyActionMeta[] = [
     defaultKey: 'KeyV',
   },
 ];
+
+export const DEFAULT_HOTKEYS = HOTKEY_ACTIONS_META;
 
 export const DEFAULT_HOTKEY_BINDINGS: Record<HotkeyActionId, string> =
   HOTKEY_ACTIONS_META.reduce(
@@ -454,6 +456,7 @@ export function formatKeyCode(code: string): string {
 }
 
 export function matchesKeyBinding(e: KeyboardEvent, boundCode: string): boolean {
+  if (e.isComposing || e.keyCode === 229) return false;
   if (!boundCode) return false;
   if (e.code === boundCode) return true;
   if (boundCode === 'Slash' && (e.code === 'Slash' || e.key === '/')) {
@@ -495,4 +498,3 @@ export function matchesKeyBinding(e: KeyboardEvent, boundCode: string): boolean 
   }
   return false;
 }
-

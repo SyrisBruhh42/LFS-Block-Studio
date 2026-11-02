@@ -1,0 +1,14 @@
+{"name":"numeric brush/mirror options are source-neutral preferences with no project/history changes","ok":true}
+{"name":"four mirrored volume placements change108 cells and chunks in one exact Undo/Redo step","ok":true,"changedCells":108,"fullAuthoredHash":"e6048eb6bd174b28777f9de1d1b5fc4d37f601b9d81f112b0369ce8228a5f58b"}
+{"name":"an identical brush preserves complete content, cell IDs, usage/learning effects and pending Redo","ok":true}
+{"name":"volume erasure removes every mirrored cell once and exact Undo restores IDs and chunk visibility","ok":true,"erasedCells":108}
+{"name":"overlapping brush cells are counted once and empty-only repeats do not clear Redo","ok":true,"uniqueChangedCells":75}
+{"name":"last mirrored extent rejection preserves all authored data, history and feedback","ok":true}
+{"name":"numeric negative-coordinate brush retains all27 cells across the old hidden floor","ok":true,"layers":[-17,-16,-15]}
+{"name":"dirty tool preferences retain their draft and reject overwrite after another control changes","ok":true}
+{"name":"half-cell mirror pivot uses exact integer reflected cells and a quarter-cell draft cannot apply","ok":true}
+{"name":"native canvas brush click uses the displayed coordinate and shares actual numeric/history semantics","ok":true,"displayedTarget":{"x":1,"y":0,"z":0},"pointerEvent":"native mouse"}
+{"name":"an unfinished native pointer gesture cannot edit a newly activated project","ok":true,"pointerEvent":"native mouse down, actual file restore, late mouse up"}
+{"name":"locked Java X/Z mirrors preserve mapped states and canonical zero rotations through one Undo","ok":true,"mappedState":"minecraft:stone","nativeQualification":"NOT_RUN"}
+{"name":"complete brush content, policy and definitions survive explicit save/reload","ok":true,"completeHash":"ceffa118fb527ccaf478de4a9ec53b63075f84a821334b28c2e01599492cffa8"}
+{"ok":true,"cases":13,"failures":[]}

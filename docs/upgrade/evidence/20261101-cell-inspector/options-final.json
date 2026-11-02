@@ -1,0 +1,37 @@
+{
+  "startedAt": "2026-11-01T22:07:02.348Z",
+  "assets": [
+    [
+      "http://127.0.0.1:4174/assets/index-BjocarM_.js",
+      "http://127.0.0.1:4174/assets/index-BxvGy-C2.css"
+    ],
+    [
+      "http://127.0.0.1:4174/assets/index-BjocarM_.js",
+      "http://127.0.0.1:4174/assets/index-BxvGy-C2.css"
+    ]
+  ],
+  "results": [
+    {
+      "name": "keyboard brush/mirror form at1600 CSS pixels preserves source and keeps focused controls visible",
+      "ok": true,
+      "controls": 10,
+      "width": 1600
+    },
+    {
+      "name": "keyboard brush/mirror form at390 CSS pixels preserves source and keeps focused controls visible",
+      "ok": true,
+      "controls": 10,
+      "width": 390
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/lfs-cell-options.png"
+  ],
+  "limitations": [
+    "Actual App native Tab/forms in disposable desktop Chromium/software WebGL at1600 and390 CSS pixels. Not browser/OS zoom, physical/coarse devices, assistive technology, whole-app accessibility or conformance.",
+    "The control geometry assertions cover the new brush/mirror form only. External/API and service workers blocked; no user profile or native game."
+  ],
+  "finishedAt": "2026-11-01T22:07:33.150Z",
+  "ok": true
+}

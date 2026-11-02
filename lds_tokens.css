@@ -1,0 +1,13 @@
+/* LFS Oasis 7-Theme Token Sheet (Evergreen + Solarpunk Stage-2 Ocular Packs) */
+:root, [data-lds-theme="evergreen-dark"] {
+  --lds-bg-canvas: oklch(0.18 0.03 155);
+  --lds-fg-primary: oklch(0.95 0.02 155);
+  --lds-accent-primary: oklch(0.72 0.14 155);
+  --lds-touch-target-min: 48px;
+}
+[data-lds-theme="evergreen-light"] { --lds-bg-canvas: oklch(0.96 0.02 155); --lds-fg-primary: oklch(0.18 0.03 155); }
+[data-lds-theme="high-contrast"] { --lds-bg-canvas: oklch(0.05 0.0 0); --lds-fg-primary: oklch(0.99 0.0 0); }
+[data-lds-theme="calm"] { --lds-bg-canvas: oklch(0.22 0.02 210); --lds-fg-primary: oklch(0.90 0.01 210); }
+[data-lds-theme="solarpunk-dawn"] { --lds-bg-canvas: oklch(0.24 0.04 85); --lds-fg-primary: oklch(0.94 0.02 85); }
+[data-lds-theme="solarpunk-canopy"] { --lds-bg-canvas: oklch(0.20 0.05 145); --lds-fg-primary: oklch(0.93 0.02 145); }
+[data-lds-theme="solarpunk-hearth-dusk"] { --lds-bg-canvas: oklch(0.19 0.04 45); --lds-fg-primary: oklch(0.92 0.03 65); }

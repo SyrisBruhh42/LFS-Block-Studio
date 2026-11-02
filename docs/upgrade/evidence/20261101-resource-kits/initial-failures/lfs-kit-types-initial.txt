@@ -1,0 +1,8 @@
+src/components/StudioResourceWorkspace.tsx(36,48): error TS2550: Property 'toSorted' does not exist on type 'PlacedBlock[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/components/StudioResourceWorkspace.tsx(36,58): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/components/StudioResourceWorkspace.tsx(36,61): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/StudioResourceWorkspace.tsx(37,41): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/StudioResourceWorkspace.tsx(37,94): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/StudioResourceWorkspace.tsx(38,41): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/StudioResourceWorkspace.tsx(38,98): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/StudioResourceWorkspace.tsx(40,185): error TS7006: Parameter 'b' implicitly has an 'any' type.

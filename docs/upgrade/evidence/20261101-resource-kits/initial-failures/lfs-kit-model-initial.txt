@@ -1,0 +1,245 @@
+TAP version 13
+# Subtest: review, metadata download and draft edits have no authored effect; one import undoes completely
+ok 1 - review, metadata download and draft edits have no authored effect; one import undoes completely
+  ---
+  duration_ms: 42.012334
+  ...
+# Subtest: duplicate and forged import reports cannot apply or consume a newer review
+ok 2 - duplicate and forged import reports cannot apply or consume a newer review
+  ---
+  duration_ms: 20.284233
+  ...
+# Subtest: own original preservation may hold the editor exclusion and still commits after its release
+ok 3 - own original preservation may hold the editor exclusion and still commits after its release
+  ---
+  duration_ms: 12.087805
+  ...
+# Subtest: cancel/close/reopen during preservation cannot publish into a new view or submit a library edit
+ok 4 - cancel/close/reopen during preservation cannot publish into a new view or submit a library edit
+  ---
+  duration_ms: 16.688031
+  ...
+# Subtest: source changes, failed preservation and unavailable authority prevent a post-await import
+ok 5 - source changes, failed preservation and unavailable authority prevent a post-await import
+  ---
+  duration_ms: 27.333519
+  ...
+# Subtest: final history admission may reject a reviewed import after preserving its original without partial library state
+ok 6 - final history admission may reject a reviewed import after preserving its original without partial library state
+  ---
+  duration_ms: 9.000309
+  ...
+# Subtest: repeat no-op import skips another archive write and retains source, history and Redo
+ok 7 - repeat no-op import skips another archive write and retains source, history and Redo
+  ---
+  duration_ms: 18.086658
+  ...
+# Subtest: bounds and wrong file sizes reject reads, revoke the previous review and never call an oversized producer
+not ok 8 - bounds and wrong file sizes reject reads, revoke the previous review and never call an oversized producer
+  ---
+  duration_ms: 10.321783
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:1:6895'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + {
+    +   addedBlueprints: [
+    +     'courtyard_v1_garden',
+    +     'courtyard_v1_bench',
+    +     'courtyard_v1_gate'
+    +   ],
+    +   addedDefinitions: [
+    +     'courtyard_v1_cream',
+    +     'courtyard_v1_moss',
+    +     'courtyard_v1_clay',
+    +     'courtyard_v1_charcoal',
+    +     'courtyard_v1_wood',
+    +     'courtyard_v1_gold'
+    +   ],
+    +   addedProvenance: 1,
+    +   archiveBytes: 17929,
+    +   archiveSha256: '337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82',
+    +   author: 'LFS Block Studio contributors',
+    +   blueprints: [
+    +     {
+    +       cells: 57,
+    +       id: 'courtyard_v1_garden',
+    +       name: 'Pocket garden'
+    +     },
+    +     {
+    +       cells: 25,
+    +       id: 'courtyard_v1_bench',
+    +       name: 'Reading bench'
+    +     },
+    +     {
+    +       cells: 21,
+    +       id: 'courtyard_v1_gate',
+    +       name: 'Garden gateway'
+    +     }
+    +   ],
+    +   definitions: [
+    +     {
+    +       id: 'courtyard_v1_cream',
+    +       name: 'Courtyard cream'
+    +     },
+    +     {
+    +       id: 'courtyard_v1_moss',
+    +       name: 'Courtyard moss'
+    +     },
+    +     {
+    +       id: 'courtyard_v1_clay',
+    +       name: 'Courtyard terracotta'
+    +     },
+    +     {
+    +       id: 'courtyard_v1_charcoal',
+    +       name: 'Courtyard charcoal'
+    +     },
+    +     {
+    +       id: 'courtyard_v1_wood',
+    +       name: 'Courtyard warm wood'
+    +     },
+    +     {
+    +       id: 'courtyard_v1_gold',
+    +       name: 'Courtyard brass'
+    +     }
+    +   ],
+    +   license: 'MIT',
+    +   name: 'Courtyard starter',
+    +   noop: false,
+    +   retainedBlueprints: [],
+    +   retainedDefinitions: [],
+    +   sourceToken: '{"documentId":"kit-model-fixture","historyEpoch":"epoch-fixture","sessionId":"session-627a9264-9fb6-446b-95a2-09f71dd14935","editRevision":0}',
+    +   sourceUrl: '',
+    +   updatedProvenance: 0
+    + }
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    sourceToken: '{"documentId":"kit-model-fixture","historyEpoch":"epoch-fixture","sessionId":"session-627a9264-9fb6-446b-95a2-09f71dd14935","editRevision":0}'
+    name: 'Courtyard starter'
+    author: 'LFS Block Studio contributors'
+    license: 'MIT'
+    sourceUrl: ''
+    archiveSha256: '337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82'
+    archiveBytes: 17929
+    addedDefinitions:
+      0: 'courtyard_v1_cream'
+      1: 'courtyard_v1_moss'
+      2: 'courtyard_v1_clay'
+      3: 'courtyard_v1_charcoal'
+      4: 'courtyard_v1_wood'
+      5: 'courtyard_v1_gold'
+    retainedDefinitions:
+    addedBlueprints:
+      0: 'courtyard_v1_garden'
+      1: 'courtyard_v1_bench'
+      2: 'courtyard_v1_gate'
+    retainedBlueprints:
+    addedProvenance: 1
+    updatedProvenance: 0
+    definitions:
+      0:
+        id: 'courtyard_v1_cream'
+        name: 'Courtyard cream'
+      1:
+        id: 'courtyard_v1_moss'
+        name: 'Courtyard moss'
+      2:
+        id: 'courtyard_v1_clay'
+        name: 'Courtyard terracotta'
+      3:
+        id: 'courtyard_v1_charcoal'
+        name: 'Courtyard charcoal'
+      4:
+        id: 'courtyard_v1_wood'
+        name: 'Courtyard warm wood'
+      5:
+        id: 'courtyard_v1_gold'
+        name: 'Courtyard brass'
+    blueprints:
+      0:
+        id: 'courtyard_v1_garden'
+        name: 'Pocket garden'
+        cells: 57
+      1:
+        id: 'courtyard_v1_bench'
+        name: 'Reading bench'
+        cells: 25
+      2:
+        id: 'courtyard_v1_gate'
+        name: 'Garden gateway'
+        cells: 21
+    noop: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:59:199)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: a late file producer or decoder ignoring abort cannot overwrite a newer resource context
+ok 9 - a late file producer or decoder ignoring abort cannot overwrite a newer resource context
+  ---
+  duration_ms: 12.913365
+  ...
+# Subtest: draft edits and edit-Undo ABA invalidate an old placement review
+ok 10 - draft edits and edit-Undo ABA invalidate an old placement review
+  ---
+  duration_ms: 20.491666
+  ...
+# Subtest: one blueprint placement has full Undo/Redo; duplicate/forged reports reject and repeated final placement is a no-op
+ok 11 - one blueprint placement has full Undo/Redo; duplicate/forged reports reject and repeated final placement is a no-op
+  ---
+  duration_ms: 34.249421
+  ...
+# Subtest: a completion from an old placement view cannot change a reopened view
+not ok 12 - a completion from an old placement view cannot change a reopened view
+  ---
+  duration_ms: 17.154206
+  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:1:9866'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'Blueprint placed as one edit. Undo restores cells and chunk visibility.'
+    - ''
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ''
+  actual: 'Blueprint placed as one edit. Undo restores cells and chunk visibility.'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:86:50)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: invalid finite/rotation/selection and read-only placement drafts reject without authored changes
+ok 13 - invalid finite/rotation/selection and read-only placement drafts reject without authored changes
+  ---
+  duration_ms: 11.788672
+  ...
+# Subtest: kit export contains complete selected resources/notices and is detached and single-consumption
+ok 14 - kit export contains complete selected resources/notices and is detached and single-consumption
+  ---
+  duration_ms: 13.676215
+  ...
+# Subtest: export source, sharing declaration, cancellation and late file consumption are fenced
+ok 15 - export source, sharing declaration, cancellation and late file consumption are fenced
+  ---
+  duration_ms: 18.130977
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 13
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 296.461533

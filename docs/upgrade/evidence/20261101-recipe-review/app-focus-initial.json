@@ -1,0 +1,70 @@
+{
+  "startedAt": "2026-11-01T22:43:05.406Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    "http://127.0.0.1:4174/assets/index-CxhUCqT0.js",
+    "http://127.0.0.1:4174/assets/index-P1DyhG_y.css"
+  ],
+  "results": [
+    {
+      "name": "native recipe focus, editing, preview and complete review download preserve the build, history and canvas",
+      "ok": true,
+      "reviewHash": "5eb0ffa64277617f26fa472a05998a3a86bbcdf03f07588f1823596f462e2151",
+      "exactChangedCells": 27
+    },
+    {
+      "name": "changed-cell paging, filtering and resolved trace expose exact before/after data without executing it",
+      "ok": true
+    },
+    {
+      "name": "Apply commits complete recipe cells, revealed chunks, selection and clipboard as one Undo and Redo",
+      "ok": true,
+      "fullAuthoredHash": "5eccb5cb2e45e65531fc71da77f098f8bd5deee7ee378a0acf377051171dc2c8",
+      "oneRecipeUndo": true,
+      "clipboardExercisedByActualPaste": true
+    },
+    {
+      "name": "an identical recipe keeps stable cell identities, source content and pending Redo",
+      "ok": true
+    },
+    {
+      "name": "a failed later command exposes no partial live changes and retains the editable script",
+      "ok": true
+    },
+    {
+      "name": "Cancel and editing during cooperative preparation retain commands and never publish a partial step",
+      "ok": true
+    },
+    {
+      "name": "Escape retains an unfinished draft, revokes Apply and requires an explicit preset replacement",
+      "ok": true
+    },
+    {
+      "name": "the existing HUD macro entry opens the review workspace without immediately changing the build",
+      "ok": true,
+      "entry": "existing Room Shell HUD slot"
+    },
+    {
+      "name": "activation through the public project-file route cancels the old review while retaining its commands",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/lfs-recipe-workspace-initial.png"
+  ],
+  "limitations": [
+    "Actual App controls, command line, public project-file input and downloaded JSON in disposable Chromium/software WebGL; external/API and service workers blocked.",
+    "No App globals, React internals or hidden controller access. No storage writes construct editing outcomes.",
+    "The source-switch fixture sends a file through the public file input while the native recipe modal is open; this is an event-boundary fixture, not a physical file-picker task.",
+    "Scoped native keyboard/reflow tasks, not full-shell, assistive technology, hardware pen/touch, performance or provider qualification.",
+    "Native Minecraft/WorldEdit NOT_RUN — skipped by user. Locked editing is candidate policy evidence only."
+  ],
+  "failure": {
+    "stage": "shared Oasis preferences and native keyboard reflow preserve source at 320 CSS pixels and 200 percent text",
+    "message": "Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}",
+    "stack": "AssertionError [ERR_ASSERTION]: Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/recipe-workspace.mjs:78:363"
+  },
+  "finishedAt": "2026-11-01T22:43:27.591Z"
+}

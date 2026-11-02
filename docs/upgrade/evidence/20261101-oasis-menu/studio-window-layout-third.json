@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-11-01T18:42:05.706Z",
+  "browser": "156.0.8078.79",
+  "sourceBefore": {
+    "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "8fb71a5397460128cad8287848e6048758a9f25dc0083bd6deca63b86e205bb6"
+  },
+  "results": [
+    {
+      "name": "numeric position/size fields work without drag and persist exact layout",
+      "ok": true,
+      "elapsedMs": 520
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Mounted real window/HUD components and real mouse/keyboard tasks; selected cancellation/secondary-pointer events are synthetic. No physical touch/pen, assistive-technology or full accessibility acceptance.",
+    "App project/history/export invariants are qualified separately on a frozen application build. No provider requests or normal browser/user storage."
+  ],
+  "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-window-id=\"layout-a\"]').getByRole('form', { name: 'Window layout controls for Window A' }).getByRole('status').filter({ hasText: 'positive dimensions' }) to be visible\u001b[22m\n\n    at /home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:66:202\n    at async run (/home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:54:60)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:65:2",
+  "sourceAfter": {
+    "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
+    "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",
+    "../../src/index.css": "81b0017f59a5231f2cc2d42987052875ec7e29d358e4fcaf5467af3cc83fcfe3",
+    "./window-layout.mjs": "8fb71a5397460128cad8287848e6048758a9f25dc0083bd6deca63b86e205bb6"
+  },
+  "sourceStable": true,
+  "finishedAt": "2026-11-01T18:42:18.599Z",
+  "ok": false
+}

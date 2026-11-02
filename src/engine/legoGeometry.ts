@@ -297,3 +297,37 @@ export function buildBlockMeshGroup(params: {
 
   return group;
 }
+
+export function isSharedStudGeometry(geo?: THREE.BufferGeometry | null): boolean {
+  return Boolean(geo && geo === sharedStudGeo);
+}
+
+/**
+ * Traverses a Group or Object3D before removal and disposes all unshared BufferGeometries
+ * and uncached ephemeral materials (such as invisible raycast hitbox materials or wireframe lines)
+ * while preserving cached procedural block materials and sharedStudGeo.
+ */
+export function disposeUnsharedGroupGeometries(
+  root: THREE.Object3D,
+  extraSharedGeos?: Set<THREE.BufferGeometry>
+): void {
+  root.traverse((obj) => {
+    const meshOrLine = obj as THREE.Mesh | THREE.LineSegments;
+    if (meshOrLine.geometry) {
+      const geo = meshOrLine.geometry;
+      if (
+        geo !== sharedStudGeo &&
+        (!extraSharedGeos || !extraSharedGeos.has(geo))
+      ) {
+        geo.dispose();
+      }
+    }
+    if (obj.userData?.isDisposableMaterial && meshOrLine.material) {
+      if (Array.isArray(meshOrLine.material)) {
+        for (const m of meshOrLine.material) m.dispose();
+      } else {
+        meshOrLine.material.dispose();
+      }
+    }
+  });
+}

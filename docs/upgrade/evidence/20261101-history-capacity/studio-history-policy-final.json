@@ -1,0 +1,170 @@
+{
+  "startedAt": "2026-11-01T20:15:56.914Z",
+  "origin": "http://127.0.0.1:4173",
+  "browser": "156.0.8078.79",
+  "results": [
+    {
+      "name": "schema1 to explicit schema2 Freeform commits complete content, checkpoint and fresh activation",
+      "ok": true
+    },
+    {
+      "name": "Java initial lock, unlock and relock retain every checkpoint and reject stale activation",
+      "ok": true
+    },
+    {
+      "name": "explicit Freeform policy can select compatible Java candidate without rewriting content",
+      "ok": true
+    },
+    {
+      "name": "ordinary saves cannot change schema, epoch, lock, mappings or policy checkpoint",
+      "ok": true
+    },
+    {
+      "name": "same-lock, rebinding, authored changes and wrong checkpoint reject before staging",
+      "ok": true
+    },
+    {
+      "name": "pre-aborted policy transition and stale live source leave no staged candidate",
+      "ok": true
+    },
+    {
+      "name": "quota during policy stage preserves prior authority and recoverable stage state",
+      "ok": true
+    },
+    {
+      "name": "abort during policy stage preserves prior authority and recoverable stage state",
+      "ok": true
+    },
+    {
+      "name": "quota during policy verify preserves prior authority and recoverable stage state",
+      "ok": true
+    },
+    {
+      "name": "abort during policy verify preserves prior authority and recoverable stage state",
+      "ok": true
+    },
+    {
+      "name": "quota during policy commit preserves prior authority and recoverable stage state",
+      "ok": true
+    },
+    {
+      "name": "abort during policy commit preserves prior authority and recoverable stage state",
+      "ok": true
+    },
+    {
+      "name": "quota after revision insertion but before metadata commit rolls back all policy writes",
+      "ok": true
+    },
+    {
+      "name": "quota after revision insertion but before candidates commit rolls back all policy writes",
+      "ok": true
+    },
+    {
+      "name": "competing policy writers commit exactly one complete successor",
+      "ok": true
+    },
+    {
+      "name": "intervening ordinary save beats a staged policy transition without losing either candidate",
+      "ok": true
+    },
+    {
+      "name": "live source change during verification is rechecked inside commit and preserves predecessor",
+      "ok": true
+    },
+    {
+      "name": "changed verified candidate cannot be promoted by policy transaction",
+      "ok": true
+    },
+    {
+      "name": "unknown persisted policy never reopens or saves as unlocked Freeform",
+      "ok": true
+    },
+    {
+      "name": "ordinary save rejects valid JSON whose predecessor identity differs from its revision key",
+      "ok": true
+    }
+  ],
+  "pageErrors": [],
+  "blockedRequests": [],
+  "loadedModules": [
+    {
+      "path": "/src/lib/studioPolicyStore.browser-tests.ts",
+      "status": 200,
+      "sha256": "14affadeb2858df5dfe66e25f27397f2145fff966e54bc3ec2bfa890886064bc"
+    },
+    {
+      "path": "/src/lib/studioDocumentStore.ts?t=1793563616361",
+      "status": 200,
+      "sha256": "34e8593b51de22516ea8da54b753a170a36f12b07d6e43d4791e91a5ebe75ce8"
+    },
+    {
+      "path": "/src/lib/studioDocument.test-fixtures.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "09ca42cc022d7a5227b0be8a991372cfe2c988a8285601e52de6e3e3daed9a5b"
+    },
+    {
+      "path": "/src/lib/studioDocument.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "dda6773f4662f6f19994111fd1f9abad5cae08ab4bd94a75c00d921cefe9ba17"
+    },
+    {
+      "path": "/src/lib/studioTargetPolicy.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "42d6e572ec07b35f920dcd87a9946efb2f1f3f0943e4c405d3ebe6cc087e56bf"
+    },
+    {
+      "path": "/src/engine/javaCellMapping.ts?t=1793547562032",
+      "status": 200,
+      "sha256": "808786764d411a533f470b5c4a86b2702abb24a9d9fb3e716b01dac87a298ef3"
+    },
+    {
+      "path": "/src/engine/javaProfile.ts",
+      "status": 200,
+      "sha256": "41683a8cf0c649d869b0a5fb25bb72f0dcd932e8d1d45a77a43d9127d4f28211"
+    },
+    {
+      "path": "/src/engine/chunkAndPatternEngine.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "8d6ffc8e15acbbfec7b4d1cf6c5131c8073e01a236b76bad0f9a9f6d36b64d09"
+    },
+    {
+      "path": "/src/engine/worldEditEngine.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "002003bca81ce0556a044ad62fb753e5504c7e97ccb93d5efe68bfdc7cc3d4a4"
+    },
+    {
+      "path": "/src/engine/blueprintDefinitionSafety.ts?t=1793557646627",
+      "status": 200,
+      "sha256": "3391c2d2292475e03dcdd68ea6653f46fc328049f570b610cfda23c3658f3ecd"
+    }
+  ],
+  "sourceBefore": {
+    "src/lib/studioPolicyStore.browser-tests.ts": "2d613c8c961961504d3dfccae286830e1e561e31afd1b507d8dff1007c0d22d8",
+    "src/lib/studioDocumentStore.ts": "30a6f43744a72b0b105aa8f45206debaf421de9683175210e78dbb5beea352bc",
+    "src/lib/studioDocument.ts": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioDocument.test-fixtures.ts": "b443dd45050b278c3d598b0c2898b3df931fa3582618cd38c61b29f4dc6d3971",
+    "src/engine/javaCellMapping.ts": "0faac1c2b3ce40b11ccb8076e35c0b93b65a4bd96444800c4f27beb4f4a2f285",
+    "src/engine/javaProfile.ts": "9e7a8f0cf27292f78d0dd5a8357d6f4449b188008e61ac133c1e3f267490ff73",
+    "src/engine/worldEditEngine.ts": "f5f367f049f3fc60e6e08830de36c04416d1c63eafa654b8cc3b8ffdaa7ea7ae",
+    "src/engine/chunkAndPatternEngine.ts": "1daefbd3337699b23985de168fa8da69358dc713ecd30bd527502b7f43593f8b"
+  },
+  "sourceAfter": {
+    "src/lib/studioPolicyStore.browser-tests.ts": "2d613c8c961961504d3dfccae286830e1e561e31afd1b507d8dff1007c0d22d8",
+    "src/lib/studioDocumentStore.ts": "30a6f43744a72b0b105aa8f45206debaf421de9683175210e78dbb5beea352bc",
+    "src/lib/studioDocument.ts": "fad3d8ffa68a529d8b270b49c3f3c6e2576c3365b7ca75b55dbcd98fe96c09f2",
+    "src/lib/studioTargetPolicy.ts": "41ab576352691a5f948ec315d225b8ac721ee8ce34713278c7e23eb1667b804c",
+    "src/lib/studioDocument.test-fixtures.ts": "b443dd45050b278c3d598b0c2898b3df931fa3582618cd38c61b29f4dc6d3971",
+    "src/engine/javaCellMapping.ts": "0faac1c2b3ce40b11ccb8076e35c0b93b65a4bd96444800c4f27beb4f4a2f285",
+    "src/engine/javaProfile.ts": "9e7a8f0cf27292f78d0dd5a8357d6f4449b188008e61ac133c1e3f267490ff73",
+    "src/engine/worldEditEngine.ts": "f5f367f049f3fc60e6e08830de36c04416d1c63eafa654b8cc3b8ffdaa7ea7ae",
+    "src/engine/chunkAndPatternEngine.ts": "1daefbd3337699b23985de168fa8da69358dc713ecd30bd527502b7f43593f8b"
+  },
+  "sourceStable": true,
+  "limitations": [
+    "Real Chromium IndexedDB with injected quota/abort failures, disposable unique test databases only.",
+    "No application UI, controller/hook, cross-browser, hardware, provider, native Minecraft, release or deployment qualification.",
+    "The live-source callback fixture checks the storage guard; it does not prove UI mutation-lock coverage."
+  ],
+  "finishedAt": "2026-11-01T20:15:57.996Z"
+}

@@ -1,0 +1,49 @@
+{
+  "startedAt": "2026-11-02T00:16:42.321Z",
+  "origin": "http://127.0.0.1:4174",
+  "browser": "156.0.8078.79",
+  "assets": [
+    [
+      "http://127.0.0.1:4174/assets/index-ChU-Vftz.js",
+      "http://127.0.0.1:4174/assets/index-N7aGP9Kv.css"
+    ]
+  ],
+  "results": [
+    {
+      "name": "native menu entry and starter review leave the complete authored project unchanged",
+      "ok": true,
+      "originalArchiveSha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82",
+      "sourceIntegrity": "Python ZIP/CRC/SHA-256/closure readback"
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/lfs-kit-app-initial.png"
+  ],
+  "files": [
+    {
+      "path": "/tmp/lfs-kit-starter-initial.zip",
+      "bytes": 17929,
+      "sha256": "337d911d5eeb4d76fee56c3a87b7a8741950e347898ba80013f6c638a3ed8a82"
+    },
+    {
+      "path": "/tmp/lfs-kit-import-summary-initial.json",
+      "bytes": 1313,
+      "sha256": "35c6b09caec5a22104c9460fed33c245a18efb62cce151d415e62dbf2f9118a5"
+    }
+  ],
+  "limitations": [
+    "Actual App controls/downloads/public file inputs in disposable Chromium/software WebGL; external/API and service workers blocked. No App globals/private React access or storage writes construct editing outcomes.",
+    "Source switching while a native modal is open is a public-file event-boundary fixture, not a physical picker journey.",
+    "Controlled File.arrayBuffer delay and IndexedDB candidate-add quota injection qualify named cancellation/failure behavior only.",
+    "Independent ZIP decoding uses Python standard-library zipfile/JSON/hashlib with no production App imports.",
+    "Offline work uses an already-loaded App; reload afterwards serves loopback App assets. This does not qualify PWA offline cold start/update/rollback.",
+    "Scoped native keyboard/reflow only; no whole-shell/assistive/physical-device/performance/provider or release acceptance. Native Minecraft/WorldEdit NOT_RUN — skipped by user."
+  ],
+  "failure": {
+    "stage": "reviewed kit import preserves the original first and applies the exact decoded library and notices once",
+    "message": "The input did not match the regular expression /^4 Undo steps · 0 Redo steps$/. Input:\n\n''\n",
+    "stack": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^4 Undo steps · 0 Redo steps$/. Input:\n\n''\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/resource-workspace.mjs:68:47"
+  },
+  "finishedAt": "2026-11-02T00:16:59.047Z"
+}

@@ -1,7 +1,7 @@
 {
   "projectId": "wide-ceiling-414513",
   "appId": "1:448407532802:web:58909141aead4ba5d27e1b",
-  "apiKey": "AIzaSyDmHehZPptV7szf2-bxRmYelz7XT5jK00Q",
+  "apiKey": "VAULT_INJECTED_AT_RUNTIME",
   "authDomain": "wide-ceiling-414513.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-1c539c0a-8b91-468f-8b6d-81cf2deb169f",
   "storageBucket": "wide-ceiling-414513.firebasestorage.app",

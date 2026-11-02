@@ -1,0 +1,7 @@
+{
+  "scope": "Intermediate H5 application regression dispatcher",
+  "exit": 143,
+  "cause": "Unknown; managed parent session returned terminal exit 143.",
+  "verifiedState": "A subsequent host process inventory found no matching dispatcher or child test process. The menu child completed9 passing cases and wrote its receipt; other App lanes did not run. Backend107 separately completed with sourceStable=true.",
+  "action": "Preserved intermediate receipts, did not infer whole-App success, and will run final App lanes directly after the exact-reference fix."
+}

@@ -1,0 +1,31 @@
+{
+  "startedAt": "2026-11-01T19:56:19.763Z",
+  "origin": "http://127.0.0.1:4174",
+  "caseFilter": "near",
+  "assets": [
+    [
+      "http://127.0.0.1:4174/assets/index-o71kALbA.js",
+      "http://127.0.0.1:4174/assets/index-D2Asi-nd.css"
+    ]
+  ],
+  "results": [
+    {
+      "name": "near-limit admitted project downloads inside its own opening limit and reopens as an independent copy",
+      "ok": true,
+      "compactInputBytes": 33552384,
+      "formerPrettyBytes": 33598640,
+      "actualBackupBytes": 33552384,
+      "backupSha256": "8ce105dc30be1fee8f984a8671b50d4e8cdf969eea9fc31018ef9efb3a354f08",
+      "independentCopy": true
+    }
+  ],
+  "errors": [],
+  "storageErrors": [],
+  "limitations": [
+    "Disposable Chromium/software WebGL, with external/API traffic and service workers blocked. No user storage, provider or native game operation.",
+    "Named large-JSON correctness fixtures only. Does not qualify rendering capacity, latency, JavaScript/RAM usage, durable storage guarantees or other browsers.",
+    "Session Undo has a change-data/count allowance and is not persisted; a saved project/backup does not contain this live history."
+  ],
+  "finishedAt": "2026-11-01T19:57:01.122Z",
+  "ok": true
+}

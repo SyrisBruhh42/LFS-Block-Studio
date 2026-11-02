@@ -32,7 +32,10 @@ import {
   formatKeyCode,
   matchesKeyBinding,
 } from '../engine/hotkeys';
-import { buildBlockMeshGroup } from '../engine/legoGeometry';
+import {
+  buildBlockMeshGroup,
+  disposeUnsharedGroupGeometries,
+} from '../engine/legoGeometry';
 import { getSelectionBounds, rotateRelativeCoord } from '../engine/worldEditEngine';
 import {
   DEFAULT_VOLUME_BRUSH_CONFIG,
@@ -48,8 +51,206 @@ import {
 } from './AdaptiveMobileStylusHub';
 import { DraggableHudOverlay } from './DraggableWindow';
 import { STUDIO_DRAG_MIME, parseStudioDragPayload } from '../engine/windowLayoutEngine';
+import {
+  CameraBookmark, MomentaryCameraView, ViewportCamera, ViewportNavigationAction, ViewportNavigationMode,
+  ViewportNavigationRequest, ViewportNavigationState, cameraFromBookmark,
+  captureCameraBookmark, computeCameraFrame, computeWorldCameraBounds, resizeViewportCamera,
+  isCameraStepAction, stepCameraBookmark,
+} from '../engine/viewportNavigation';
+import { ViewportGestureTracker, hasOpenViewportModal, isViewportUiTarget, shouldIgnoreViewportKeyboard } from '../engine/viewportInput';
+export type { ViewportNavigationRequest, ViewportNavigationState } from '../engine/viewportNavigation';
 
 export type CameraViewPreset = 'isometric' | 'top' | 'front' | 'free';
+
+export interface ViewportRenderTelemetry {
+  geometries: number;
+  textures: number;
+  calls: number;
+  triangles: number;
+  points: number;
+  lines: number;
+  isMounted: boolean;
+  steepDropOverlayCount: number;
+  steepDropPulseOpacity: number;
+}
+
+let activeViewportBridge: {
+  getRenderer: () => THREE.WebGLRenderer | null;
+  getScene: () => THREE.Scene | null;
+  getCamera: () => ViewportCamera | null;
+  rebuildPlacedBlocks: () => void;
+  renderNow: () => void;
+  getSteepDropTelemetry: () => { count: number; pulseOpacity: number };
+} | null = null;
+
+export function getViewportRenderTelemetry(): ViewportRenderTelemetry {
+  const renderer = activeViewportBridge?.getRenderer();
+  const steepDrop = activeViewportBridge?.getSteepDropTelemetry() ?? {
+    count: 0,
+    pulseOpacity: 0,
+  };
+  if (!renderer) {
+    return {
+      geometries: 0,
+      textures: 0,
+      calls: 0,
+      triangles: 0,
+      points: 0,
+      lines: 0,
+      isMounted: false,
+      steepDropOverlayCount: steepDrop.count,
+      steepDropPulseOpacity: steepDrop.pulseOpacity,
+    };
+  }
+  return {
+    geometries: renderer.info.memory.geometries,
+    textures: renderer.info.memory.textures,
+    calls: renderer.info.render.calls,
+    triangles: renderer.info.render.triangles,
+    points: renderer.info.render.points,
+    lines: renderer.info.render.lines,
+    isMounted: true,
+    steepDropOverlayCount: steepDrop.count,
+    steepDropPulseOpacity: steepDrop.pulseOpacity,
+  };
+}
+
+export function runLiveViewportGpuRebuildStressTest(iterations = 50): {
+  iterations: number;
+  geometriesBefore: number;
+  geometriesAfter: number;
+  deltaGeometries: number;
+  passed: boolean;
+  durationMs: number;
+} {
+  const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const bridge = activeViewportBridge;
+  const renderer = bridge?.getRenderer();
+  if (!bridge || !renderer) {
+    return {
+      iterations,
+      geometriesBefore: 0,
+      geometriesAfter: 0,
+      deltaGeometries: 0,
+      passed: true,
+      durationMs: 0,
+    };
+  }
+  bridge.rebuildPlacedBlocks();
+  const geometriesBefore = renderer.info.memory.geometries;
+  for (let i = 0; i < iterations; i++) {
+    bridge.rebuildPlacedBlocks();
+  }
+  bridge.renderNow();
+  const geometriesAfter = renderer.info.memory.geometries;
+  const deltaGeometries = geometriesAfter - geometriesBefore;
+  const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  return {
+    iterations,
+    geometriesBefore,
+    geometriesAfter,
+    deltaGeometries,
+    passed: Math.abs(deltaGeometries) <= 4,
+    durationMs: Number((t1 - t0).toFixed(2)),
+  };
+}
+
+/**
+ * Captures the live 3D WebGL viewport canvas (forcing an immediate synchronous render first so
+ * the drawing buffer is populated) and overlays visible HUD/window bounding boxes for Gemini Vision diagnostics.
+ */
+export function captureViewportDiagnosticFrame(): string | null {
+  if (typeof document === 'undefined') return null;
+  const bridge = activeViewportBridge;
+  const renderer = bridge?.getRenderer();
+  if (bridge && renderer) {
+    bridge.renderNow();
+  }
+
+  const webglCanvas =
+    renderer?.domElement ||
+    (document.querySelector('canvas') as HTMLCanvasElement | null);
+  const w = Math.max(640, Math.min(1440, window.innerWidth || 1280));
+  const h = Math.max(400, Math.min(900, window.innerHeight || 720));
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = w;
+  outCanvas.height = h;
+  const ctx = outCanvas.getContext('2d');
+  if (!ctx) return null;
+
+  ctx.fillStyle = '#0B0F19';
+  ctx.fillRect(0, 0, w, h);
+
+  if (webglCanvas) {
+    try {
+      const rect = webglCanvas.getBoundingClientRect();
+      ctx.drawImage(
+        webglCanvas,
+        rect.left || 0,
+        rect.top || 0,
+        rect.width || w,
+        rect.height || h
+      );
+    } catch {
+      // Fallback if WebGL canvas taint or context lost
+    }
+  }
+
+  // Draw lightweight wireframe HUD diagnostic outlines of visible studio panels/bars so Gemini Vision sees exact layout geometry
+  const uiNodes = document.querySelectorAll(
+    'header, aside, [data-window-id], [data-hud-bar-id]'
+  );
+  uiNodes.forEach((node) => {
+    const el = node as HTMLElement;
+    const r = el.getBoundingClientRect();
+    if (r.width < 10 || r.height < 10) return;
+    // Skip the auditor modal itself if open
+    if (el.getAttribute('data-window-id') === 'self_testing_auditor_window') {
+      return;
+    }
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(r.left, r.top, r.width, r.height);
+    ctx.strokeRect(r.left, r.top, r.width, r.height);
+
+    const label =
+      el.getAttribute('aria-label') ||
+      el.getAttribute('data-window-id') ||
+      el.getAttribute('data-hud-bar-id') ||
+      el.tagName.toLowerCase();
+    ctx.fillStyle = '#E2E8F0';
+    ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+    ctx.fillText(label.slice(0, 42), r.left + 8, r.top + 16);
+    ctx.restore();
+  });
+
+  return outCanvas.toDataURL('image/png');
+}
+
+/** Drops are a separate DOM input route; pointer ownership does not guard them. */
+export function dispatchViewportDrop(raw: string, inputBlocked: boolean, doc: Document, actions: {
+  selectBlock?: (id: string) => void;
+  selectTool?: (mode: ToolMode) => void;
+  runCommand?: (command: string) => void;
+}): boolean {
+  if (inputBlocked || hasOpenViewportModal(doc)) return false;
+  const payload = parseStudioDragPayload(raw);
+  if (!payload?.targetId) return false;
+  if (payload.type === 'block' && actions.selectBlock) actions.selectBlock(payload.targetId);
+  else if (payload.type === 'tool' && actions.selectTool) actions.selectTool(payload.targetId as ToolMode);
+  else if (payload.type === 'command' && actions.runCommand) actions.runCommand(payload.targetId);
+  else return false;
+  return true;
+}
+
+export function ghostShortcutHint(binding: string): { label: string; description: string } {
+  if (binding === 'Tab') return { label: 'Rebind Tab in Controls', description: 'Tab is reserved for keyboard focus. Use this button, or choose another shortcut in Controls.' };
+  if (!binding) return { label: 'Click to accept', description: 'No keyboard shortcut is assigned. Use this button, or assign a shortcut in Controls.' };
+  return { label: formatKeyCode(binding), description: `Keyboard shortcut: ${formatKeyCode(binding)}` };
+}
 
 interface SkyblockViewportProps {
   blocks: Record<string, PlacedBlock>;
@@ -66,6 +267,12 @@ interface SkyblockViewportProps {
   chunkConfig?: WorldChunkConfig;
   patternConfig?: SmartPatternVariationConfig;
   cameraPreset: CameraViewPreset;
+  navigationRequest?: ViewportNavigationRequest | null;
+  onNavigationStateChange?: (state: ViewportNavigationState) => void;
+  /** Explicit UI ownership, e.g. the app's modal or command palette is open. */
+  inputBlocked?: boolean;
+  /** Project/session/policy epoch; ordinary continuous strokes retain ownership. */
+  editScope?: string;
   collaborators: CollaboratorPresence[];
   hotkeyConfig: HotkeyConfig;
   flyMode: boolean;
@@ -105,6 +312,7 @@ interface SkyblockViewportProps {
   onChangeSymmetryConfig?: (next: SymmetryConfig) => void;
   detectedSymmetry?: DetectedSymmetryCandidate | null;
   copilotConfig?: SpatialCopilotConfig;
+  onChangeCopilotConfig?: (next: SpatialCopilotConfig) => void;
   copilotPredictions?: CopilotPredictedBlock[];
   onAcceptCopilotPredictions?: () => void;
   selectionRecommendations?: SelectionCommandRecommendation[];
@@ -132,6 +340,11 @@ interface SkyblockViewportProps {
   worldName?: string;
   onSelectBlockId?: (id: string) => void;
   onSelectToolMode?: (mode: ToolMode) => void;
+  onClearSelection?: () => void;
+  isLeftToolboxOpen?: boolean;
+  onOpenLeftToolbox?: () => void;
+  isRightInspectorOpen?: boolean;
+  onOpenRightInspector?: () => void;
 }
 
 export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
@@ -149,6 +362,10 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
   chunkConfig,
   patternConfig,
   cameraPreset,
+  navigationRequest,
+  onNavigationStateChange,
+  inputBlocked = false,
+  editScope = '',
   collaborators,
   hotkeyConfig,
   flyMode,
@@ -181,6 +398,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
   onChangeSymmetryConfig,
   detectedSymmetry,
   copilotConfig,
+  onChangeCopilotConfig,
   copilotPredictions = [],
   onAcceptCopilotPredictions,
   selectionRecommendations = [],
@@ -203,15 +421,27 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
   onCameraPresetHandled,
   turntableEnabled = false,
   snapshotTriggerCount = 0,
-  worldName = 'lfs_skyblock_studio',
+  worldName = 'lfs_block_studio',
   onSelectBlockId,
   onSelectToolMode,
+  onClearSelection,
+  isLeftToolboxOpen = true,
+  onOpenLeftToolbox,
+  isRightInspectorOpen = true,
+  onOpenRightInspector,
 }) => {
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
   const requestRenderRef = useRef<() => void>(() => {});
   const isSoftwareGlRef = useRef<boolean>(false);
   const [webglContextLost, setWebglContextLost] = useState<boolean>(false);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const navigationActionRef = useRef<(action: ViewportNavigationAction, explicit?: boolean) => void>(() => {});
+  const cancelInputRef = useRef<() => void>(() => {});
+  const lastNavigationRequestId = useRef<number | null>(null);
+  const previousLegacyFreeLook = useRef(freeLookActive);
+  const [navigationState, setNavigationState] = useState<ViewportNavigationState>({
+    mode: freeLookActive ? 'fly' : 'orbit', projection: 'perspective', canGoBack: false,
+  });
   const prevBlocksMapRef = useRef<Record<string, PlacedBlock>>({});
   const spawnBurstRef = useRef<
     (pos: GridCoord, hexColor: string) => void
@@ -234,6 +464,9 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     patternConfig,
     collaborators,
     hotkeyConfig,
+    inputBlocked,
+    editScope,
+    onNavigationStateChange,
     flyMode,
     onToggleFlyMode,
     freeLookActive,
@@ -284,6 +517,9 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     patternConfig,
     collaborators,
     hotkeyConfig,
+    inputBlocked,
+    editScope,
+    onNavigationStateChange,
     flyMode,
     onToggleFlyMode,
     freeLookActive,
@@ -321,7 +557,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
 
   const sceneRefs = useRef<{
     scene: THREE.Scene;
-    camera: THREE.PerspectiveCamera;
+    camera: ViewportCamera;
     controls: OrbitControls;
     hemiLight: THREE.HemisphereLight;
     keyLight: THREE.DirectionalLight;
@@ -350,11 +586,11 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.blocksGroup);
     while (ctx.blocksGroup.children.length > 0) {
       ctx.blocksGroup.remove(ctx.blocksGroup.children[0]);
     }
     ctx.interactables.length = 0;
-    ctx.interactables.push(ctx.groundPlane);
 
     const {
       blocks: curBlocks,
@@ -418,15 +654,23 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const w = Math.max(0.2, def.width * sx);
       const d = Math.max(0.2, def.depth * sz);
       const h = Math.max(0.15, (def.heightPlates / 3) * sy);
+      const blockUserData = {
+        isPlacedBlock: true,
+        gridCoord: { ...blk.position },
+        blockId: blk.id,
+        blockHeight: Math.max(1, Math.round(h)),
+      };
+      meshGroup.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.userData = { ...blockUserData };
+          ctx.interactables.push(child);
+        }
+      });
       const hitGeo = new THREE.BoxGeometry(w, h, d);
       const hitMat = new THREE.MeshBasicMaterial({ visible: false });
       const hitMesh = new THREE.Mesh(hitGeo, hitMat);
       hitMesh.position.set((w - 1) * 0.5, h * 0.5, (d - 1) * 0.5);
-      hitMesh.userData = {
-        isPlacedBlock: true,
-        gridCoord: { ...blk.position },
-        blockHeight: Math.max(1, Math.round(h)),
-      };
+      hitMesh.userData = { ...blockUserData, isDisposableMaterial: true };
       meshGroup.add(hitMesh);
       ctx.interactables.push(hitMesh);
 
@@ -476,6 +720,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.chunkGridsGroup);
     while (ctx.chunkGridsGroup.children.length > 0) {
       ctx.chunkGridsGroup.remove(ctx.chunkGridsGroup.children[0]);
     }
@@ -532,6 +777,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.ghostGroup);
     while (ctx.ghostGroup.children.length > 0) {
       ctx.ghostGroup.remove(ctx.ghostGroup.children[0]);
     }
@@ -662,6 +908,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.selectionGroup);
     while (ctx.selectionGroup.children.length > 0) {
       ctx.selectionGroup.remove(ctx.selectionGroup.children[0]);
     }
@@ -670,26 +917,41 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const {
       pos1: p1,
       pos2: p2,
+      toolMode: curToolMode,
       isSelectionGizmoActive: gizmoUnlocked,
+      activeCommandPreviewMode: cmdPreviewMode,
     } = propsRef.current;
 
-    if (p1) {
+    const showFullWandGizmos =
+      curToolMode === 'wand_select' ||
+      gizmoUnlocked ||
+      Boolean(cmdPreviewMode);
+
+    if (p1 && showFullWandGizmos) {
       const p1Geo = new THREE.BoxGeometry(1.06, 1.06, 1.06);
       const p1Edges = new THREE.EdgesGeometry(p1Geo);
       const p1Marker = new THREE.LineSegments(
         p1Edges,
-        new THREE.LineBasicMaterial({ color: 0x06b6d4 })
+        new THREE.LineBasicMaterial({
+          color: 0x06b6d4,
+          transparent: true,
+          opacity: 0.85,
+        })
       );
       p1Marker.position.set(p1.x, p1.y + 0.5, p1.z);
       ctx.selectionGroup.add(p1Marker);
     }
 
-    if (p2) {
+    if (p2 && showFullWandGizmos) {
       const p2Geo = new THREE.BoxGeometry(1.06, 1.06, 1.06);
       const p2Edges = new THREE.EdgesGeometry(p2Geo);
       const p2Marker = new THREE.LineSegments(
         p2Edges,
-        new THREE.LineBasicMaterial({ color: 0xf43f5e })
+        new THREE.LineBasicMaterial({
+          color: 0xf43f5e,
+          transparent: true,
+          opacity: 0.85,
+        })
       );
       p2Marker.position.set(p2.x, p2.y + 0.5, p2.z);
       ctx.selectionGroup.add(p2Marker);
@@ -704,65 +966,68 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const cy = (b.minY + b.maxY) * 0.5 + 0.5;
       const cz = (b.minZ + b.maxZ) * 0.5;
 
-      // Bounding box wireframe
+      // Bounding box wireframe — subtle & unobtrusive when in normal Place/Erase mode
       const boxGeo = new THREE.BoxGeometry(lx + 0.08, ly + 0.08, lz + 0.08);
       const edges = new THREE.EdgesGeometry(boxGeo);
       const wireframe = new THREE.LineSegments(
         edges,
         new THREE.LineBasicMaterial({
           color: gizmoUnlocked ? 0xf59e0b : 0x38bdf8,
+          transparent: true,
+          opacity: showFullWandGizmos ? 0.85 : 0.28,
         })
       );
       wireframe.position.set(cx, cy, cz);
       ctx.selectionGroup.add(wireframe);
 
-      // Translucent tint volume
-      const fillMat = new THREE.MeshBasicMaterial({
-        color: gizmoUnlocked ? 0xf59e0b : 0x06b6d4,
-        transparent: true,
-        opacity: gizmoUnlocked ? 0.11 : 0.06,
-        depthWrite: false,
-      });
-      const fillMesh = new THREE.Mesh(boxGeo, fillMat);
-      fillMesh.position.set(cx, cy, cz);
-      ctx.selectionGroup.add(fillMesh);
-
-      // 6 3D face handle gizmos (+X, -X, +Y, -Y, +Z, -Z)
-      // Only active/bright when holding Selection Gizmo modifier key so they never get in the way!
-      const handleDefs: {
-        face: '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
-        pos: [number, number, number];
-        color: number;
-      }[] = [
-        { face: '+x', pos: [b.maxX + 0.85, cy, cz], color: 0xf43f5e },
-        { face: '-x', pos: [b.minX - 0.85, cy, cz], color: 0xf43f5e },
-        { face: '+y', pos: [cx, b.maxY + 1.35, cz], color: 0x22c55e },
-        { face: '-y', pos: [cx, b.minY - 0.35, cz], color: 0x22c55e },
-        { face: '+z', pos: [cx, cy, b.maxZ + 0.85], color: 0x3b82f6 },
-        { face: '-z', pos: [cx, cy, b.minZ - 0.85], color: 0x3b82f6 },
-      ];
-
-      const handleGeo = new THREE.OctahedronGeometry(
-        gizmoUnlocked ? 0.32 : 0.16,
-        0
-      );
-      for (const h of handleDefs) {
-        const hMat = new THREE.MeshStandardMaterial({
-          color: h.color,
-          emissive: h.color,
-          emissiveIntensity: gizmoUnlocked ? 0.65 : 0.1,
-          roughness: 0.2,
+      if (showFullWandGizmos) {
+        // Translucent tint volume only when in Wand mode or holding Gizmo modifier
+        const fillMat = new THREE.MeshBasicMaterial({
+          color: gizmoUnlocked ? 0xf59e0b : 0x06b6d4,
           transparent: true,
-          opacity: gizmoUnlocked ? 0.96 : 0.22,
+          opacity: gizmoUnlocked ? 0.1 : 0.05,
+          depthWrite: false,
         });
-        const hMesh = new THREE.Mesh(handleGeo, hMat);
-        hMesh.position.set(h.pos[0], h.pos[1], h.pos[2]);
-        hMesh.userData = {
-          isGizmoHandle: true,
-          face: h.face,
-        };
-        ctx.selectionGroup.add(hMesh);
-        ctx.gizmoHandles.push(hMesh);
+        const fillMesh = new THREE.Mesh(boxGeo, fillMat);
+        fillMesh.position.set(cx, cy, cz);
+        ctx.selectionGroup.add(fillMesh);
+
+        // 6 3D face handle gizmos (+X, -X, +Y, -Y, +Z, -Z)
+        const handleDefs: {
+          face: '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
+          pos: [number, number, number];
+          color: number;
+        }[] = [
+          { face: '+x', pos: [b.maxX + 0.85, cy, cz], color: 0xf43f5e },
+          { face: '-x', pos: [b.minX - 0.85, cy, cz], color: 0xf43f5e },
+          { face: '+y', pos: [cx, b.maxY + 1.35, cz], color: 0x22c55e },
+          { face: '-y', pos: [cx, b.minY - 0.35, cz], color: 0x22c55e },
+          { face: '+z', pos: [cx, cy, b.maxZ + 0.85], color: 0x3b82f6 },
+          { face: '-z', pos: [cx, cy, b.minZ - 0.85], color: 0x3b82f6 },
+        ];
+
+        const handleGeo = new THREE.OctahedronGeometry(
+          gizmoUnlocked ? 0.3 : 0.18,
+          0
+        );
+        for (const h of handleDefs) {
+          const hMat = new THREE.MeshStandardMaterial({
+            color: h.color,
+            emissive: h.color,
+            emissiveIntensity: gizmoUnlocked ? 0.65 : 0.2,
+            roughness: 0.2,
+            transparent: true,
+            opacity: gizmoUnlocked ? 0.95 : 0.45,
+          });
+          const hMesh = new THREE.Mesh(handleGeo, hMat);
+          hMesh.position.set(h.pos[0], h.pos[1], h.pos[2]);
+          hMesh.userData = {
+            isGizmoHandle: true,
+            face: h.face,
+          };
+          ctx.selectionGroup.add(hMesh);
+          ctx.gizmoHandles.push(hMesh);
+        }
       }
     }
 
@@ -774,6 +1039,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    disposeUnsharedGroupGeometries(ctx.collaboratorsGroup);
     while (ctx.collaboratorsGroup.children.length > 0) {
       ctx.collaboratorsGroup.remove(ctx.collaboratorsGroup.children[0]);
     }
@@ -792,14 +1058,45 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     requestRenderRef.current();
   };
 
-  // Shared zero-GC geometries for Spatial Copilot ghosts & symmetry planes (Pixel 8 Pro GPU optimization)
+  // Shared zero-GC geometries & materials for Spatial Copilot ghosts, symmetry planes, and steep-drop safety grids
   const sharedCopilotGeoRef = useRef<{
     boxGeo: THREE.BoxGeometry;
     boxEdges: THREE.EdgesGeometry;
     planeGeo: THREE.PlaneGeometry;
     planeEdges: THREE.EdgesGeometry;
     markerGeo: THREE.OctahedronGeometry;
+    steepDropTileGeo: THREE.PlaneGeometry;
+    steepDropGridGeo: THREE.BufferGeometry;
   } | null>(null);
+
+  const steepDropPulseMatsRef = useRef<{
+    fillMat: THREE.MeshBasicMaterial;
+    gridMat: THREE.LineBasicMaterial;
+  } | null>(null);
+  const activeSteepDropCountRef = useRef<number>(0);
+
+  const getSteepDropPulseMaterials = () => {
+    if (!steepDropPulseMatsRef.current) {
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: 0xef4444,
+        transparent: true,
+        opacity: 0.14,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      });
+      const gridMat = new THREE.LineBasicMaterial({
+        color: 0xf87171,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+      });
+      steepDropPulseMatsRef.current = { fillMat, gridMat };
+    }
+    return steepDropPulseMatsRef.current;
+  };
 
   const getSharedCopilotGeometries = () => {
     if (!sharedCopilotGeoRef.current) {
@@ -808,12 +1105,36 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       const planeGeo = new THREE.PlaneGeometry(36, 18);
       const planeEdges = new THREE.EdgesGeometry(planeGeo);
       const markerGeo = new THREE.OctahedronGeometry(0.28, 0);
+
+      // 0.92x0.92 horizontal safety tile + 2x2 internal grid cross for steepDropCoords
+      const steepDropTileGeo = new THREE.PlaneGeometry(0.92, 0.92);
+      steepDropTileGeo.rotateX(-Math.PI / 2);
+
+      const h = 0.46;
+      const gridVertices = new Float32Array([
+        // Outer square perimeter
+        -h, 0, -h,  h, 0, -h,
+         h, 0, -h,  h, 0,  h,
+         h, 0,  h, -h, 0,  h,
+        -h, 0,  h, -h, 0, -h,
+        // Inner 2x2 sub-grid cross lines
+        -h, 0,  0,  h, 0,  0,
+         0, 0, -h,  0, 0,  h,
+      ]);
+      const steepDropGridGeo = new THREE.BufferGeometry();
+      steepDropGridGeo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(gridVertices, 3)
+      );
+
       sharedCopilotGeoRef.current = {
         boxGeo,
         boxEdges,
         planeGeo,
         planeEdges,
         markerGeo,
+        steepDropTileGeo,
+        steepDropGridGeo,
       };
     }
     return sharedCopilotGeoRef.current;
@@ -824,6 +1145,17 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const ctx = sceneRefs.current;
     if (!ctx) return;
 
+    const shared = getSharedCopilotGeometries();
+    const sharedSet = new Set<THREE.BufferGeometry>([
+      shared.boxGeo,
+      shared.boxEdges,
+      shared.planeGeo,
+      shared.planeEdges,
+      shared.markerGeo,
+      shared.steepDropTileGeo,
+      shared.steepDropGridGeo,
+    ]);
+    disposeUnsharedGroupGeometries(ctx.copilotGroup, sharedSet);
     while (ctx.copilotGroup.children.length > 0) {
       ctx.copilotGroup.remove(ctx.copilotGroup.children[0]);
     }
@@ -836,8 +1168,6 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       activeCommandPreviewMode: cmdMode,
       walkabilityReport: walkRep,
     } = propsRef.current;
-
-    const shared = getSharedCopilotGeometries();
 
     // 1. Render Active 3D Symmetry Mirror Laser Plane(s)
     if (sym && sym.mode !== 'off' && sym.showPlaneGizmo) {
@@ -897,7 +1227,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       return;
     }
 
-    // 2. Render Copilot Predictive Ghost Auto-Complete Blocks (Press Tab to accept)
+    // 2. Render Copilot Predictive Ghost Auto-Complete Blocks (configured shortcut or HUD button)
     if (
       (!copCfg || copCfg.ghostAutoCompleteEnabled) &&
       preds &&
@@ -958,8 +1288,8 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       }
     }
 
-    // 4. Render Walkability Audit Markers (Headroom Pinch Points & Unlit Interior Spots)
-    if (copCfg?.showWalkabilityOverlays && walkRep) {
+    // 4. Render Walkability Audit Overlays (Steep Drop Red Grid Pulse, Headroom Pinch Points & Unlit Interior Spots)
+    if ((!copCfg || copCfg.showWalkabilityOverlays !== false) && walkRep) {
       const pinchMat = new THREE.MeshBasicMaterial({
         color: 0xf43f5e,
         transparent: true,
@@ -981,6 +1311,44 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         m.position.set(c.x, c.y + 0.5, c.z);
         ctx.copilotGroup.add(m);
       }
+
+      // Faint red pulsing grid overlay on steepDropCoords (>= 3 block ledge drop)
+      if (walkRep.steepDropCoords && walkRep.steepDropCoords.length > 0) {
+        const { fillMat, gridMat } = getSteepDropPulseMaterials();
+        const currentBlocks = propsRef.current.blocks;
+        const currentCustom = propsRef.current.customBlocks;
+
+        for (const c of walkRep.steepDropCoords) {
+          const blk = currentBlocks[`${c.x},${c.y},${c.z}`];
+          let blockHeight = 1.0;
+          if (blk) {
+            const def = currentCustom[blk.blockDefId];
+            if (def) {
+              const sy = blk.customScale?.y ?? def.defaultScale?.y ?? 1;
+              blockHeight = Math.max(0.15, (def.heightPlates / 3) * sy);
+            }
+          }
+          const topY = c.y + blockHeight + 0.018;
+
+          const tileMesh = new THREE.Mesh(shared.steepDropTileGeo, fillMat);
+          tileMesh.position.set(c.x, topY, c.z);
+          tileMesh.userData = { isSteepDropOverlay: true, coord: c };
+          ctx.copilotGroup.add(tileMesh);
+
+          const gridLines = new THREE.LineSegments(
+            shared.steepDropGridGeo,
+            gridMat
+          );
+          gridLines.position.set(c.x, topY + 0.002, c.z);
+          gridLines.userData = { isSteepDropOverlay: true, coord: c };
+          ctx.copilotGroup.add(gridLines);
+        }
+        activeSteepDropCountRef.current = walkRep.steepDropCoords.length;
+      } else {
+        activeSteepDropCountRef.current = 0;
+      }
+    } else {
+      activeSteepDropCountRef.current = 0;
     }
 
     requestRenderRef.current();
@@ -1023,6 +1391,8 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const initH = mount.clientHeight || window.innerHeight;
     renderer.setSize(initW, initH);
     renderer.domElement.style.touchAction = 'none';
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.setAttribute('aria-label', '3D build viewport. Camera and editing controls are also available in the workspace.');
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -1036,22 +1406,146 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
     pmremGenerator.dispose();
 
-    const camera = new THREE.PerspectiveCamera(48, initW / initH, 0.1, 250);
+    let camera: ViewportCamera = new THREE.PerspectiveCamera(48, initW / initH, 0.1, 250);
     camera.position.set(13, 12, 15);
     camera.lookAt(0, 1, 0);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1, 0);
-    controls.enableDamping = !isSoftwareGl;
-    controls.dampingFactor = 0.08;
-    controls.minDistance = 4;
-    controls.maxDistance = 65;
-    controls.maxPolarAngle = Math.PI * 0.85;
-    // Multi-touch 2-finger pinch-to-zoom & 2-finger pan gesture configuration
-    controls.touches = {
-      ONE: THREE.TOUCH.ROTATE,
-      TWO: THREE.TOUCH.DOLLY_PAN,
-    };
+    let navigationMode: ViewportNavigationMode = propsRef.current.freeLookActive ? 'fly' : 'orbit';
+    let explicitNavigationMode = false;
+    const cameraHistory: CameraBookmark[] = [];
+    const momentaryView = new MomentaryCameraView();
+    let previousExplicitNavigationMode = false;
+    const homeBookmark = captureCameraBookmark(camera, new THREE.Vector3(0, 1, 0), 'orbit');
+    const isFreeLook = () => navigationMode === 'fly';
+    let gestureEditScope = propsRef.current.editScope, hasScopedGesture = false;
+    const inputIsBlocked = () => propsRef.current.inputBlocked || hasOpenViewportModal(document)
+      || hasScopedGesture && gestureEditScope !== propsRef.current.editScope;
+    const aspect = () => Math.max(1, mount.clientWidth) / Math.max(1, mount.clientHeight);
+
+    function createControls(nextCamera: ViewportCamera, target = new THREE.Vector3(0, 1, 0)) {
+      const next = new OrbitControls(nextCamera, renderer.domElement);
+      next.target.copy(target);
+      next.enableDamping = !isSoftwareGl && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      next.dampingFactor = 0.08;
+      next.minDistance = 0.1;
+      next.maxDistance = Math.max(65, nextCamera.far * 0.8);
+      next.maxPolarAngle = Math.PI * 0.999;
+      next.zoomToCursor = true;
+      next.enableRotate = navigationMode === 'orbit' && nextCamera instanceof THREE.PerspectiveCamera;
+      next.mouseButtons.LEFT = navigationMode === 'pan' || nextCamera instanceof THREE.OrthographicCamera ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+      next.touches = { ONE: next.mouseButtons.LEFT === THREE.MOUSE.PAN ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+      next.enabled = !isFreeLook() && !inputIsBlocked();
+      next.addEventListener('change', requestRender);
+      return next;
+    }
+    let controls = createControls(camera);
+
+    function publishNavigationState() {
+      const state: ViewportNavigationState = { mode: navigationMode, projection: camera instanceof THREE.OrthographicCamera ? 'orthographic' : 'perspective', canGoBack: cameraHistory.length > 0 };
+      setNavigationState(state);
+      propsRef.current.onNavigationStateChange?.(state);
+    }
+
+    function rememberView(bookmark = captureCameraBookmark(camera, controls.target, navigationMode)) {
+      if (momentaryView.active) return;
+      cameraHistory.push(bookmark);
+      if (cameraHistory.length > 30) cameraHistory.shift();
+    }
+
+    function restoreView(bookmark: CameraBookmark) {
+      const autoRotate = controls.autoRotate;
+      const autoRotateSpeed = controls.autoRotateSpeed;
+      controls.removeEventListener('change', requestRender);
+      controls.dispose();
+      camera = cameraFromBookmark(bookmark, aspect());
+      navigationMode = bookmark.mode;
+      controls = createControls(camera, new THREE.Vector3().fromArray(bookmark.target));
+      controls.autoRotate = autoRotate && camera instanceof THREE.PerspectiveCamera;
+      controls.autoRotateSpeed = autoRotateSpeed;
+      const ctx = sceneRefs.current;
+      if (ctx) { ctx.camera = camera; ctx.controls = controls; ctx.syncYawPitchFromCamera(); }
+      requestRender();
+      publishNavigationState();
+    }
+
+    function switchNavigationMode(mode: ViewportNavigationMode) {
+      const bookmark = captureCameraBookmark(camera, controls.target, navigationMode);
+      bookmark.mode = mode;
+      if (mode !== 'pan' && bookmark.projection === 'orthographic') {
+        // Preserve apparent scale at the target when leaving an orthographic view.
+        const span = bookmark.verticalSpan / bookmark.zoom;
+        const distance = span / (2 * Math.tan(THREE.MathUtils.degToRad(48) / 2));
+        const direction = camera.position.clone().sub(controls.target).normalize();
+        bookmark.position = controls.target.clone().addScaledVector(direction, distance).toArray();
+        bookmark.up = [0, 1, 0];
+        bookmark.zoom = 1;
+        bookmark.projection = 'perspective';
+      }
+      restoreView(bookmark);
+      if (mode === 'fly') renderer.domElement.focus({ preventScroll: true });
+    }
+
+    function applyNavigationAction(action: ViewportNavigationAction, explicit = true) {
+      if (action === 'begin-look') {
+        if (momentaryView.active || inputIsBlocked()) return;
+        cancelAllInput();
+        momentaryView.begin(captureCameraBookmark(camera, controls.target, navigationMode));
+        previousExplicitNavigationMode = explicitNavigationMode;
+        explicitNavigationMode = true;
+        switchNavigationMode('fly');
+        return;
+      }
+      if (action === 'end-look') {
+        const previous = momentaryView.end();
+        if (!previous) return; // Includes a coalesced press/release whose begin never applied.
+        cancelAllInput();
+        explicitNavigationMode = previousExplicitNavigationMode;
+        restoreView(previous);
+        return;
+      }
+      if (explicit) momentaryView.cancel(); // A stale release cannot undo a newer explicit action.
+      if (action === 'frame-selection' && (!propsRef.current.pos1 || !propsRef.current.pos2)) return;
+      cancelAllInput();
+      if (action === 'orbit' || action === 'pan' || action === 'fly') explicitNavigationMode = explicit;
+      if (action === navigationMode && (action === 'pan' || camera instanceof THREE.PerspectiveCamera)) return;
+      if (action === 'previous') {
+        const previous = cameraHistory.pop();
+        if (previous) restoreView(previous);
+        return;
+      }
+      if (isCameraStepAction(action)) {
+        const next = stepCameraBookmark(captureCameraBookmark(camera, controls.target, navigationMode), action, aspect());
+        if (next) { rememberView(); restoreView(next); }
+        return;
+      }
+      rememberView();
+      if (action === 'home') { restoreView(homeBookmark); return; }
+      if (action === 'orbit' || action === 'pan' || action === 'fly') {
+        switchNavigationMode(action);
+        return;
+      }
+      const bookmark = captureCameraBookmark(camera, controls.target, navigationMode);
+      let bounds = computeWorldCameraBounds(propsRef.current.blocks, propsRef.current.customBlocks);
+      if (action === 'frame-selection') {
+        const a = propsRef.current.pos1!; const b = propsRef.current.pos2!;
+        bounds = new THREE.Box3(new THREE.Vector3(Math.min(a.x, b.x) - 0.5, Math.min(a.y, b.y), Math.min(a.z, b.z) - 0.5), new THREE.Vector3(Math.max(a.x, b.x) + 0.5, Math.max(a.y, b.y) + 1, Math.max(a.z, b.z) + 0.5));
+      }
+      const fit = computeCameraFrame(bounds, aspect());
+      let direction = camera.position.clone().sub(controls.target).normalize();
+      if (direction.lengthSq() < 0.001) direction.set(1, 1, 1).normalize();
+      if (action === 'top' || action === 'front' || action === 'side') {
+        bookmark.projection = 'orthographic';
+        bookmark.mode = 'orbit';
+        bookmark.up = action === 'top' ? [0, 0, -1] : [0, 1, 0];
+        direction = action === 'top' ? new THREE.Vector3(0, 1, 0) : action === 'front' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+      }
+      bookmark.position = fit.center.clone().addScaledVector(direction, fit.distance).toArray();
+      bookmark.target = fit.center.toArray();
+      bookmark.verticalSpan = fit.verticalSpan;
+      bookmark.zoom = 1; bookmark.near = fit.near; bookmark.far = fit.far;
+      restoreView(bookmark);
+    }
+    navigationActionRef.current = applyNavigationAction;
 
     // 3. Balanced 3-Point Studio & Skyblock Lighting Rig
     const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x334155, 0.85);
@@ -1220,7 +1714,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       gridHelper,
       groundPlane,
       gizmoHandles: [],
-      interactables: [groundPlane],
+      interactables: [],
       hoveredCoord: { x: 0, y: 1, z: 0 },
       wandNextCorner: 1,
       maxAnisotropy,
@@ -1279,13 +1773,11 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     }
 
     requestRenderRef.current = requestRender;
-    controls.addEventListener('change', requestRender);
 
     // Pre-allocated raycaster & pointer math (Zero-GC)
     const raycaster = new THREE.Raycaster();
     const pointerNdc = new THREE.Vector2();
     const downPixel = new THREE.Vector2();
-    let downTimestamp = 0;
     let lastRaycastTime = 0;
     const lastFreeLookPointer = { x: 0, y: 0, active: false };
 
@@ -1325,37 +1817,42 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         }
       }
 
-      const hits = raycaster.intersectObjects(ctx.interactables, false);
-      if (hits.length === 0) return { coord: null };
-
-      const hit = hits[0];
-      const obj = hit.object;
-
-      if (obj.userData.isPlacedBlock && obj.userData.gridCoord) {
-        const baseCoord: GridCoord = obj.userData.gridCoord;
-        if (forModifyExisting) {
-          return { coord: { ...baseCoord } };
+      // 1. Always raycast against placed blocks FIRST so groundPlane at y=0 never blocks blocks at y < 0 or y = 0!
+      const blockHits = raycaster.intersectObjects(ctx.interactables, false);
+      if (blockHits.length > 0) {
+        const hit = blockHits[0];
+        const obj = hit.object;
+        if (obj.userData.isPlacedBlock && obj.userData.gridCoord) {
+          const baseCoord: GridCoord = obj.userData.gridCoord;
+          if (forModifyExisting) {
+            return { coord: { ...baseCoord } };
+          }
+          const normal = hit.face?.normal
+            ? hit.face.normal.clone().transformDirection(obj.matrixWorld)
+            : new THREE.Vector3(0, 1, 0);
+          const stepX = Math.round(normal.x);
+          const stepY = Math.round(normal.y);
+          const stepZ = Math.round(normal.z);
+          const blockH = obj.userData.blockHeight || 1;
+          return {
+            coord: {
+              x: baseCoord.x + stepX,
+              y: baseCoord.y + (stepY > 0 ? blockH : stepY),
+              z: baseCoord.z + stepZ,
+            },
+          };
         }
-        const normal = hit.face?.normal
-          ? hit.face.normal.clone().transformDirection(obj.matrixWorld)
-          : new THREE.Vector3(0, 1, 0);
-        const stepX = Math.round(normal.x);
-        const stepY = Math.round(normal.y);
-        const stepZ = Math.round(normal.z);
-        const blockH = obj.userData.blockHeight || 1;
-        return {
-          coord: {
-            x: baseCoord.x + stepX,
-            y: baseCoord.y + (stepY > 0 ? blockH : stepY),
-            z: baseCoord.z + stepZ,
-          },
-        };
       }
 
-      if (obj.userData.isGroundPlane) {
-        const gx = Math.round(hit.point.x);
-        const gz = Math.round(hit.point.z);
-        return { coord: { x: gx, y: 0, z: gz } };
+      // 2. Fallback to groundPlane ONLY when placing/hovering in open air (never when erasing/painting/picking existing blocks)
+      if (!forModifyExisting) {
+        const groundHits = raycaster.intersectObject(ctx.groundPlane, false);
+        if (groundHits.length > 0) {
+          const gHit = groundHits[0];
+          const gx = Math.round(gHit.point.x);
+          const gz = Math.round(gHit.point.z);
+          return { coord: { x: gx, y: 0, z: gz } };
+        }
       }
 
       return { coord: null };
@@ -1371,9 +1868,9 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       gizmoFace?: '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
       gizmoWorldPos?: THREE.Vector3;
     } {
-      const { freeLookActive: isFreeLook, hotkeyConfig: hk } = propsRef.current;
+      const { hotkeyConfig: hk } = propsRef.current;
       // In Free-Look Fly Builder mode with Crosshair Aim enabled, aim directly from screen center (0, 0)
-      if (isFreeLook && hk.flight.crosshairCenterAim !== false) {
+      if (isFreeLook() && hk.flight.crosshairCenterAim !== false) {
         return computeTargetCoordFromNdc(0, 0, forModifyExisting, allowGizmoHit);
       }
 
@@ -1416,6 +1913,35 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     let isStylusStrokeActive = false;
     let lastStrokeCoordKey = '';
     let isPanningCamera = false;
+    const gestures = new ViewportGestureTracker();
+    let gestureView: CameraBookmark | null = null;
+    let cancellingInput = false;
+    let composingInput = false;
+
+    function cancelAllInput() {
+      if (cancellingInput) return;
+      cancellingInput = true;
+      const ids = gestures.ids();
+      gestures.cancel();
+      hasScopedGesture = false;
+      gestureView = null;
+      activeGizmoDrag = null;
+      isStylusStrokeActive = false;
+      isPanningCamera = false;
+      lastStrokeCoordKey = '';
+      lastFreeLookPointer.active = false;
+      clearFlightInput();
+      // Public reconnect resets OrbitControls' internal pointer list after cancellation.
+      controls.disconnect();
+      controls.connect(renderer.domElement);
+      for (const id of ids) {
+        if (renderer.domElement.hasPointerCapture(id)) renderer.domElement.releasePointerCapture(id);
+      }
+      controls.enabled = !isFreeLook() && !inputIsBlocked();
+      propsRef.current.onPanningOrDrawingChange?.(false);
+      cancellingInput = false;
+    }
+    cancelInputRef.current = cancelAllInput;
 
     // 3D Selection Gizmo Node Drag State (Hold modifier key + drag node to stretch/shrink selection face)
     let activeGizmoDrag: {
@@ -1469,6 +1995,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       e: PointerEvent,
       sCfg: StylusModeConfig
     ) {
+      if (inputIsBlocked() || composingInput || navigationMode === 'pan') return;
       const cKey = `${coord.x},${coord.y},${coord.z}`;
       if (cKey === lastStrokeCoordKey) return;
       lastStrokeCoordKey = cKey;
@@ -1529,9 +2056,20 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     const onPointerMove = (e: PointerEvent) => {
       const ctx = sceneRefs.current;
       if (!ctx) return;
+      if (inputIsBlocked() || composingInput || (gestures.size === 0 && isViewportUiTarget(document.activeElement))) {
+        cancelAllInput();
+        e.stopPropagation();
+        return;
+      }
+      gestures.move(e.pointerId, e.clientX, e.clientY);
+      if (gestures.owner(e.pointerId) === 'camera' && gestureView) {
+        rememberView(gestureView);
+        gestureView = null;
+        publishNavigationState();
+      }
 
       // Handle Continuous 3D Dragging of Selection Face Nodes (+X, -X, +Y, -Y, +Z, -Z)
-      if (activeGizmoDrag) {
+      if (activeGizmoDrag && gestures.owner(e.pointerId) === 'gizmo') {
         const dragDx = e.clientX - activeGizmoDrag.startClientX;
         const dragDy = e.clientY - activeGizmoDrag.startClientY;
         const projectedPx =
@@ -1591,10 +2129,10 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         }
       }
 
-      const { freeLookActive: isFreeLook, hotkeyConfig: hk } = propsRef.current;
+      const { hotkeyConfig: hk } = propsRef.current;
 
       // Free-Look Fly Builder Mode: Mouse movement rotates camera yaw & pitch like an invisible flying 3D character
-      if (isFreeLook && !isStylusStrokeActive) {
+      if (isFreeLook() && !isStylusStrokeActive) {
         let moveX = 0;
         let moveY = 0;
         if (document.pointerLockElement === renderer.domElement) {
@@ -1681,31 +2219,25 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         }
 
         // Continuous Stylus Stroke Painting / Sculpting along the dragged path
-        if (isStylusStrokeActive && sCfg.continuousStroke && e.buttons > 0) {
+        if (isStylusStrokeActive && gestures.owner(e.pointerId) === 'stylus' && sCfg.continuousStroke && e.buttons > 0) {
           executeStylusStrokeActionAt(coord, e, sCfg);
         }
       }
     };
 
-    const onPointerLeave = () => {
+    const onPointerLeave = (e: PointerEvent) => {
       lastFreeLookPointer.active = false;
-      if (activeGizmoDrag) {
-        activeGizmoDrag = null;
-        if (!propsRef.current.freeLookActive) {
-          controls.enabled = true;
-        }
-      }
-      if (isStylusStrokeActive || isPanningCamera) {
-        isStylusStrokeActive = false;
-        isPanningCamera = false;
-        lastStrokeCoordKey = '';
-        propsRef.current.onPanningOrDrawingChange?.(false);
-      }
+      if (gestures.owner(e.pointerId) && !renderer.domElement.hasPointerCapture(e.pointerId)) cancelAllInput();
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      if (inputIsBlocked() || composingInput) {
+        cancelAllInput();
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
       downPixel.set(e.clientX, e.clientY);
-      downTimestamp = performance.now();
       lastStrokeCoordKey = '';
 
       const sCfg = propsRef.current.stylusConfig || DEFAULT_STYLUS_MODE_CONFIG;
@@ -1737,9 +2269,29 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         const isRecentPen = performance.now() - lastPenTimestamp < 450;
         if (isStylusStrokeActive || isRecentPen || isLargePalmContact) {
           e.preventDefault();
-          e.stopPropagation();
+          e.stopImmediatePropagation();
           return;
         }
+      }
+
+      renderer.domElement.focus({ preventScroll: true });
+      if (!gestures.size) {
+        gestureView = captureCameraBookmark(camera, controls.target, navigationMode);
+        gestureEditScope = propsRef.current.editScope;
+        hasScopedGesture = true;
+      }
+      const cameraOnly = navigationMode === 'pan' || e.button === 1 || e.ctrlKey || e.metaKey;
+      gestures.begin(e.pointerId, e.clientX, e.clientY, cameraOnly ? 'camera' : 'edit');
+      try { renderer.domElement.setPointerCapture(e.pointerId); } catch { /* Browser may have cancelled the pointer already. */ }
+      if (gestures.size > 1) {
+        activeGizmoDrag = null;
+        isStylusStrokeActive = false;
+        controls.enabled = !isFreeLook();
+        return;
+      }
+      if (navigationMode === 'pan' || e.button === 1) {
+        controls.enabled = true;
+        return;
       }
 
       // Check if user is holding Selection Gizmo modifier key (or Ctrl) and grabbing a 3D Selection Face Node
@@ -1751,6 +2303,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
           true
         );
         if (gizmoCheck.gizmoFace && gizmoCheck.gizmoWorldPos) {
+          gestures.claim(e.pointerId, 'gizmo');
           beginGizmoFaceDrag(
             gizmoCheck.gizmoFace,
             gizmoCheck.gizmoWorldPos,
@@ -1769,6 +2322,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         pType === 'touch' && sCfg.touchOrbitsInStylusMode;
 
       if (stylusActive && !isOrbitBarrel && !isFingerOrbitInStylusMode) {
+        gestures.claim(e.pointerId, 'stylus');
         isStylusStrokeActive = true;
         controls.enabled = false;
         propsRef.current.onPanningOrDrawingChange?.(true);
@@ -1795,13 +2349,20 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         if (coord) {
           executeStylusStrokeActionAt(coord, e, sCfg);
         }
-      } else if (!propsRef.current.freeLookActive) {
-        controls.enabled = true;
+      } else {
+        if (isOrbitBarrel || isFingerOrbitInStylusMode) gestures.claim(e.pointerId, 'camera');
+        controls.enabled = !isFreeLook();
       }
     };
 
     const onPointerUp = (e: PointerEvent) => {
-      if (activeGizmoDrag) {
+      if (inputIsBlocked() || composingInput) { cancelAllInput(); return; }
+      const owner = gestures.finish(e.pointerId, e.clientX, e.clientY);
+      if (!gestures.size) hasScopedGesture = false;
+      if (!owner) return; // A release after cancellation, or outside-origin gesture, cannot edit.
+      if (owner === 'camera' && gestureView) { rememberView(gestureView); publishNavigationState(); }
+      if (!gestures.size) gestureView = null;
+      if (activeGizmoDrag && owner === 'gizmo') {
         const dragTravel = Math.hypot(
           e.clientX - activeGizmoDrag.startClientX,
           e.clientY - activeGizmoDrag.startClientY
@@ -1814,7 +2375,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
           );
         }
         activeGizmoDrag = null;
-        if (!propsRef.current.freeLookActive) {
+        if (!isFreeLook()) {
           controls.enabled = true;
         }
         return;
@@ -1828,22 +2389,14 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       if (isStylusStrokeActive) {
         isStylusStrokeActive = false;
         lastStrokeCoordKey = '';
-        if (!propsRef.current.freeLookActive) {
+        if (!isFreeLook()) {
           controls.enabled = true;
         }
         propsRef.current.onPanningOrDrawingChange?.(false);
         return;
       }
 
-      const dx = e.clientX - downPixel.x;
-      const dy = e.clientY - downPixel.y;
-      const dtClick = performance.now() - downTimestamp;
-      const isFreeLook = propsRef.current.freeLookActive;
-
-      // In Studio Pan mode, ignore camera orbit drags (> 6px travel).
-      // In Free-Look mode, allow clicks even with slight mouse look movement (< 24px or < 260ms).
-      if (!isFreeLook && Math.hypot(dx, dy) > 6) return;
-      if (isFreeLook && Math.hypot(dx, dy) > 24 && dtClick > 260) return;
+      if (owner !== 'edit' || (e.button !== 0 && e.button !== 2)) return;
 
       const ctx = sceneRefs.current;
       if (!ctx) return;
@@ -1906,7 +2459,13 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     // 3. Otherwise Shift + Wheel -> Resizes the Active Block Scale (Snap or Free mode)!
     // 4. In Free-Look mode without modifiers -> Flies forward/backward along look ray.
     const onWheel = (e: WheelEvent) => {
+      if (inputIsBlocked() || composingInput || isViewportUiTarget(document.activeElement)) {
+        e.preventDefault(); e.stopImmediatePropagation(); return;
+      }
       const dir: 1 | -1 = e.deltaY < 0 ? 1 : -1;
+
+      // Explicit pan reserves wheel modifiers for navigation.
+      if (navigationMode === 'pan') return;
 
       if (
         (propsRef.current.isSelectionGizmoActive || e.ctrlKey) &&
@@ -1944,7 +2503,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         return;
       }
 
-      if (!propsRef.current.freeLookActive) return;
+      if (!isFreeLook()) return;
       e.preventDefault();
       const ctx = sceneRefs.current;
       if (!ctx) return;
@@ -1957,10 +2516,14 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     };
 
     const canvasEl = renderer.domElement;
-    canvasEl.addEventListener('pointermove', onPointerMove);
+    const onPointerCancel = () => cancelAllInput();
+    const onLostPointerCapture = (e: PointerEvent) => { if (gestures.owner(e.pointerId)) cancelAllInput(); };
+    canvasEl.addEventListener('pointermove', onPointerMove, true);
     canvasEl.addEventListener('pointerleave', onPointerLeave);
-    canvasEl.addEventListener('pointerdown', onPointerDown);
-    canvasEl.addEventListener('pointerup', onPointerUp);
+    canvasEl.addEventListener('pointerdown', onPointerDown, true);
+    canvasEl.addEventListener('pointerup', onPointerUp, true);
+    canvasEl.addEventListener('pointercancel', onPointerCancel);
+    canvasEl.addEventListener('lostpointercapture', onLostPointerCapture);
     canvasEl.addEventListener('wheel', onWheel, {
       passive: false,
       capture: true,
@@ -1978,31 +2541,30 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     let lastFlightTime = performance.now();
     let lastSpaceDownTime = 0;
 
-    function isInputElementFocused(target: EventTarget | null): boolean {
-      const el = target as HTMLElement | null;
-      if (!el) return false;
-      if (
-        el.tagName === 'INPUT' ||
-        el.tagName === 'TEXTAREA' ||
-        el.tagName === 'SELECT' ||
-        el.isContentEditable
-      ) {
-        return true;
-      }
-      // Also ignore if a modal dialog is open
-      if (document.querySelector('[role="dialog"]')) {
-        return true;
-      }
-      return false;
+    function clearFlightInput() {
+      pressedFlightActions.clear();
+      flightVelocity.set(0, 0, 0);
+      targetVelocity.set(0, 0, 0);
+      clearTimeout(flightTickId);
+      flightTickId = 0;
+      lastSpaceDownTime = 0;
+    }
+
+    function keyboardFlightEnabled() {
+      return camera instanceof THREE.PerspectiveCamera && (isFreeLook() || (!explicitNavigationMode && propsRef.current.flyMode));
     }
 
     function stepFlightLoop() {
       flightTickId = 0;
+      if (inputIsBlocked() || composingInput || document.hidden || isViewportUiTarget(document.activeElement) || !keyboardFlightEnabled()) {
+        clearFlightInput();
+        return;
+      }
       const now = performance.now();
       const dt = Math.min(0.08, Math.max(0.004, (now - lastFlightTime) / 1000));
       lastFlightTime = now;
 
-      const { hotkeyConfig: hk, freeLookActive: isFreeLook } = propsRef.current;
+      const { hotkeyConfig: hk } = propsRef.current;
       const baseSpeed = 11.5 * (hk.flight.flySpeed || 1.0);
       const sprintMult = pressedFlightActions.has('sprint') ? 2.15 : 1.0;
       const speed = baseSpeed * sprintMult;
@@ -2046,7 +2608,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       if (flightVelocity.lengthSq() > 0.0005) {
         camera.position.addScaledVector(flightVelocity, dt);
         controls.target.addScaledVector(flightVelocity, dt);
-        if (isFreeLook && hk.flight.crosshairCenterAim !== false) {
+        if (isFreeLook() && hk.flight.crosshairCenterAim !== false) {
           updateCenterCrosshairAim();
         }
         requestRender();
@@ -2073,8 +2635,13 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     }
 
     const onFlightKeyDown = (e: KeyboardEvent) => {
-      if (isInputElementFocused(e.target)) return;
-      if (e.metaKey || (e.ctrlKey && e.key.toLowerCase() === 'z')) return;
+      if (shouldIgnoreViewportKeyboard(e) || inputIsBlocked() || composingInput || isViewportUiTarget(document.activeElement)) {
+        clearFlightInput();
+        return;
+      }
+      // Browser/app command chords own modified letters; never fly on Ctrl/Cmd+S.
+      if (e.metaKey || (e.ctrlKey && !matchesKeyBinding(e, propsRef.current.hotkeyConfig.bindings.sprintFly))) return;
+      if (e.key === 'Escape') { cancelAllInput(); return; }
 
       const { bindings, flight } = propsRef.current.hotkeyConfig;
 
@@ -2094,7 +2661,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       }
 
       // Allow WASD flight when either flyMode is ON or Free-Look Fly Builder is active
-      if (!propsRef.current.flyMode && !propsRef.current.freeLookActive) {
+      if (!keyboardFlightEnabled()) {
         return;
       }
 
@@ -2159,19 +2726,27 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     };
 
     const onWindowBlur = () => {
-      pressedFlightActions.clear();
-      lastFreeLookPointer.active = false;
+      cancelAllInput();
     };
+    const onVisibilityChange = () => { if (document.hidden) cancelAllInput(); };
+    const onFocusIn = (e: FocusEvent) => { if (isViewportUiTarget(e.target) || inputIsBlocked()) cancelAllInput(); };
+    const onCompositionStart = () => { composingInput = true; cancelAllInput(); };
+    const onCompositionEnd = () => { composingInput = false; };
+    const onPointerLockChange = () => { if (document.pointerLockElement !== canvasEl) cancelAllInput(); };
 
     window.addEventListener('keydown', onFlightKeyDown);
     window.addEventListener('keyup', onFlightKeyUp);
     window.addEventListener('blur', onWindowBlur);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('compositionstart', onCompositionStart);
+    document.addEventListener('compositionend', onCompositionEnd);
+    document.addEventListener('pointerlockchange', onPointerLockChange);
 
     const resizeObserver = new ResizeObserver(() => {
       const w = mount.clientWidth || window.innerWidth;
       const h = mount.clientHeight || window.innerHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+      resizeViewportCamera(camera, w / h);
       renderer.setSize(w, h);
       if (controls.enabled) {
         controls.update();
@@ -2192,6 +2767,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     }
     controls.update();
     renderer.render(scene, camera);
+    publishNavigationState();
 
     // WebGL Context-Loss & Automatic Recovery Listeners (iOS/Android backgrounding resilience)
     const onWebglContextLost = (ev: Event) => {
@@ -2210,7 +2786,32 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     canvasEl.addEventListener('webglcontextlost', onWebglContextLost);
     canvasEl.addEventListener('webglcontextrestored', onWebglContextRestored);
 
+    activeViewportBridge = {
+      getRenderer: () => rendererRef.current,
+      getScene: () => scene,
+      getCamera: () => sceneRefs.current?.camera ?? camera,
+      rebuildPlacedBlocks: () => {
+        rebuildPlacedBlocks();
+        rebuildChunkGrids();
+        rebuildGhostMesh();
+        rebuildSelectionGizmos();
+        rebuildCopilotOverlays();
+        rebuildCollaborators();
+      },
+      renderNow: () => {
+        if (controls.enabled) controls.update();
+        renderer.render(scene, sceneRefs.current?.camera ?? camera);
+      },
+      getSteepDropTelemetry: () => ({
+        count: activeSteepDropCountRef.current,
+        pulseOpacity: Number(
+          (steepDropPulseMatsRef.current?.gridMat.opacity ?? 0).toFixed(3)
+        ),
+      }),
+    };
+
     return () => {
+      activeViewportBridge = null;
       cancelAnimationFrame(frameId);
       clearTimeout(frameId);
       clearTimeout(flightTickId);
@@ -2219,14 +2820,26 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
       window.removeEventListener('keydown', onFlightKeyDown);
       window.removeEventListener('keyup', onFlightKeyUp);
       window.removeEventListener('blur', onWindowBlur);
-      canvasEl.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('compositionstart', onCompositionStart);
+      document.removeEventListener('compositionend', onCompositionEnd);
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
+      canvasEl.removeEventListener('pointermove', onPointerMove, true);
       canvasEl.removeEventListener('pointerleave', onPointerLeave);
-      canvasEl.removeEventListener('pointerdown', onPointerDown);
-      canvasEl.removeEventListener('pointerup', onPointerUp);
+      canvasEl.removeEventListener('pointerdown', onPointerDown, true);
+      canvasEl.removeEventListener('pointerup', onPointerUp, true);
+      canvasEl.removeEventListener('pointercancel', onPointerCancel);
+      canvasEl.removeEventListener('lostpointercapture', onLostPointerCapture);
       canvasEl.removeEventListener('wheel', onWheel, true);
       canvasEl.removeEventListener('webglcontextlost', onWebglContextLost);
       canvasEl.removeEventListener('webglcontextrestored', onWebglContextRestored);
       controls.dispose();
+      navigationActionRef.current = () => {};
+      cancelInputRef.current = () => {};
+      requestRenderRef.current = () => {};
+      lastNavigationRequestId.current = null;
+      sceneRefs.current = null;
       renderer.dispose();
       rendererRef.current = null;
       if (mount.contains(canvasEl)) {
@@ -2269,17 +2882,25 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     }
   }, [snapshotTriggerCount, worldName]);
 
-  // Synchronize OrbitControls vs. Free-Look Fly Builder camera state when mode toggles
+  // Legacy props remain adapters to the same navigation owner.
   useEffect(() => {
-    const ctx = sceneRefs.current;
-    if (!ctx) return;
-    ctx.syncYawPitchFromCamera();
-    ctx.controls.enabled = !freeLookActive;
-    if (freeLookActive && hotkeyConfig.flight.crosshairCenterAim !== false) {
-      ctx.updateCenterCrosshairAim();
+    if (navigationRequest) {
+      previousLegacyFreeLook.current = freeLookActive;
+      return;
     }
-    requestRenderRef.current();
-  }, [freeLookActive, hotkeyConfig.flight.crosshairCenterAim]);
+    if (previousLegacyFreeLook.current !== freeLookActive) {
+      previousLegacyFreeLook.current = freeLookActive;
+      navigationActionRef.current(freeLookActive ? 'fly' : 'orbit', false);
+    }
+  }, [freeLookActive, navigationRequest]);
+
+  useEffect(() => {
+    if (!navigationRequest || navigationRequest.id === lastNavigationRequestId.current) return;
+    lastNavigationRequestId.current = navigationRequest.id;
+    navigationActionRef.current(navigationRequest.action);
+  }, [navigationRequest]);
+
+  useEffect(() => { cancelInputRef.current(); }, [inputBlocked, editScope]);
 
   useEffect(() => {
     rebuildPlacedBlocks();
@@ -2309,17 +2930,46 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
 
   useEffect(() => {
     rebuildSelectionGizmos();
-  }, [pos1, pos2, isSelectionGizmoActive]);
+  }, [pos1, pos2, toolMode, isSelectionGizmoActive, activeCommandPreviewMode]);
 
   useEffect(() => {
     rebuildCopilotOverlays();
   }, [
+    blocks,
     symmetryConfig,
     copilotConfig,
     copilotPredictions,
     commandPreviewCoords,
     activeCommandPreviewMode,
     walkabilityReport,
+  ]);
+
+  // Faint Red Grid Pulse Animation for Walkability Steep-Drop Hazard Overlays
+  useEffect(() => {
+    const steepCount = walkabilityReport?.steepDropCoords?.length ?? 0;
+    const overlaysActive =
+      (!copilotConfig ||
+        (copilotConfig.enabled !== false &&
+          copilotConfig.showWalkabilityOverlays !== false)) &&
+      steepCount > 0;
+
+    if (!overlaysActive) return;
+
+    const mats = getSteepDropPulseMaterials();
+    const intervalMs = isSoftwareGlRef.current ? 180 : 60;
+    const timerId = window.setInterval(() => {
+      const t = performance.now() * 0.004;
+      const wave = 0.5 + 0.5 * Math.sin(t);
+      mats.fillMat.opacity = 0.08 + wave * 0.11; // Faint red fill pulse (0.08 .. 0.19)
+      mats.gridMat.opacity = 0.28 + wave * 0.36; // Crisp red grid pulse (0.28 .. 0.64)
+      requestRenderRef.current();
+    }, intervalMs);
+
+    return () => window.clearInterval(timerId);
+  }, [
+    copilotConfig?.enabled,
+    copilotConfig?.showWalkabilityOverlays,
+    walkabilityReport?.steepDropCoords?.length,
   ]);
 
   useEffect(() => {
@@ -2392,24 +3042,14 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
   }, [showGrid, daylightMode, lightingConfig]);
 
   useEffect(() => {
-    const ctx = sceneRefs.current;
-    if (!ctx || cameraPreset === 'free') return;
-    if (cameraPreset === 'isometric') {
-      ctx.camera.position.set(13, 12, 15);
-    } else if (cameraPreset === 'top') {
-      ctx.camera.position.set(0, 22, 0.01);
-    } else if (cameraPreset === 'front') {
-      ctx.camera.position.set(0, 5, 18);
-    }
-    ctx.controls.target.set(0, 1, 0);
-    ctx.controls.update();
-    ctx.syncYawPitchFromCamera();
+    if (cameraPreset === 'free') return;
+    navigationActionRef.current(cameraPreset === 'isometric' ? 'home' : cameraPreset, false);
     onCameraPresetHandled();
-    requestRenderRef.current();
   }, [cameraPreset]);
 
   const toggleKeyLabel = formatKeyCode(hotkeyConfig.bindings.toggleMouseLookMode);
   const holdKeyLabel = formatKeyCode(hotkeyConfig.bindings.holdMouseLookMode);
+  const ghostShortcut = ghostShortcutHint(hotkeyConfig.bindings.acceptCopilotGhost);
   const gizmoHoldKeyLabel = formatKeyCode(
     hotkeyConfig.bindings.holdSelectionGizmo || 'KeyN'
   );
@@ -2420,6 +3060,12 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
     <div
       className="relative w-full h-full select-none overflow-hidden"
       onDragOver={(e) => {
+        if (inputBlocked || hasOpenViewportModal(e.currentTarget.ownerDocument)) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = 'none';
+          return;
+        }
         if (
           e.dataTransfer.types.includes(STUDIO_DRAG_MIME) ||
           e.dataTransfer.types.includes('text/plain')
@@ -2429,27 +3075,14 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         }
       }}
       onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const raw =
           e.dataTransfer.getData(STUDIO_DRAG_MIME) ||
           e.dataTransfer.getData('text/plain');
-        const payload = parseStudioDragPayload(raw);
-        if (!payload) return;
-        e.preventDefault();
-        if (payload.type === 'block' && payload.targetId && onSelectBlockId) {
-          onSelectBlockId(payload.targetId);
-        } else if (
-          payload.type === 'tool' &&
-          payload.targetId &&
-          onSelectToolMode
-        ) {
-          onSelectToolMode(payload.targetId as ToolMode);
-        } else if (
-          payload.type === 'command' &&
-          payload.targetId &&
-          onRunRecommendedCommand
-        ) {
-          onRunRecommendedCommand(payload.targetId);
-        }
+        dispatchViewportDrop(raw, inputBlocked, e.currentTarget.ownerDocument, {
+          selectBlock: onSelectBlockId, selectTool: onSelectToolMode, runCommand: onRunRecommendedCommand,
+        });
       }}
     >
       {/* Dedicated WebGL Mount Container */}
@@ -2457,7 +3090,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         ref={canvasMountRef}
         data-testid="skyblock-3d-canvas"
         className={`w-full h-full ${
-          freeLookActive ? 'cursor-crosshair' : 'cursor-default'
+          navigationState.mode === 'fly' ? 'cursor-crosshair' : navigationState.mode === 'pan' ? 'cursor-grab' : 'cursor-default'
         }`}
         onContextMenu={(e) => e.preventDefault()}
       />
@@ -2498,23 +3131,40 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
               : 'opacity-100'
           }`}
         >
+        {/* Re-open Left Paint & Blocks Toolbox inline button when closed */}
+        {!isLeftToolboxOpen && onOpenLeftToolbox && (
+          <button
+            type="button"
+            data-testid="viewport-reopen-left-toolbox-btn"
+            onClick={onOpenLeftToolbox}
+            className="px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-semibold text-[11px] whitespace-nowrap shrink-0"
+            title="Open Left Paint & Block Library Dock"
+          >
+            Blocks
+          </button>
+        )}
+
         <button
           type="button"
           data-testid="viewport-mouse-mode-toggle"
-          onClick={onToggleMouseLookMode}
+          onClick={() => {
+            const nextFly = navigationState.mode !== 'fly';
+            navigationActionRef.current(nextFly ? 'fly' : 'orbit');
+            if (freeLookActive !== nextFly) onToggleMouseLookMode();
+          }}
           className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-            freeLookActive
+            navigationState.mode === 'fly'
               ? 'bg-emerald-500 text-slate-950'
               : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
           }`}
           title="Switch between Large-Scale Studio Pan/Zoom and Minecraft Free-Look Fly Builder"
         >
           <span>
-            {freeLookActive
+            {navigationState.mode === 'fly'
               ? isHoldingFreeLook
                 ? 'Mouse: Free-Look Fly (Held)'
                 : 'Mouse: Free-Look Fly Builder'
-              : 'Mouse: Studio Pan & Zoom'}
+              : navigationState.mode === 'pan' ? 'Mouse: Pan only' : navigationState.projection === 'orthographic' ? 'Mouse: Orthographic build' : 'Mouse: Studio Orbit & Zoom'}
           </span>
         </button>
 
@@ -2717,23 +3367,38 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
           </div>
         )}
 
-        {/* Selection Nodes Hold-to-Drag / Unlock Indicator when Pos1 & Pos2 exist */}
-        {pos1 && pos2 && onToggleSelectionGizmoLock && (
-          <button
-            type="button"
-            data-testid="selection-gizmo-lock-toggle"
-            onClick={onToggleSelectionGizmoLock}
-            title={`Hold ${gizmoHoldKeyLabel} (or Ctrl) to drag 3D Selection Nodes & Scroll-Resize Selection, or click to toggle unlock`}
-            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors ${
-              isSelectionGizmoActive
-                ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
-                : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-slate-200'
-            }`}
-          >
-            {isSelectionGizmoActive
-              ? 'Nodes: Drag & Scroll Active'
-              : `Hold ${gizmoHoldKeyLabel}: Drag Nodes`}
-          </button>
+        {/* Selection Nodes Hold-to-Drag / Unlock Indicator & Clear Selection when Pos1 or Pos2 exist */}
+        {(pos1 || pos2) && (
+          <div className="flex items-center gap-1 pl-1.5 border-l border-slate-800 shrink-0">
+            {pos1 && pos2 && onToggleSelectionGizmoLock && (
+              <button
+                type="button"
+                data-testid="selection-gizmo-lock-toggle"
+                onClick={onToggleSelectionGizmoLock}
+                title={`Hold ${gizmoHoldKeyLabel} (or Ctrl) to drag 3D Selection Nodes & Scroll-Resize Selection, or click to toggle unlock`}
+                className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors ${
+                  isSelectionGizmoActive
+                    ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
+                    : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                {isSelectionGizmoActive
+                  ? 'Nodes: Drag & Scroll Active'
+                  : `Hold ${gizmoHoldKeyLabel}: Drag Nodes`}
+              </button>
+            )}
+            {onClearSelection && (
+              <button
+                type="button"
+                data-testid="clear-selection-btn"
+                onClick={onClearSelection}
+                title="Clear Pos1 & Pos2 Wand Selection Box (Shortcut: Esc)"
+                className="px-1.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-[10px] font-mono font-bold whitespace-nowrap"
+              >
+                Clear Sel
+              </button>
+            )}
+          </div>
         )}
 
         {/* Live Symmetry Mirror Toggle Button (V) */}
@@ -2769,6 +3434,40 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
           </button>
         )}
 
+        {/* Steep Drop Spatial Safety Grid Pulse Toggle */}
+        {walkabilityReport && walkabilityReport.steepDropCoords.length > 0 && (
+          <button
+            type="button"
+            data-testid="viewport-steep-drop-toggle"
+            onClick={() => {
+              if (copilotConfig && onChangeCopilotConfig) {
+                onChangeCopilotConfig({
+                  ...copilotConfig,
+                  enabled: true,
+                  showWalkabilityOverlays:
+                    !copilotConfig.showWalkabilityOverlays,
+                });
+              }
+            }}
+            className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold whitespace-nowrap border transition-colors shrink-0 flex items-center gap-1 ${
+              !copilotConfig || copilotConfig.showWalkabilityOverlays !== false
+                ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-rose-400/50'
+            }`}
+            title="Toggle 3D Steep-Drop Red Grid Pulse Overlay (Highlights >=3 block ledges identified by Walkability Audit)"
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                !copilotConfig ||
+                copilotConfig.showWalkabilityOverlays !== false
+                  ? 'bg-rose-400'
+                  : 'bg-slate-600'
+              }`}
+            />
+            <span>Drops: {walkabilityReport.steepDropCoords.length}</span>
+          </button>
+        )}
+
         {/* Quick UI Rescale & Stylus Settings Button */}
         {onOpenAdaptiveSettings && (
           <button
@@ -2781,10 +3480,23 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
             UI & Stylus
           </button>
         )}
+
+        {/* Re-open Right Inspector inline button when closed */}
+        {!isRightInspectorOpen && onOpenRightInspector && (
+          <button
+            type="button"
+            data-testid="viewport-reopen-right-inspector-btn"
+            onClick={onOpenRightInspector}
+            className="px-2 py-0.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-semibold text-[11px] whitespace-nowrap shrink-0"
+            title="Open Right Command Legend & Studio Inspector Dock"
+          >
+            Inspector
+          </button>
+        )}
         </div>
       </DraggableHudOverlay>
 
-      {/* Lightweight Local Spatial Copilot Bar: Self-Learning Ghost Auto-Complete (Tab), Object Class Mapping, Linger Removal Feedback, Auto-Symmetry, & Selection Command Previews */}
+      {/* Lightweight Local Spatial Copilot Bar: Ghost Auto-Complete, Object Class Mapping, Linger Removal Feedback, Auto-Symmetry, & Selection Command Previews */}
       {(!copilotConfig || copilotConfig.enabled) &&
         ((detectedSymmetry &&
           symmetryConfig?.mode === 'off' &&
@@ -2822,17 +3534,17 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
               </span>
             )}
 
-            {/* 1. One-Tap Accept Predictive Ghost Auto-Complete (Tab) with Learned Reason */}
+            {/* 1. One-Tap Accept Predictive Ghost Auto-Complete with configured shortcut */}
             {copilotPredictions.length > 0 && onAcceptCopilotPredictions && (
               <button
                 type="button"
                 data-testid="copilot-accept-ghost-btn"
                 onClick={onAcceptCopilotPredictions}
                 className="px-2.5 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1.5 shadow-sm"
-                title="Accept predicted 3D block run (Keyboard shortcut: Tab)"
+                title={`Accept predicted 3D block run. ${ghostShortcut.description}`}
               >
                 <span>
-                  Accept +{copilotPredictions.length} Ghost Run (Tab)
+                  Accept +{copilotPredictions.length} Ghost Run ({ghostShortcut.label})
                 </span>
                 <span className="px-1 py-0.2 rounded bg-slate-950/20 text-[9px] font-mono uppercase">
                   {copilotPredictions[0].reason === 'learned_archive_habit'
@@ -2930,7 +3642,7 @@ export const SkyblockViewport: React.FC<SkyblockViewportProps> = ({
         )}
 
       {/* Center 3D Crosshair Reticle when Free-Look Fly Builder Mode is active */}
-      {freeLookActive && hotkeyConfig.flight.crosshairCenterAim !== false && (
+      {navigationState.mode === 'fly' && hotkeyConfig.flight.crosshairCenterAim !== false && (
         <div
           data-testid="freelook-crosshair"
           aria-hidden="true"
