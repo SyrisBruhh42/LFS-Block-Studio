@@ -274,7 +274,15 @@ export async function exportSceneToGltfJson(
 ): Promise<string> {
   const exportScene = new THREE.Scene();
   const createdGroups: THREE.Group[] = [];
-  for (const blk of Object.values(blocks)) {
+
+  const sortedBlocks = Object.values(blocks).sort((a, b) => {
+    if (a.position.x !== b.position.x) return a.position.x - b.position.x;
+    if (a.position.y !== b.position.y) return a.position.y - b.position.y;
+    if (a.position.z !== b.position.z) return a.position.z - b.position.z;
+    return a.blockDefId.localeCompare(b.blockDefId);
+  });
+
+  for (const blk of sortedBlocks) {
     const def = customBlocks[blk.blockDefId];
     if (!def) continue;
     const group = buildBlockMeshGroup({
@@ -390,7 +398,12 @@ export function exportToGltfJson(
   blocks: Record<string, PlacedBlock>,
   customBlocks: Record<string, CustomBlockDefinition>
 ): string {
-  const placedList = Object.values(blocks);
+  const placedList = Object.values(blocks).sort((a, b) => {
+    if (a.position.x !== b.position.x) return a.position.x - b.position.x;
+    if (a.position.y !== b.position.y) return a.position.y - b.position.y;
+    if (a.position.z !== b.position.z) return a.position.z - b.position.z;
+    return a.blockDefId.localeCompare(b.blockDefId);
+  });
 
   // Build unit cube geometry (24 vertices with normals + 36 uint16 indices)
   const positions = new Float32Array([
