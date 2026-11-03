@@ -472,6 +472,7 @@ export function syncSelfTestReportToIssueTracker(
     ux_ergonomics_input_ownership: 'UI_OVERLAP',
     balance_copilot_progression: 'BALANCE_PROGRESSION',
     legal_ip_export_fidelity: 'IP_COMPLIANCE',
+    webgl_memory_context_invariants: 'WEBGL_TELEMETRY_GUARD',
   };
 
   for (const suite of report.suites) {

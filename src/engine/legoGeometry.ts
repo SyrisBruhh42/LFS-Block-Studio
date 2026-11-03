@@ -15,7 +15,7 @@ import { AtlasCellCoord, ConnectedArtMode } from './chunkAndPatternEngine';
 
 const STUD_RADIUS = 0.24;
 const STUD_HEIGHT = 0.12;
-const sharedStudGeo = new THREE.CylinderGeometry(
+export const sharedStudGeo = new THREE.CylinderGeometry(
   STUD_RADIUS,
   STUD_RADIUS,
   STUD_HEIGHT,

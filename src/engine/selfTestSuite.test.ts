@@ -8,6 +8,7 @@ import {
   runUxErgonomicsAndInputOwnershipAudit,
   runBalanceCopilotAndProgressionAudit,
   runLegalIpAndExportFidelityAudit,
+  runWebglMemoryAndContextInvariantsAudit,
 } from './selfTestSuite';
 
 test('Suite 1: Command & Bounds Fuzzer passes all adversarial assertions', () => {
@@ -82,9 +83,21 @@ test('Suite 6: Legal, IP & Export Fidelity Audit verifies glTF 2.0 meshes and tr
   assert.equal(report.failedCount, 0);
 });
 
-test('Master SelfTestSuiteReport aggregates all 6 suites with 0 failures', () => {
+test('Suite 7: WebGL Memory & Context Invariants Audit verifies proper disposal and shared geo preservation', () => {
+  const report = runWebglMemoryAndContextInvariantsAudit();
+  for (const a of report.assertions) {
+    assert.equal(
+      a.passed,
+      true,
+      `[${a.id}] ${a.title} failed: ${a.actualSummary} (${a.assertionDiff || ''})`
+    );
+  }
+  assert.equal(report.failedCount, 0);
+});
+
+test('Master SelfTestSuiteReport aggregates all 7 suites with 0 failures', () => {
   const master = runAllSelfTests();
   assert.equal(master.allPassed, true);
   assert.equal(master.totalFailed, 0);
-  assert.equal(master.suites.length, 6);
+  assert.equal(master.suites.length, 7);
 });

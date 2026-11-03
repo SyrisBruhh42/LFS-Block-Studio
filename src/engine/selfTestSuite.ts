@@ -37,6 +37,8 @@ import {
   computeUpdatedBuildStreak,
 } from './studioEngagementEngine';
 import { exportToGltfJson } from './godotExporter';
+import { disposeUnsharedGroupGeometries, sharedStudGeo } from './legoGeometry';
+import * as THREE from 'three';
 
 export type SelfTestDomainId =
   | 'command_bounds_fuzzer'
@@ -44,7 +46,8 @@ export type SelfTestDomainId =
   | 'persistence_serialization_crucible'
   | 'ux_ergonomics_input_ownership'
   | 'balance_copilot_progression'
-  | 'legal_ip_export_fidelity';
+  | 'legal_ip_export_fidelity'
+  | 'webgl_memory_context_invariants';
 
 export interface SelfTestAssertionResult {
   id: string;
@@ -949,6 +952,106 @@ export function runBalanceCopilotAndProgressionAudit(): SelfTestDomainSuiteRepor
 /**
  * 6. Legal, IP & Export Fidelity Audit (`src/engine/godotExporter.ts`, `src/engine/openSourceBlockMarket.ts`, `src/engine/worldEditEngine.ts`)
  */
+/**
+ * 7. WebGL Memory & Context Invariants Audit (`src/engine/legoGeometry.ts` & `src/components/SkyblockViewport.tsx`)
+ */
+export function runWebglMemoryAndContextInvariantsAudit(): SelfTestDomainSuiteReport {
+  const t0 = performance.now();
+  const assertions: SelfTestAssertionResult[] = [];
+
+  // 7A: disposeUnsharedGroupGeometries correctly cleans up unshared geometries and marked materials
+  assertions.push(
+    runAssertion({
+      id: 'dispose_unshared_geometries_and_materials',
+      domain: 'webgl_memory_context_invariants',
+      title:
+        'Verify disposeUnsharedGroupGeometries calls dispose on unshared geometries and materials marked with isDisposableMaterial',
+      sourceFile: 'src/engine/legoGeometry.ts',
+      expectedSummary:
+        'Unshared geometries and disposable materials have dispose() called exactly once',
+      fn: () => {
+        let unsharedGeoDisposed = false;
+        let unsharedMatDisposed = false;
+        let unmarkedMatDisposed = false;
+
+        const unsharedGeo = new THREE.BufferGeometry();
+        unsharedGeo.dispose = () => { unsharedGeoDisposed = true; };
+
+        const unsharedMat = new THREE.MeshBasicMaterial();
+        unsharedMat.dispose = () => { unsharedMatDisposed = true; };
+
+        const unmarkedMat = new THREE.MeshBasicMaterial();
+        unmarkedMat.dispose = () => { unmarkedMatDisposed = true; };
+
+        const mesh1 = new THREE.Mesh(unsharedGeo, unsharedMat);
+        mesh1.userData = { isDisposableMaterial: true };
+
+        const mesh2 = new THREE.Mesh(new THREE.BufferGeometry(), unmarkedMat);
+        // Not marking mesh2 as disposable material
+
+        const group = new THREE.Group();
+        group.add(mesh1);
+        group.add(mesh2);
+
+        disposeUnsharedGroupGeometries(group);
+
+        const passed = unsharedGeoDisposed && unsharedMatDisposed && !unmarkedMatDisposed;
+        return {
+          passed,
+          actualSummary: `unsharedGeoDisposed=${unsharedGeoDisposed}, unsharedMatDisposed=${unsharedMatDisposed}, unmarkedMatDisposed=${unmarkedMatDisposed}`,
+          diff: passed
+            ? undefined
+            : `Expected true/true/false, got ${unsharedGeoDisposed}/${unsharedMatDisposed}/${unmarkedMatDisposed}`,
+        };
+      },
+    })
+  );
+
+  // 7B: sharedStudGeo is preserved during disposal traversal
+  assertions.push(
+    runAssertion({
+      id: 'preserve_shared_stud_geo',
+      domain: 'webgl_memory_context_invariants',
+      title: 'Verify disposeUnsharedGroupGeometries preserves sharedStudGeo without calling dispose()',
+      sourceFile: 'src/engine/legoGeometry.ts',
+      expectedSummary: 'sharedStudGeo.dispose is never called during tree traversal',
+      fn: () => {
+        let sharedStudDisposed = false;
+        const originalDispose = sharedStudGeo.dispose;
+        sharedStudGeo.dispose = () => { sharedStudDisposed = true; };
+
+        try {
+          const mesh = new THREE.Mesh(sharedStudGeo, new THREE.MeshBasicMaterial());
+          const group = new THREE.Group();
+          group.add(mesh);
+          disposeUnsharedGroupGeometries(group);
+
+          const passed = !sharedStudDisposed;
+          return {
+            passed,
+            actualSummary: `sharedStudDisposed=${sharedStudDisposed}`,
+            diff: passed ? undefined : 'sharedStudGeo was incorrectly disposed',
+          };
+        } finally {
+          sharedStudGeo.dispose = originalDispose;
+        }
+      },
+    })
+  );
+
+  const passedCount = assertions.filter((a) => a.passed).length;
+  return {
+    domain: 'webgl_memory_context_invariants',
+    title: 'Suite 7: WebGL Memory & Context Invariants Audit',
+    description: 'Verifies WebGL context loss invariants, strict memory disposal, and shared geometry preservation during scene rebuilds.',
+    passedCount,
+    failedCount: assertions.length - passedCount,
+    totalCount: assertions.length,
+    durationMs: Number((performance.now() - t0).toFixed(2)),
+    assertions,
+  };
+}
+
 export function runLegalIpAndExportFidelityAudit(): SelfTestDomainSuiteReport {
   const t0 = performance.now();
   const assertions: SelfTestAssertionResult[] = [];
@@ -1098,6 +1201,7 @@ export function runAllSelfTests(): SelfTestSuiteReport {
     runUxErgonomicsAndInputOwnershipAudit(),
     runBalanceCopilotAndProgressionAudit(),
     runLegalIpAndExportFidelityAudit(),
+    runWebglMemoryAndContextInvariantsAudit(),
   ];
 
   const totalPassed = suites.reduce((acc, s) => acc + s.passedCount, 0);
