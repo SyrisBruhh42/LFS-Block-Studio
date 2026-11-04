@@ -54,7 +54,7 @@
     {
       "name": "clear selection is undoable and never invents a region for a later edit",
       "ok": false,
-      "error": "AssertionError [ERR_ASSERTION]: Clearing selection must disable selection export\n\nfalse !== true\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/java-export-workflow.mjs:117:10"
+      "error": "AssertionError [ERR_ASSERTION]: Clearing selection must disable selection export\n\nfalse !== true\n\n    at file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/java-export-workflow.mjs:117:10"
     }
   ],
   "errors": [],

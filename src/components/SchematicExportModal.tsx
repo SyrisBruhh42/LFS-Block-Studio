@@ -10,6 +10,7 @@ import {
   exportSpongeSchematicJson,
 } from '../engine/schematicExporter';
 import {
+  exportToBlockbenchModelJson,
   exportToGltfJson,
   exportToGodotScript,
   exportToGodotTscn,
@@ -50,7 +51,8 @@ type ExportFormatTab =
   | 'ldraw'
   | 'godot_tscn'
   | 'godot_gd'
-  | 'gltf';
+  | 'gltf'
+  | 'bbmodel';
 
 /** A locked Java project never mounts the independent heuristic/AI draft mapper. */
 export const SchematicExportModal: React.FC<SchematicExportModalProps> = props => {
@@ -124,6 +126,7 @@ const LegacySchematicExportModal: React.FC<SchematicExportModalProps & { exportC
       else if (activeFormat === 'ldraw') output = exportBrickLDraw(worldName, blocks, customBlocks, mappingByBlockId);
       else if (activeFormat === 'godot_tscn') output = exportToGodotTscn(worldName, blocks, customBlocks);
       else if (activeFormat === 'godot_gd') output = exportToGodotScript(worldName, blocks, customBlocks);
+      else if (activeFormat === 'bbmodel') output = exportToBlockbenchModelJson(worldName, blocks, customBlocks);
       else output = exportToGltfJson(worldName, blocks, customBlocks);
       return { output: boundLegacyExportText(output), error: null };
     } catch (error) {
@@ -137,7 +140,8 @@ const LegacySchematicExportModal: React.FC<SchematicExportModalProps & { exportC
     ldraw: 'Approximate brick draft using two part shapes. It does not preserve the complete studio geometry or materials.',
     godot_tscn: 'Generated Godot scene draft. Geometry, materials and native loading have not been independently qualified.',
     godot_gd: 'Generated Godot script draft. Review before running; native behaviour has not been independently qualified.',
-    gltf: 'Embedded glTF 2.0 unit-cube mesh & PBR material draft with per-node customScale. Detailed brick studs and custom profile cutouts are simplified to unit boxes.',
+    gltf: 'Deterministic glTF 2.0 3D mesh & PBR material draft with per-node customScale, bone rig hierarchy, and animation channels.',
+    bbmodel: 'Blockbench 3D model (.bbmodel) draft containing cube mesh elements, 6-face UV skins, bone hierarchy rig (outliner), and keyframe animation tracks.',
   };
 
   if (!isOpen) return null;
@@ -203,6 +207,12 @@ const LegacySchematicExportModal: React.FC<SchematicExportModalProps & { exportC
         `${safeSlug}_builder.gd`,
         previewOutput,
         'text/plain'
+      );
+    } else if (activeFormat === 'bbmodel') {
+      triggerDownloadFile(
+        `${safeSlug}.bbmodel`,
+        previewOutput,
+        'application/json'
       );
     } else {
       triggerDownloadFile(
@@ -427,7 +437,11 @@ const LegacySchematicExportModal: React.FC<SchematicExportModalProps & { exportC
                     },
                     {
                       id: 'gltf',
-                      label: 'Layout JSON (no mesh)',
+                      label: 'glTF 2.0 Mesh / Rig',
+                    },
+                    {
+                      id: 'bbmodel',
+                      label: 'Blockbench Model (.bbmodel)',
                     },
                   ] as const
                 ).map((tab) => (

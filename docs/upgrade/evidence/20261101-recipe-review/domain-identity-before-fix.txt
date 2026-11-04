@@ -103,16 +103,16 @@ ok 20 - source change cancels delayed preparation and unavailable write authorit
 not ok 21 - recipes can build at a former coordinate without duplicating a cell ID moved by precise editing
   ---
   duration_ms: 1.495594
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:14775'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:14775'
   failureType: 'testCodeFailure'
   error: 'Recipe command 1 of 1 was rejected: Duplicate block ID. No prepared edit was committed.'
   code: 'command-failed'
   name: 'StudioRecipeError'
   stack: |-
-    prepareStudioRecipe (/home/joe/Projects/LFS-Block-Studio-upgrade/src/engine/studioRecipe.ts:124:27)
-    reviewStudioRecipe (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.ts:69:22)
-    review (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:22:49)
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:94:151)
+    prepareStudioRecipe ($HOME/Projects/LFS-Block-Studio-upgrade/src/engine/studioRecipe.ts:124:27)
+    reviewStudioRecipe ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.ts:69:22)
+    review ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:22:49)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:94:151)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)
@@ -124,7 +124,7 @@ not ok 21 - recipes can build at a former coordinate without duplicating a cell 
 not ok 22 - deleting and rebuilding an anchor creates a new identity while command moves preserve the moved identity
   ---
   duration_ms: 5.140035
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:15217'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:15217'
   failureType: 'testCodeFailure'
   error: |-
     Expected "actual" to be strictly unequal to:
@@ -136,7 +136,7 @@ not ok 22 - deleting and rebuilding an anchor creates a new identity while comma
   actual: 'blk_0_1_0'
   operator: 'notStrictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:97:303)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:97:303)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...

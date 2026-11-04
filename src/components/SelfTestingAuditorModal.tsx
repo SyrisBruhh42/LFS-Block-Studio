@@ -881,7 +881,7 @@ export const SelfTestingAuditorModal: React.FC<SelfTestingAuditorModalProps> = (
                                     : 'text-rose-400'
                                 }
                               >
-                                {assertion.passed ? '✓' : '✗'}
+                                {assertion.passed ? '\u{2713}' : '\u{2717}'}
                               </span>
                               {assertion.title}
                             </span>

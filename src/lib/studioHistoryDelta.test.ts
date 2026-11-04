@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { captureStudioHistoryDelta, applyStudioHistoryDelta } from './studioHistoryDelta';
 
-const capture = (a: unknown, b: unknown, bytes = 65536) => captureStudioHistoryDelta(a, b, 'Test 🧱', bytes);
+const capture = (a: unknown, b: unknown, bytes = 65536) => captureStudioHistoryDelta(a, b, 'Test \u{1F9F1}', bytes);
 function roundtrip(a: unknown, b: unknown) {
   const before = JSON.stringify(a), after = JSON.stringify(b), delta = capture(a, b);
   const redone = applyStudioHistoryDelta(a, delta.payload, 'redo'), undone = applyStudioHistoryDelta(b, delta.payload, 'undo');
@@ -14,16 +14,16 @@ function roundtrip(a: unknown, b: unknown) {
 
 test('nested changes retain exact absence, null, false, zero, empty objects and Unicode without mutating inputs', () => {
   roundtrip({ keep: { zero: 0 }, remove: false, optional: null, array: [{ name: 'old' }] },
-    { keep: { zero: 0 }, added: false, optional: {}, array: [{ name: 'Ω🌿', nested: null }], zero: 0 });
+    { keep: { zero: 0 }, added: false, optional: {}, array: [{ name: 'Ω\u{1F33F}', nested: null }], zero: 0 });
   for (const [a, b] of [[null, []], [{ a: 1 }, []], [[], {}], [[], [false]], [[null], []], [{ a: null }, {}], [false, 0]]) roundtrip(a, b);
 });
 
 test('array insertion, removal, replacement and same-length nested changes roundtrip with unchanged prefix/suffix', () => {
-  const prefix = { id: 1, values: [false, '🧱'] }, suffix = { id: 9 };
+  const prefix = { id: 1, values: [false, '\u{1F9F1}'] }, suffix = { id: 9 };
   for (const [a, b] of [
     [[], [prefix]], [[prefix], []], [[prefix, suffix], [prefix, null, suffix]],
     [[prefix, null, suffix], [prefix, suffix]], [[prefix, { old: true }, suffix], [prefix, { next: true }, false, suffix]],
-    [[prefix, suffix], [{ ...prefix, values: ['new', '🧱'] }, suffix]],
+    [[prefix, suffix], [{ ...prefix, values: ['new', '\u{1F9F1}'] }, suffix]],
     [[{ a: 1, b: 2 }], [{ b: 2, a: 1 }, null]],
   ]) roundtrip(a, b);
 });
@@ -44,8 +44,8 @@ test('retention scales with the change, including array append and an unchanged 
 });
 
 test('encoded byte budget includes both endpoints, UTF-8, escaping and the label; exact fit succeeds', () => {
-  const a = { text: 'Ω🌿\n\t' }, b = { text: '🧱'.repeat(8) }, delta = capture(a, b);
-  assert.equal(delta.bytes, Buffer.byteLength(delta.payload) + Buffer.byteLength('Test 🧱') + 64);
+  const a = { text: 'Ω\u{1F33F}\n\t' }, b = { text: '\u{1F9F1}'.repeat(8) }, delta = capture(a, b);
+  assert.equal(delta.bytes, Buffer.byteLength(delta.payload) + Buffer.byteLength('Test \u{1F9F1}') + 64);
   assert.deepEqual(capture(a, b, delta.bytes), delta);
   assert.throws(() => capture(a, b, delta.bytes - 1), /Undo history change limit/);
   assert.throws(() => capture({ text: 'x'.repeat(10_000_000) }, {}, 1024), /Undo history change limit/);
@@ -89,7 +89,7 @@ test('deterministic mixed JSON sequences reverse and replay against full-state s
     switch (n % 6) {
       case 0: next.cells[index] = { name: `Ω-${i}`, rotation: n % 4 }; break;
       case 1: delete next.cells[index]; next.text = `removed-${i}`; break;
-      case 2: next.list.splice(next.list.length ? n % next.list.length : 0, 0, { index: i, text: '🌿' }); break;
+      case 2: next.list.splice(next.list.length ? n % next.list.length : 0, 0, { index: i, text: '\u{1F33F}' }); break;
       case 3: next.list = next.list.slice(1); next.text = `shift-${i}`; break;
       case 4: if (i % 2) delete next.optional; else next.optional = [null, false, { i }]; next.text = `option-${i}`; break;
       case 5: next.text = `renamed-${i}`; break;

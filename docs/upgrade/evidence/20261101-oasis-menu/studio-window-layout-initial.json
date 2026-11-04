@@ -13,7 +13,7 @@
     "Mounted real window/HUD components and real mouse/keyboard tasks; selected cancellation/secondary-pointer events are synthetic. No physical touch/pen, assistive-technology or full accessibility acceptance.",
     "App project/history/export invariants are qualified separately on a frozen application build. No provider requests or normal browser/user storage."
   ],
-  "error": "locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('layout-a').getByRole('button', { name: 'Window layout for Window A', exact: true })\u001b[22m\n\n    at layout (/home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:49:16)\n    at /home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:58:23\n    at async run (/home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:54:60)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:56:2",
+  "error": "locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('layout-a').getByRole('button', { name: 'Window layout for Window A', exact: true })\u001b[22m\n\n    at layout ($HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:49:16)\n    at $HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:58:23\n    at async run ($HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:54:60)\n    at async file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:56:2",
   "sourceAfter": {
     "../../src/components/DraggableWindow.tsx": "f65a1caffaceae774d34e057dc5d104548adcc70dfd6f2842bc6625896be7bd3",
     "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",

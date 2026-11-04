@@ -1,0 +1,11 @@
+--- src/engine/legoGeometry.ts
++++ src/engine/legoGeometry.ts
+@@ -15,7 +15,7 @@
+   heightMap: Map<string, number>;
+ }
+ 
+-const sharedStudGeo = new THREE.CylinderGeometry(
++export const sharedStudGeo = new THREE.CylinderGeometry(
+   0.25,
+   0.25,
+   0.2,

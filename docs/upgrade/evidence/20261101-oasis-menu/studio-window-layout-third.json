@@ -19,7 +19,7 @@
     "Mounted real window/HUD components and real mouse/keyboard tasks; selected cancellation/secondary-pointer events are synthetic. No physical touch/pen, assistive-technology or full accessibility acceptance.",
     "App project/history/export invariants are qualified separately on a frozen application build. No provider requests or normal browser/user storage."
   ],
-  "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-window-id=\"layout-a\"]').getByRole('form', { name: 'Window layout controls for Window A' }).getByRole('status').filter({ hasText: 'positive dimensions' }) to be visible\u001b[22m\n\n    at /home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:66:202\n    at async run (/home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:54:60)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:65:2",
+  "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-window-id=\"layout-a\"]').getByRole('form', { name: 'Window layout controls for Window A' }).getByRole('status').filter({ hasText: 'positive dimensions' }) to be visible\u001b[22m\n\n    at $HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:66:202\n    at async run ($HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:54:60)\n    at async file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:65:2",
   "sourceAfter": {
     "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
     "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",

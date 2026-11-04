@@ -43,7 +43,7 @@
   "failure": {
     "stage": "reviewed kit import preserves the original first and applies the exact decoded library and notices once",
     "message": "The input did not match the regular expression /^4 Undo steps · 0 Redo steps$/. Input:\n\n''\n",
-    "stack": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^4 Undo steps · 0 Redo steps$/. Input:\n\n''\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/resource-workspace.mjs:68:47"
+    "stack": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^4 Undo steps · 0 Redo steps$/. Input:\n\n''\n\n    at file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/resource-workspace.mjs:68:47"
   },
   "finishedAt": "2026-11-02T00:16:59.047Z"
 }

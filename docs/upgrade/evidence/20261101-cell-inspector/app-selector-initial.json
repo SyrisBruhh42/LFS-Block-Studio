@@ -23,7 +23,7 @@
   "failure": {
     "stage": "reviewed position, type, rotation and scale apply in one step with stable identity and complete Undo/Redo",
     "message": "locator.getAttribute: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('complementary', { name: 'Cell properties', exact: true }).locator('details').filter({ has: getByRole('complementary', { name: 'Cell properties', exact: true }).getByText('Scale and appearance', { exact: true }) })\u001b[22m\n",
-    "stack": "locator.getAttribute: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('complementary', { name: 'Cell properties', exact: true }).locator('details').filter({ has: getByRole('complementary', { name: 'Cell properties', exact: true }).getByText('Scale and appearance', { exact: true }) })\u001b[22m\n\n    at advanced (/home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:39:139)\n    at /home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:54:188"
+    "stack": "locator.getAttribute: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('complementary', { name: 'Cell properties', exact: true }).locator('details').filter({ has: getByRole('complementary', { name: 'Cell properties', exact: true }).getByText('Scale and appearance', { exact: true }) })\u001b[22m\n\n    at advanced ($HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:39:139)\n    at $HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:54:188"
   },
   "finishedAt": "2026-11-01T21:44:49.435Z"
 }

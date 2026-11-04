@@ -128,7 +128,7 @@ ok 25 - a validated project above the history allowance remains editable with sm
 not ok 26 - mixed domain history follows full-state snapshots through trimming, branching, arrays and both directions
   ---
   duration_ms: 71.029613
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.test.ts:1:21219'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.test.ts:1:21219'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -141,8 +141,8 @@ not ok 26 - mixed domain history follows full-state snapshots through trimming, 
   actual: 'noop'
   operator: 'strictEqual'
   stack: |-
-    applied (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.test.ts:19:61)
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.test.ts:345:17)
+    applied ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.test.ts:19:61)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.test.ts:345:17)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)

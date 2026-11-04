@@ -236,7 +236,7 @@ test('history byte budget evicts only older entries and rejects an unretainable 
 });
 
 test('history bytes include multibyte Unicode payload and both stacks', () => {
-  const doc = document(); doc.world.description = '界😀'.repeat(100);
+  const doc = document(); doc.world.description = '界\u{1F600}'.repeat(100);
   let state = apply(session(doc), place()); state = apply(state, place(1)); state = apply(state, { type: 'undo' });
   const independent = [...state.undoStack, ...state.redoStack].reduce((total, frame) => total
     + Buffer.byteLength(frame.authoredJson, 'utf8') + Buffer.byteLength(JSON.stringify({ label: frame.label,

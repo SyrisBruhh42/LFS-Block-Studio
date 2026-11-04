@@ -64,7 +64,7 @@
   "failure": {
     "stage": "shared Oasis preferences and native keyboard reflow preserve source at 320 CSS pixels and 200 percent text",
     "message": "Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}",
-    "stack": "AssertionError [ERR_ASSERTION]: Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/recipe-workspace.mjs:78:363"
+    "stack": "AssertionError [ERR_ASSERTION]: Focused recipe control clipped: 6 {\"x\":33,\"y\":617.84375,\"width\":254,\"height\":406.3125}\n    at file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/recipe-workspace.mjs:78:363"
   },
   "finishedAt": "2026-11-01T22:43:27.591Z"
 }

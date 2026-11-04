@@ -34,7 +34,7 @@ npm run build
 
 ## 3. Zero-Trust Secret Vaulting (`ZT-1`)
 
-No API keys are committed to `firebase-applet-config.json` (`"apiKey": "VAULT_INJECTED_AT_RUNTIME"`). At runtime, `server.ts` and `src/lib/firebase.ts` resolve credentials from `~/.config/lfs-oasis/secrets.env` (`LFS_FIREBASE_API_KEY`, `GEMINI_API_KEY`) or process environment variables, falling back cleanly to 100% offline local IndexedDB mode when unconfigured.
+No API keys are committed to `firebase-applet-config.json` (`"apiKey": "SCRUBBED_BY_OASIS_GUILDER"`). At runtime, `server.ts` and `src/lib/firebase.ts` resolve credentials from `~/.config/lfs-oasis/secrets.env` (`LFS_FIREBASE_API_KEY`, `GEMINI_API_KEY`) or process environment variables, falling back cleanly to 100% offline local IndexedDB mode when unconfigured.
 <!-- lfs-steward:auto-zone:end -->
 
 <!-- lfs-cmi-lockdown:begin v1 -->

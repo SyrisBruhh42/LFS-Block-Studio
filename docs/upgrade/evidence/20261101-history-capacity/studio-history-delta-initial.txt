@@ -28,7 +28,7 @@ ok 5 - wrong endpoints/container shapes reject rather than silently applying a p
 not ok 6 - malformed history paths, sparse-array requests and unsupported kinds fail without prototype mutation
   ---
   duration_ms: 1.559511
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:1:3041'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:1:3041'
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /history/. Input:
@@ -41,19 +41,19 @@ not ok 6 - malformed history paths, sparse-array requests and unsupported kinds 
   actual:
   error: 'History cannot create a sparse array.'
   stack: |-
-    visit (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.ts:100:73)
-    applyStudioHistoryDelta (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.ts:115:18)
-    <anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:66:45)
+    visit ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.ts:100:73)
+    applyStudioHistoryDelta ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.ts:115:18)
+    <anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:66:45)
     getActual (node:assert:840:5)
     Function.throws (node:assert:986:24)
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:66:32)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:66:32)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)
     Test.postRun (node:internal/test_runner/test:1090:19)
   operator: 'throws'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:66:32)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioHistoryDelta.test.ts:66:32)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)

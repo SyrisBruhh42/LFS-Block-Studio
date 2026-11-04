@@ -275,9 +275,9 @@ test('malformed objects, array holes, accessors and decorators do not become sil
 });
 
 test('Unicode name uses Java modified UTF-8 with a literal emoji byte oracle', async () => {
-  const { bytes } = await encodeJavaSchematic({ ...airBox(), name: 'Aé中😀' });
+  const { bytes } = await encodeJavaSchematic({ ...airBox(), name: 'Aé中\u{1F600}' });
   const { raw, schematic } = decode(bytes);
-  assert.equal(schematic.Metadata.value.Name.value, 'Aé中😀');
+  assert.equal(schematic.Metadata.value.Name.value, 'Aé中\u{1F600}');
   // TAG_String Name: 12 encoded bytes; supplementary character encoded as two surrogate triples.
   assert.ok(raw.includes(Buffer.from('0800044e616d65000c41c3a9e4b8adeda0bdedb880', 'hex')));
   for (const name of ['', ' ', 'a\0b', 'line\nbreak', '\ud800', '\udc00', '\ud800x', 'x'.repeat(257)]) rejected({ ...airBox(), name });

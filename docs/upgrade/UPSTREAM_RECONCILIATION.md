@@ -4,10 +4,10 @@ Updated **2026-11-01**. Full semantic convergence between `codex/studio-upgrades
 
 ## Identities & Recovery Archive
 
-- **Pre-convergence archive**: `/home/joe/.local/share/lfs-oasis/adopted-projects/backups/lfs-block-studio-pre-convergence-20261101.tar.zst`
+- **Pre-convergence archive**: `$HOME/.local/share/lfs-oasis/adopted-projects/backups/lfs-block-studio-pre-convergence-20261101.tar.zst`
 - **Converged branch**: `codex/studio-upgrades` merged cleanly into `main` (incorporating `2392861a75db96a659d564f59ada9da8922b6fe6`)
 - **Single authored/history authority**: `StudioEditorSession` (`src/lib/studioEditorSession.ts`) + `StudioDocument` (`src/lib/studioDocument.ts`) + `useStudioPersistence` (`src/lib/useStudioPersistence.ts`)
-- **Zero-Trust Secret Vaulting**: Hardcoded `AIzaSy*` API key scrubbed from `firebase-applet-config.json` (`"apiKey": "VAULT_INJECTED_AT_RUNTIME"`), resolved at runtime via `/api/lfs/vault/client-config` (`~/.config/lfs-oasis/secrets.env` or `VITE_FIREBASE_API_KEY`).
+- **Zero-Trust Secret Vaulting**: Hardcoded `AIzaSy*` API key scrubbed from `firebase-applet-config.json` (`"apiKey": "SCRUBBED_BY_OASIS_GUILDER"`), resolved at runtime via `/api/lfs/vault/client-config` (`~/.config/lfs-oasis/secrets.env` or `VITE_FIREBASE_API_KEY`).
 - **LFS Oasis Suite Capsule Bridge (`OASIS-BLKS` / `lfs-voxel-sandbox`)**: `src/lib/oasisCapsuleBridge.ts` + `server.ts` routing `/api/ai/analyze-issue` to Local Sovereign Forge (`http://127.0.0.1:19447/v1/healer/analyze-issue`) with offline heuristic fallback.
 
 ## Converged Path Matrix (`f2de594...2392861` + `codex/studio-upgrades`)

@@ -25,7 +25,7 @@
   "failure": {
     "stage": "reviewed position, type, rotation and scale apply in one step with stable identity and complete Undo/Redo",
     "message": "Expected values to be strictly equal:\n\n'other' !== 'unit'\n",
-    "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n'other' !== 'unit'\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:63:38\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n'other' !== 'unit'\n\n    at file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/cell-inspector.mjs:63:38\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
   },
   "finishedAt": "2026-11-01T21:45:23.703Z"
 }

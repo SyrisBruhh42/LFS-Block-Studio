@@ -43,7 +43,7 @@ const resolvedFirebaseApiKey =
   (firebaseConfig.apiKey &&
   firebaseConfig.apiKey !== 'VAULT_INJECTED_AT_RUNTIME'
     ? firebaseConfig.apiKey
-    : 'oasis-local-offline-vault-key');
+    : 'SCRUBBED_BY_OASIS_GUILDER');
 
 const resolvedFirebaseConfig = {
   ...firebaseConfig,

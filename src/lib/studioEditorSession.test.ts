@@ -291,7 +291,7 @@ test('byte accounting includes UTF-8 workspace payload and oldest frames are evi
   applied(store.transaction(label, () => { store.setWorldField('worldName', 'Second'); }));
   applied(store.transaction(label, () => { store.setWorldField('worldName', 'Third'); }));
   applied(store.undo()); assert.equal(store.getDocument().world.worldName, 'Second'); assert.equal(store.undo().status, 'noop');
-  rejected(store.transaction(label, () => { store.setWorldField('worldName', '🧱'.repeat(10)); }));
+  rejected(store.transaction(label, () => { store.setWorldField('worldName', '\u{1F9F1}'.repeat(10)); }));
   rejected(store.transaction(label, () => { store.setEngineState(state => ({ ...state, clipboard: [block()] })); }));
 });
 

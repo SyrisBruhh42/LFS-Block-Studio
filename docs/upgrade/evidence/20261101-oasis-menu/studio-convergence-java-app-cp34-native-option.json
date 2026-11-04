@@ -54,7 +54,7 @@
     {
       "name": "clear selection is undoable and never invents a region for a later edit",
       "ok": false,
-      "error": "AssertionError [ERR_ASSERTION]: Missing expected rejection.\n    at async selectionUnavailable (file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/java-export-workflow.mjs:41:5)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/java-export-workflow.mjs:125:3"
+      "error": "AssertionError [ERR_ASSERTION]: Missing expected rejection.\n    at async selectionUnavailable (file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/java-export-workflow.mjs:41:5)\n    at async file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/java-export-workflow.mjs:125:3"
     }
   ],
   "errors": [],

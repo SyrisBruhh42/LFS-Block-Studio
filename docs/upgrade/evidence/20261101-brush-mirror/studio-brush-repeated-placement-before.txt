@@ -23,7 +23,7 @@ ok 4 - valid brushes retain one undo, lower-floor clipping, erase behavior, and 
 not ok 5 - repeating an identical brush preserves cell identities, state and pending Redo
   ---
   duration_ms: 1289.752245
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/engine/chunkAndPatternEngine.safety.test.ts:1:3564'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/engine/chunkAndPatternEngine.safety.test.ts:1:3564'
   failureType: 'testCodeFailure'
   error: |-
     Expected "actual" to be reference-equal to "expected":
@@ -9831,7 +9831,7 @@ not ok 5 - repeating an identical brush preserves cell identities, state and pen
     redoStack:
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/engine/chunkAndPatternEngine.safety.test.ts:88:12)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/engine/chunkAndPatternEngine.safety.test.ts:88:12)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)

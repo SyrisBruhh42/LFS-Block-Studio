@@ -43,7 +43,7 @@ try {
   };
   const closeExport = async () => { await panel.getByRole('button', { name: 'Close Java schematic export', exact: true }).click(); await panel.waitFor({ state: 'hidden' }); };
   const review = async (scope = 'world', anchor = { x: 1, y: -5, z: 10 }) => {
-    await panel.getByLabel('Schematic name', { exact: true }).fill('Actual exported Ω🌿');
+    await panel.getByLabel('Schematic name', { exact: true }).fill('Actual exported Ω\u{1F33F}');
     await panel.getByLabel('Export scope', { exact: true }).selectOption(scope);
     for (const axis of ['x', 'y', 'z']) await panel.getByLabel(`Paste anchor ${axis.toUpperCase()}`, { exact: true }).fill(String(anchor[axis]));
     await panel.getByRole('button', { name: 'Review schematic export', exact: true }).click();
@@ -91,7 +91,7 @@ try {
 
   stage = 'downloaded world .schem independently decodes exact axes, offsets, states, air and Unicode name';
   const binary = await download(await review()); const decoded = readCandidateSchematic(binary.bytes);
-  assert.match(binary.filename, /\.candidate\.schem$/); assert.equal(decoded.name, 'Actual exported Ω🌿'); assert.deepEqual(decoded.dimensions, [3, 2, 4]); assert.deepEqual(decoded.offset, [-5, 7, -3]); assert.equal(decoded.volume, 24);
+  assert.match(binary.filename, /\.candidate\.schem$/); assert.equal(decoded.name, 'Actual exported Ω\u{1F33F}'); assert.deepEqual(decoded.dimensions, [3, 2, 4]); assert.deepEqual(decoded.offset, [-5, 7, -3]); assert.equal(decoded.volume, 24);
   assert.deepEqual(decoded.cells.filter(cell => cell.blockState !== 'minecraft:air'), [
     { x: -5, y: 7, z: -3, blockState: 'minecraft:oak_planks' }, { x: -3, y: 7, z: -3, blockState: 'minecraft:oak_planks' },
     { x: -5, y: 7, z: 0, blockState: 'minecraft:cobblestone' }, { x: -4, y: 8, z: -1, blockState: 'minecraft:stone' },

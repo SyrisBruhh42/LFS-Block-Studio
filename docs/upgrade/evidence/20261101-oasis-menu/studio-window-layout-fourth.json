@@ -61,7 +61,7 @@
       }
     ]
   },
-  "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(b.x > 100 && b.x < 600 && b.y >= 8)\n\n    at file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:79:327\n    at async run (file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:64:60)\n    at async file:///home/joe/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:78:2",
+  "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(b.x > 100 && b.x < 600 && b.y >= 8)\n\n    at file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:79:327\n    at async run (file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:64:60)\n    at async file://$HOME/Projects/LFS-Block-Studio-upgrade/scripts/qa/window-layout.mjs:78:2",
   "sourceAfter": {
     "../../src/components/DraggableWindow.tsx": "e8c7287c6453d4063b21a6d57af432a4d18b4abe7714ffdaf10fbf808da57675",
     "../../src/engine/windowLayoutEngine.ts": "78d0bf3055928dffe19eb4528d3b410ed1a23c4caa83bc5038b19da5507dd7fa",

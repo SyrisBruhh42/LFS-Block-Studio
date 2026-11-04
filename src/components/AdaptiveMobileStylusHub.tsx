@@ -1051,7 +1051,7 @@ export const AdaptiveMobileStylusHub: React.FC<AdaptiveMobileStylusHubProps> = (
                             <Icon className="w-3.5 h-3.5" />
                             <span>{t.label}</span>
                             <span className="text-[10px] font-mono ml-1">
-                              {pinned ? '★ Pinned' : '+ Pin'}
+                              {pinned ? '\u{2605} Pinned' : '+ Pin'}
                             </span>
                           </button>
                         );

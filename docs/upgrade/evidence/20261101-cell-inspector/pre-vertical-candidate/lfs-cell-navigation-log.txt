@@ -1,7 +1,7 @@
 {"name":"Orbit/Fly/C/F/Home and legacy ribbon labels share one mode","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}
 {"name":"temporary Alt look restores the orthographic camera after flight movement","ok":true,"referenceCameraHash":"eacba33c15bfb31c562f3bacaaa7e8449a01137b365b37781ed1cad12d98a792","restoredCameraHash":"c74af2a206758abf9096eb5d3914537b4abb87fc83147f08fecb60e25f4d0c62","maxCameraMatrixDifference":1.1702870838270246e-15,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}
 {"name":"ordinary navigation cancels temporary look; stale and coalesced releases are harmless","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}
-{"name":"Pan, frame/view/home/previous actions preserve authored content","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}
+{"name":"Pan, frame/view$HOME actions preserve authored content","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}
 {"name":"native Tab traverses controls without accepting ghosts or changing camera","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}
 {"name":"project dialog text/shortcuts and command drops cannot fly or mutate authored content","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec","dropFixture":"synthetic command drop while actual project dialog is open"}
 {"name":"hotkey capture preserves Tab, stops for composition and does not survive close","ok":true,"authoredHash":"5d38e23f5ec9747478601c2343d05aa82558979d09d845b9f3b4005347099fec"}

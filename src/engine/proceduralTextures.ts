@@ -735,6 +735,13 @@ export function getProceduralTextures(
   const existing = textureCache.get(cacheKey);
   if (existing) return existing;
 
+  if (typeof document === 'undefined') {
+    return {
+      map: null as unknown as THREE.CanvasTexture,
+      bumpMap: null as unknown as THREE.CanvasTexture,
+    };
+  }
+
   const { albedo, bump } = getMasterSpritemapCanvases({
     pattern,
     connectedMode,
@@ -917,6 +924,7 @@ export function getBlockMaterial(params: {
     mat.depthWrite = false;
   }
 
+  mat.userData = { ...mat.userData, isCachedStudioMaterial: true };
   materialCache.set(key, mat);
   return mat;
 }

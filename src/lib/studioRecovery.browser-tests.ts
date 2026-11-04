@@ -63,7 +63,7 @@ export async function runStudioRecoveryBrowserTests(): Promise<RecoveryTestResul
     });
   });
   await check('future schema active document preserves exact text and pointer without downgrade', async (store, db) => {
-    const future: any = makeStudioDocument('rescue'); future.schemaVersion = 99; future.world.worldName = 'café 🌱';
+    const future: any = makeStudioDocument('rescue'); future.schemaVersion = 99; future.world.worldName = 'café \u{1F331}';
     const raw = ` \n${JSON.stringify(future, null, 2)}\r\n`;
     await seedActive(store, db, raw);
     await noWrites(db, async () => {

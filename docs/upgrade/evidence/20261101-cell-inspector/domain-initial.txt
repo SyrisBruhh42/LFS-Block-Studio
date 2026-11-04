@@ -38,15 +38,15 @@ ok 7 - instance scale identity remains explicit until definition source is delib
 not ok 8 - definition changes preserve instance appearance unless its removal is explicitly reviewed
   ---
   duration_ms: 1.505479
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:1:7099'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:1:7099'
   failureType: 'testCodeFailure'
   error: 'Unsupported value.'
   code: 'ERR_TEST_FAILURE'
   stack: |-
-    validateDocument (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.ts:91:25)
-    new StudioEditorSession (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.ts:179:47)
-    session (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:28:68)
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:84:11)
+    validateDocument ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.ts:91:25)
+    new StudioEditorSession ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioEditorSession.ts:179:47)
+    session ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:28:68)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:84:11)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)
@@ -103,7 +103,7 @@ ok 17 - external source changes retain dirty values, invalidate reviews, and req
 not ok 18 - clean views follow external moves and deletions/Undo while dirty drafts cannot cross a replacement project
   ---
   duration_ms: 5.419024
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:1:12472'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:1:12472'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -118,7 +118,7 @@ not ok 18 - clean views follow external moves and deletions/Undo while dirty dra
   actual: 'applied'
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:129:173)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioCellEdit.test.ts:129:173)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.processPendingSubtests (node:internal/test_runner/test:677:18)

@@ -22,8 +22,8 @@ function resolveVaultSecret(secretName: string): {
   }
   const vaultPaths = [
     process.env.OASIS_VAULT_FILE || '',
-    path.join(process.env.HOME || '/home/joe', '.config/lfs-oasis/secrets.json'),
-    path.join(process.env.HOME || '/home/joe', '.local/share/lfs-oasis/vault/secrets.json'),
+    path.join(process.env.HOME || '$HOME', '.config/lfs-oasis/secrets.json'),
+    path.join(process.env.HOME || '$HOME', '.local/share/lfs-oasis/vault/secrets.json'),
   ].filter(Boolean);
 
   for (const vp of vaultPaths) {

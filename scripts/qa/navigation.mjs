@@ -210,7 +210,7 @@ try {
     return { authoredHash: await assertNoAuthoredChanges() };
   });
 
-  await check('Pan, frame/view/home/previous actions preserve authored content', async () => {
+  await check('Pan, frame/view$HOME actions preserve authored content', async () => {
     for (const action of ['Pan', 'Orbit', 'Frame all', 'Home', 'Top', 'Front', 'Side', 'Previous']) await choose(action);
     await choose('Pan');
     const box = await canvas.boundingBox(); assert.ok(box);

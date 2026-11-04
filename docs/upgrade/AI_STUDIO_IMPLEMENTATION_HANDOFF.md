@@ -8,7 +8,7 @@ Build a joyful, precise browser-first local studio with a calm Oasis UI and opti
 
 ## First work order: preserve and converge (`CONVERGED_AND_VERIFIED`)
 
-Full semantic convergence of `codex/studio-upgrades` (base `f2de5949594202e57fda9dc38cea7bf3634825ab`) and GitHub `main` (`2392861a75db96a659d564f59ada9da8922b6fe6`) is complete and verified (`CONVERGED_AND_VERIFIED`). Both source trees and pre-convergence states are preserved in `/home/joe/.local/share/lfs-oasis/adopted-projects/backups/lfs-block-studio-pre-convergence-20261101.tar.zst`.
+Full semantic convergence of `codex/studio-upgrades` (base `f2de5949594202e57fda9dc38cea7bf3634825ab`) and GitHub `main` (`2392861a75db96a659d564f59ada9da8922b6fe6`) is complete and verified (`CONVERGED_AND_VERIFIED`). Both source trees and pre-convergence states are preserved in `$HOME/.local/share/lfs-oasis/adopted-projects/backups/lfs-block-studio-pre-convergence-20261101.tar.zst`.
 
 ## Existing work to reuse
 

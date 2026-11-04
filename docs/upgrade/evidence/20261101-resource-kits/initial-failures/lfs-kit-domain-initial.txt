@@ -58,7 +58,7 @@ ok 11 - invalid UTF-8, oversized license text, public copies and excessive resou
 not ok 12 - exporting raw license/notices never silently replaces malformed UTF-16
   ---
   duration_ms: 7.547731
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:1:10306'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:1:10306'
   failureType: 'testCodeFailure'
   error: 'Missing expected rejection.'
   code: 'ERR_ASSERTION'
@@ -66,7 +66,7 @@ not ok 12 - exporting raw license/notices never silently replaces malformed UTF-
   expected:
   operator: 'rejects'
   stack: |-
-    async TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:87:3)
+    async TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:87:3)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...
@@ -114,7 +114,7 @@ ok 20 - retained provenance ceiling rejects before losing records or importing r
 not ok 21 - locked Java accepts unused Freeform kit resources while rejecting their unbound placement atomically
   ---
   duration_ms: 13.915577
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:1:15781'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:1:15781'
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /mapping|binding|mapped|unsupported/i. Input:
@@ -127,16 +127,16 @@ not ok 21 - locked Java accepts unused Freeform kit resources while rejecting th
   actual:
   error: 'Game compatibility lock: No explicit reviewed assignment exists for this definition.'
   stack: |-
-    prepareStudioPrefabPlacement (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioPrefabPlacement.ts:28:26)
-    <anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:111)
+    prepareStudioPrefabPlacement ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioPrefabPlacement.ts:28:26)
+    <anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:111)
     getActual (node:assert:840:5)
     Function.throws (node:assert:986:24)
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:98)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:98)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   operator: 'throws'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:98)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKit.test.ts:132:98)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...

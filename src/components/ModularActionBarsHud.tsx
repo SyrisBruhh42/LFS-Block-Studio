@@ -170,7 +170,7 @@ export const ModularActionBarsHud: React.FC<ModularActionBarsHudProps> = ({
         id: `auto_most_${id}`,
         type: 'block' as const,
         targetId: id,
-        hotkeyHint: `★${idx + 1}`,
+        hotkeyHint: `\u{2605}${idx + 1}`,
       }));
     return sortedBlockIds;
   };

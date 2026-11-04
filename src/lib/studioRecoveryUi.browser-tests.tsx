@@ -62,7 +62,7 @@ const cases: Record<string, () => Promise<void>> = {
     } finally { downloads.restore(); h.unmount(); IDBDatabase.prototype.transaction = tx; }
   },
   'failed hydration can independently download preserved candidate originals including BOM and whitespace': async () => {
-    const originals = [{ sourceId: 'file:original', raw: '\ufeff  {"café":"🌱"}\r\n' }, { sourceId: 'cloud:blocksData', raw: '{ malformed\n' }];
+    const originals = [{ sourceId: 'file:original', raw: '\ufeff  {"café":"\u{1F331}"}\r\n' }, { sourceId: 'cloud:blocksData', raw: '{ malformed\n' }];
     await fixture(futureRaw(), [{ candidateId: 'candidate-original', json: 'not valid JSON', legacySources: originals }]);
     const h = mount(), downloads = captureDownloads();
     try {

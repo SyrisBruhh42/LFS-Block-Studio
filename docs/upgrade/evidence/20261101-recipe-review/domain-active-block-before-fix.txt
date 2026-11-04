@@ -133,7 +133,7 @@ ok 26 - blueprint stamping uses fresh identities after a retained coordinate ID 
 not ok 27 - the selected active block is exact even when definition IDs differ only in case
   ---
   duration_ms: 3.986464
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:18659'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:18659'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -146,7 +146,7 @@ not ok 27 - the selected active block is exact even when definition IDs differ o
   actual: 'unit'
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:115:295)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:115:295)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...
@@ -154,7 +154,7 @@ not ok 27 - the selected active block is exact even when definition IDs differ o
 not ok 28 - an active definition named air is placed as a block rather than interpreted as an erase alias
   ---
   duration_ms: 1.692658
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:19099'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:1:19099'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -166,7 +166,7 @@ not ok 28 - an active definition named air is placed as a block rather than inte
   expected: 'air'
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:118:232)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioRecipeReview.test.ts:118:232)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...

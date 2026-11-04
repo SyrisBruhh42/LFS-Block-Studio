@@ -38,7 +38,7 @@ ok 7 - repeat no-op import skips another archive write and retains source, histo
 not ok 8 - bounds and wrong file sizes reject reads, revoke the previous review and never call an oversized producer
   ---
   duration_ms: 10.321783
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:1:6895'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:1:6895'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -177,7 +177,7 @@ not ok 8 - bounds and wrong file sizes reject reads, revoke the previous review 
     noop: false
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:59:199)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:59:199)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...
@@ -200,7 +200,7 @@ ok 11 - one blueprint placement has full Undo/Redo; duplicate/forged reports rej
 not ok 12 - a completion from an old placement view cannot change a reopened view
   ---
   duration_ms: 17.154206
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:1:9866'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:1:9866'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -215,7 +215,7 @@ not ok 12 - a completion from an old placement view cannot change a reopened vie
   actual: 'Blueprint placed as one edit. Undo restores cells and chunk visibility.'
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:86:50)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioKitModel.test.ts:86:50)
     async Test.run (node:internal/test_runner/test:980:9)
     async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
   ...

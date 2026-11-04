@@ -73,7 +73,7 @@ try {
   const doc = await f.live(), definition = doc.customBlocks.cobble_brick;
   assert.ok(definition); doc.schemaVersion = 1; delete doc.targetPolicy;
   doc.world.worldName = 'Large editable project Ω'; doc.blocks = {}; doc.blueprints = []; doc.customBlocks = { cobble_brick: definition };
-  doc.extensions = { retained: 'x'.repeat(20 * 1024 * 1024), structured: [false, null, { original: 'Ω🌿' }] };
+  doc.extensions = { retained: 'x'.repeat(20 * 1024 * 1024), structured: [false, null, { original: 'Ω\u{1F33F}' }] };
   stage = 'a project larger than the history allowance opens, makes small edits and reports bounded retained changes';
   await f.open(doc, doc.world.worldName); const original = await f.live(), initial = await f.history(); assert.deepEqual(initial, { undo: 0, redo: 0, bytes: 0 });
   await f.command('//pos1 -7 2 9'); await f.command('//pos2 -7 2 9'); await f.command('//set cobble_brick');

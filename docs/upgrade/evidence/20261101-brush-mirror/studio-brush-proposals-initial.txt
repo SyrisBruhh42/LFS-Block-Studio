@@ -3,7 +3,7 @@ TAP version 13
 not ok 1 - four mirrored brushes commit complete cells/chunks as one history step with exact Undo and Redo
   ---
   duration_ms: 19.400565
-  location: '/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioBrushEdit.test.ts:1:2570'
+  location: '$HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioBrushEdit.test.ts:1:2570'
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
@@ -17,7 +17,7 @@ not ok 1 - four mirrored brushes commit complete cells/chunks as one history ste
   expected: true
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/joe/Projects/LFS-Block-Studio-upgrade/src/lib/studioBrushEdit.test.ts:48:62)
+    TestContext.<anonymous> ($HOME/Projects/LFS-Block-Studio-upgrade/src/lib/studioBrushEdit.test.ts:48:62)
     Test.runInAsyncScope (node:async_hooks:211:14)
     Test.run (node:internal/test_runner/test:979:25)
     Test.start (node:internal/test_runner/test:877:17)
