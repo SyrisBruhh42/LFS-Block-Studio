@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import { exportToGltfJson } from './godotExporter';
 import type { PlacedBlock, CustomBlockDefinition } from './types';
+
+function expect(actual: any) {
+  return {
+    toBe(expected: any) {
+      assert.strictEqual(actual, expected);
+    },
+  };
+}
 
 describe('godotExporter', () => {
   it('should export deterministically regardless of object property order', () => {
@@ -14,6 +23,8 @@ describe('godotExporter', () => {
         shape: 'brick',
         color: '#ff0000',
         materialFinish: 'matte',
+        texturePattern: 'solid',
+        hasStuds: true,
       },
     };
 

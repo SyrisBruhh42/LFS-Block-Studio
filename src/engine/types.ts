@@ -15,6 +15,7 @@ export type BlockShape =
   | 'micro_voxel';
 
 export type BlockTexturePattern =
+  | 'solid'
   | 'smooth_abs'
   | 'cobblestone'
   | 'cobble'

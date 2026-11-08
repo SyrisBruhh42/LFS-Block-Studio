@@ -1,10 +1,23 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   detectBoneCycles,
   validateSkinWeights,
   interpolateKeyframes
 } from './skeletalAnimationEngine';
+
+function expect(actual: any) {
+  return {
+    toBe(expected: any) {
+      assert.strictEqual(actual, expected);
+    },
+    toBeCloseTo(expected: number, precision = 2) {
+      const diff = Math.abs(actual - expected);
+      assert.ok(diff < Math.pow(10, -precision) / 2, `Expected ${actual} to be close to ${expected}`);
+    },
+  };
+}
 
 describe('Skeletal Animation Engine', () => {
   describe('detectBoneCycles', () => {

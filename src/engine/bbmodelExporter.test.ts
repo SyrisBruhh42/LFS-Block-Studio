@@ -1,5 +1,23 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import { BBModelHelper, BBModel } from './bbmodelExporter';
+
+function expect(actual: any) {
+  return {
+    toBe(expected: any) {
+      assert.strictEqual(actual, expected);
+    },
+    toEqual(expected: any) {
+      assert.deepStrictEqual(actual, expected);
+    },
+    toHaveProperty(prop: string) {
+      assert.ok(actual != null && prop in Object(actual), `Expected object to have property ${prop}`);
+    },
+    toThrow() {
+      assert.throws(actual);
+    },
+  };
+}
 
 describe('BBModelHelper', () => {
   const sampleBBModel: BBModel = {

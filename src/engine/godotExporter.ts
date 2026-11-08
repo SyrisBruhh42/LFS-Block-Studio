@@ -5,14 +5,34 @@ import {
   DynamicLightingConfig,
   PlacedBlock,
 } from './types';
-import { buildBlockMeshGroup } from './legoGeometry';
+import {
+  buildBlockMeshGroup,
+  disposeUnsharedGroupGeometries,
+} from './legoGeometry';
 import { exportCommentName } from './exportPreflight';
+import { BBModel, BBElement, BBModelHelper } from './bbmodelExporter';
+
+export function sortBlocksDeterministically(
+  blocks: Record<string, PlacedBlock>
+): PlacedBlock[] {
+  return Object.values(blocks).sort((a, b) => {
+    if (a.position.y !== b.position.y) return a.position.y - b.position.y;
+    if (a.position.z !== b.position.z) return a.position.z - b.position.z;
+    if (a.position.x !== b.position.x) return a.position.x - b.position.x;
+    const idCmp = (a.id || '').localeCompare(b.id || '');
+    if (idCmp !== 0) return idCmp;
+    return a.blockDefId.localeCompare(b.blockDefId);
+  });
+}
+
+export const sortVoxelKeysDeterministically = sortBlocksDeterministically;
 
 /**
  * Generates a complete Godot 4.x (.tscn) scene with:
  * - ProceduralSkyMaterial + WorldEnvironment + DirectionalLight3D (Dynamic Lighting)
  * - Shared StandardMaterial3D + BoxMesh sub-resources per block type (draw-call friendly for Mobile/Android)
  * - StaticBody3D + BoxShape3D collision shapes so structures are immediately walkable in Godot
+ *   (including 3-part compound walk-through colliders for 'arch' blocks — CA-11-C02)
  * - OmniLight3D nodes automatically attached to emissive / lantern blocks
  */
 export function generateGodotTscn(
@@ -21,12 +41,15 @@ export function generateGodotTscn(
   customBlocks: Record<string, CustomBlockDefinition>,
   lightingConfig?: DynamicLightingConfig
 ): string {
-  const placedList = Object.values(blocks);
+  const placedList = sortBlocksDeterministically(blocks);
   const usedDefIds = Array.from(new Set(placedList.map((b) => b.blockDefId)));
 
   // Each block type gets 3 sub_resources: StandardMaterial3D, BoxMesh, BoxShape3D
-  // Plus 2 scene environment sub_resources: ProceduralSkyMaterial, Environment
-  const totalSubResources = usedDefIds.length * 3 + 2;
+  // Arch block types additionally get 2 compound sub_resources (PillarShape, LintelShape)
+  const archDefCount = usedDefIds.filter(
+    (id) => customBlocks[id]?.shape === 'arch'
+  ).length;
+  const totalSubResources = usedDefIds.length * 3 + archDefCount * 2 + 2;
   const lines: string[] = [];
   lines.push(
     `[gd_scene load_steps=${totalSubResources + 1} format=3 uid="uid://brickforge_export"]`
@@ -99,7 +122,8 @@ export function generateGodotTscn(
     lines.push('');
 
     const w = def?.width || 1;
-    const h = ((def?.heightPlates || 3) / 3).toFixed(3);
+    const hNum = (def?.heightPlates || 3) / 3;
+    const h = hNum.toFixed(3);
     const d = def?.depth || 1;
     lines.push(`[sub_resource type="BoxMesh" id="BoxMesh_${meshIndex}"]`);
     lines.push(`material = SubResource("StandardMaterial3D_${matIndex}")`);
@@ -109,6 +133,21 @@ export function generateGodotTscn(
     lines.push(`[sub_resource type="BoxShape3D" id="BoxShape3D_${shapeIndex}"]`);
     lines.push(`size = Vector3(${w}, ${h}, ${d})`);
     lines.push('');
+
+    if (def?.shape === 'arch') {
+      const pillarW = Math.max(0.18, w * 0.24).toFixed(3);
+      const lintelH = Math.max(0.18, hNum * 0.28).toFixed(3);
+      lines.push(
+        `[sub_resource type="BoxShape3D" id="BoxShape3D_${shapeIndex}_pillar"]`
+      );
+      lines.push(`size = Vector3(${pillarW}, ${h}, ${d})`);
+      lines.push('');
+      lines.push(
+        `[sub_resource type="BoxShape3D" id="BoxShape3D_${shapeIndex}_lintel"]`
+      );
+      lines.push(`size = Vector3(${w}, ${lintelH}, ${d})`);
+      lines.push('');
+    }
   });
 
   const safeSceneName =
@@ -160,11 +199,45 @@ export function generateGodotTscn(
       `[node name="StaticBody3D" type="StaticBody3D" parent="${nodeName}"]`
     );
     lines.push('');
-    lines.push(
-      `[node name="CollisionShape3D" type="CollisionShape3D" parent="${nodeName}/StaticBody3D"]`
-    );
-    lines.push(`shape = SubResource("BoxShape3D_${ids.shapeId}")`);
-    lines.push('');
+    if (def?.shape === 'arch') {
+      const w = def?.width || 1;
+      const hNum = (def?.heightPlates || 3) / 3;
+      const pillarOffset = (w * 0.38).toFixed(3);
+      const lintelOffsetY = (hNum * 0.36).toFixed(3);
+
+      lines.push(
+        `[node name="LeftPillarCol" type="CollisionShape3D" parent="${nodeName}/StaticBody3D"]`
+      );
+      lines.push(
+        `transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -${pillarOffset}, 0, 0)`
+      );
+      lines.push(`shape = SubResource("BoxShape3D_${ids.shapeId}_pillar")`);
+      lines.push('');
+
+      lines.push(
+        `[node name="RightPillarCol" type="CollisionShape3D" parent="${nodeName}/StaticBody3D"]`
+      );
+      lines.push(
+        `transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, ${pillarOffset}, 0, 0)`
+      );
+      lines.push(`shape = SubResource("BoxShape3D_${ids.shapeId}_pillar")`);
+      lines.push('');
+
+      lines.push(
+        `[node name="TopLintelCol" type="CollisionShape3D" parent="${nodeName}/StaticBody3D"]`
+      );
+      lines.push(
+        `transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, ${lintelOffsetY}, 0)`
+      );
+      lines.push(`shape = SubResource("BoxShape3D_${ids.shapeId}_lintel")`);
+      lines.push('');
+    } else {
+      lines.push(
+        `[node name="CollisionShape3D" type="CollisionShape3D" parent="${nodeName}/StaticBody3D"]`
+      );
+      lines.push(`shape = SubResource("BoxShape3D_${ids.shapeId}")`);
+      lines.push('');
+    }
 
     // Attach OmniLight3D if block is an emissive lantern
     if (def?.materialFinish === 'neon') {
@@ -191,7 +264,7 @@ export function generateGodotGdScript(
   blocks: Record<string, PlacedBlock>,
   customBlocks: Record<string, CustomBlockDefinition>
 ): string {
-  const placedList = Object.values(blocks);
+  const placedList = sortBlocksDeterministically(blocks);
   worldName = exportCommentName(worldName);
   return `# Generated Godot 4.x draft; native behaviour and device performance are unqualified
 # Attach this @tool script to a Node3D in Godot 4 to spawn "${worldName}" with StaticBody3D collisions and OmniLight3D lanterns
@@ -275,12 +348,7 @@ export async function exportSceneToGltfJson(
   const exportScene = new THREE.Scene();
   const createdGroups: THREE.Group[] = [];
 
-  const sortedBlocks = Object.values(blocks).sort((a, b) => {
-    if (a.position.x !== b.position.x) return a.position.x - b.position.x;
-    if (a.position.y !== b.position.y) return a.position.y - b.position.y;
-    if (a.position.z !== b.position.z) return a.position.z - b.position.z;
-    return a.blockDefId.localeCompare(b.blockDefId);
-  });
+  const sortedBlocks = sortBlocksDeterministically(blocks);
 
   for (const blk of sortedBlocks) {
     const def = customBlocks[blk.blockDefId];
@@ -333,16 +401,9 @@ export async function exportSceneToGltfJson(
       );
     });
   } finally {
-    // Dispose any unshared geometries created for exportScene to prevent GPU memory leaks
+    // Dispose any unshared geometries & ephemeral materials created for exportScene (CA-11-C03)
     for (const grp of createdGroups) {
-      grp.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          if (mesh.geometry && mesh.geometry.type !== 'CylinderGeometry') {
-            mesh.geometry.dispose();
-          }
-        }
-      });
+      disposeUnsharedGroupGeometries(grp);
     }
   }
 }
@@ -388,6 +449,11 @@ function hexToRgbaFactor(hex: string, alpha = 1.0): [number, number, number, num
   ];
 }
 
+export interface GltfExportOptions {
+  includeRig?: boolean;
+  includeAnimation?: boolean;
+}
+
 /**
  * Synchronously generates a spec-compliant glTF 2.0 JSON document containing real
  * 3D mesh primitives, PBR materials, vertex/normal/index accessors, bufferViews,
@@ -396,14 +462,10 @@ function hexToRgbaFactor(hex: string, alpha = 1.0): [number, number, number, num
 export function exportToGltfJson(
   worldName: string,
   blocks: Record<string, PlacedBlock>,
-  customBlocks: Record<string, CustomBlockDefinition>
+  customBlocks: Record<string, CustomBlockDefinition>,
+  options?: GltfExportOptions
 ): string {
-  const placedList = Object.values(blocks).sort((a, b) => {
-    if (a.position.x !== b.position.x) return a.position.x - b.position.x;
-    if (a.position.y !== b.position.y) return a.position.y - b.position.y;
-    if (a.position.z !== b.position.z) return a.position.z - b.position.z;
-    return a.blockDefId.localeCompare(b.blockDefId);
-  });
+  const placedList = sortBlocksDeterministically(blocks);
 
   // Build unit cube geometry (24 vertices with normals + 36 uint16 indices)
   const positions = new Float32Array([
@@ -576,7 +638,7 @@ export function exportToGltfJson(
     };
   });
 
-  const gltfDoc = {
+  const gltfDoc: Record<string, unknown> = {
     asset: {
       version: '2.0',
       generator: 'LFS Block Studio Universal glTF 2.0 Exporter (Godot 4 & Blender Ready)',
@@ -593,6 +655,27 @@ export function exportToGltfJson(
     nodes,
     meshes,
     materials,
+    ...(options?.includeRig
+      ? {
+          skins: [
+            {
+              name: 'Armature_Skin',
+              joints: nodes.map((_, i) => i),
+            },
+          ],
+        }
+      : {}),
+    ...(options?.includeAnimation
+      ? {
+          animations: [
+            {
+              name: 'Studio_Idle',
+              channels: [],
+              samplers: [],
+            },
+          ],
+        }
+      : {}),
     accessors: [
       {
         bufferView: 0,
@@ -653,6 +736,224 @@ export function exportToGltfJson(
   return JSON.stringify(gltfDoc, null, 2);
 }
 
+/**
+ * Exports a deterministic Blockbench (.bbmodel v4.10) JSON document with cube elements,
+ * 6-face UV skins, outliner bone hierarchy rig, texture palette, and idle animation track.
+ */
+export function exportToBlockbenchModelJson(
+  worldName: string,
+  blocks: Record<string, PlacedBlock>,
+  customBlocks: Record<string, CustomBlockDefinition>
+): string {
+  const placedList = sortBlocksDeterministically(blocks);
+  const textureIndexByKey = new Map<string, number>();
+  const textures: Array<Record<string, unknown>> = [];
+
+  const getTextureIndex = (blk: PlacedBlock): number => {
+    const def = customBlocks[blk.blockDefId];
+    const color = blk.colorOverride || def?.color || '#7E8B9B';
+    const pattern = blk.textureOverride || def?.texturePattern || 'solid';
+    const key = `${blk.blockDefId}::${color}::${pattern}`;
+    const existing = textureIndexByKey.get(key);
+    if (existing !== undefined) return existing;
+    const idx = textures.length;
+    textureIndexByKey.set(key, idx);
+    textures.push({
+      id: String(idx),
+      uuid: `tex_${idx}_${blk.blockDefId}`,
+      name: `${def?.name || blk.blockDefId}_${color}`,
+      color,
+      pattern,
+      width: 64,
+      height: 64,
+    });
+    return idx;
+  };
+
+  const elements: BBElement[] = placedList.map((blk, idx) => {
+    const def = customBlocks[blk.blockDefId];
+    const texIdx = getTextureIndex(blk);
+    const rawScale = blk.customScale as unknown;
+    const ux =
+      typeof rawScale === 'number' && Number.isFinite(rawScale) && rawScale > 0
+        ? rawScale
+        : typeof (rawScale as any)?.x === 'number'
+          ? (rawScale as any).x
+          : 1;
+    const uy =
+      typeof rawScale === 'number' && Number.isFinite(rawScale) && rawScale > 0
+        ? rawScale
+        : typeof (rawScale as any)?.y === 'number'
+          ? (rawScale as any).y
+          : 1;
+    const uz =
+      typeof rawScale === 'number' && Number.isFinite(rawScale) && rawScale > 0
+        ? rawScale
+        : typeof (rawScale as any)?.z === 'number'
+          ? (rawScale as any).z
+          : 1;
+
+    const w = (def?.width || 1) * ux * 16;
+    const h = ((def?.heightPlates || 3) / 3) * uy * 16;
+    const d = (def?.depth || 1) * uz * 16;
+    const fx = blk.position.x * 16;
+    const fy = blk.position.y * 16;
+    const fz = blk.position.z * 16;
+
+    return {
+      uuid: `cube_${idx}_${blk.id || blk.blockDefId}`,
+      name: `Block_${idx}_${blk.blockDefId}`,
+      type: 'cube',
+      from: [Number(fx.toFixed(4)), Number(fy.toFixed(4)), Number(fz.toFixed(4))],
+      to: [
+        Number((fx + w).toFixed(4)),
+        Number((fy + h).toFixed(4)),
+        Number((fz + d).toFixed(4)),
+      ],
+      origin: [
+        Number((fx + w * 0.5).toFixed(4)),
+        Number((fy + h * 0.5).toFixed(4)),
+        Number((fz + d * 0.5).toFixed(4)),
+      ],
+      rotation: [0, blk.rotation || 0, 0],
+      faces: {
+        north: { uv: [0, 0, 16, 16], texture: texIdx },
+        south: { uv: [0, 0, 16, 16], texture: texIdx },
+        east: { uv: [0, 0, 16, 16], texture: texIdx },
+        west: { uv: [0, 0, 16, 16], texture: texIdx },
+        up: { uv: [0, 0, 16, 16], texture: texIdx },
+        down: { uv: [0, 0, 16, 16], texture: texIdx },
+      },
+    };
+  });
+
+  const model: BBModel = {
+    meta: {
+      format_version: '4.10',
+      model_format: 'free',
+      box_uv: false,
+    },
+    name: worldName || 'LFSBlockStudioModel',
+    resolution: {
+      width: 64,
+      height: 64,
+    },
+    elements,
+    outliner: [
+      {
+        uuid: 'bone_root_001',
+        name: 'root',
+        origin: [0, 0, 0],
+        rotation: [0, 0, 0],
+        children: elements.map((el) => el.uuid),
+      },
+    ],
+    textures,
+    animations: [
+      {
+        uuid: 'anim_idle_001',
+        name: 'idle',
+        loop: 'loop',
+        length: 1.0,
+        snapping: 24,
+        animators: {
+          bone_root_001: {
+            name: 'root',
+            type: 'bone',
+            keyframes: [
+              {
+                channel: 'position',
+                time: 0,
+                interpolation: 'linear',
+                data_points: [{ x: 0, y: 0, z: 0 }],
+              },
+              {
+                channel: 'position',
+                time: 1.0,
+                interpolation: 'linear',
+                data_points: [{ x: 0, y: 0, z: 0 }],
+              },
+            ],
+          },
+        },
+      },
+    ],
+  };
+
+  return BBModelHelper.serialize(model);
+}
+
+export interface SpriteAtlasFrameRegion {
+  name: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface SpriteAnimationClipSpec {
+  name: string;
+  fps?: number;
+  loop?: boolean;
+  frames: SpriteAtlasFrameRegion[];
+}
+
+/**
+ * Generates a Godot 4.x SpriteFrames (.tres) resource for 8-direction salvaged character
+ * or prop sprite sheets so AnimatedSprite2D / AnimatedSprite3D nodes can consume packed atlases directly.
+ */
+export function generateGodotSpriteFramesTres(
+  atlasResPath: string,
+  animations: SpriteAnimationClipSpec[]
+): string {
+  const allFrames: Array<{ id: string; region: SpriteAtlasFrameRegion }> = [];
+  const animEntries: string[] = [];
+  let subIdx = 1;
+
+  for (const clip of animations) {
+    const clipFrameRefs: string[] = [];
+    for (const frame of clip.frames) {
+      const id = `AtlasTexture_${subIdx++}`;
+      allFrames.push({ id, region: frame });
+      clipFrameRefs.push(
+        `{\n"duration": 1.0,\n"texture": SubResource("${id}")\n}`
+      );
+    }
+    const fps = (clip.fps ?? 10.0).toFixed(1);
+    const loop = (clip.loop ?? true) ? 'true' : 'false';
+    animEntries.push(
+      `{\n"frames": [${clipFrameRefs.join(', ')}],\n"loop": ${loop},\n"name": &"${clip.name}",\n"speed": ${fps}\n}`
+    );
+  }
+
+  const lines: string[] = [];
+  lines.push(
+    `[gd_resource type="SpriteFrames" load_steps=${allFrames.length + 2} format=3]`
+  );
+  lines.push('');
+  lines.push(
+    `[ext_resource type="Texture2D" path="${atlasResPath}" id="1_atlas"]`
+  );
+  lines.push('');
+
+  for (const item of allFrames) {
+    lines.push(`[sub_resource type="AtlasTexture" id="${item.id}"]`);
+    lines.push('atlas = ExtResource("1_atlas")');
+    lines.push(
+      `region = Rect2(${item.region.x}, ${item.region.y}, ${item.region.w}, ${item.region.h})`
+    );
+    lines.push('');
+  }
+
+  lines.push('[resource]');
+  lines.push(`animations = [${animEntries.join(', ')}]`);
+  lines.push('');
+  return lines.join('\n');
+}
+
 export const exportToGodotTscn = generateGodotTscn;
 export const exportToGodotScript = generateGodotGdScript;
 export const triggerDownloadFile = triggerFileDownload;
+export const exportToBbmodel = exportToBlockbenchModelJson;
+export { convertRgbaToHollowShellBlocks } from './imageToVoxelHollowShell';
+

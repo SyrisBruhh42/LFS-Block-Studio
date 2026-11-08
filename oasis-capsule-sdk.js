@@ -72,6 +72,27 @@
     }
   };
 
+  function searchForgeAssets(query, opts) {
+    const options = opts || {};
+    const q = encodeURIComponent(String(query || "").trim());
+    const baseUrl = String(options.baseUrl || "http://127.0.0.1:19447/v1/assets/search");
+    const url = baseUrl.indexOf("?") !== -1 ? baseUrl + "&q=" + q : baseUrl + "?q=" + q;
+    if (typeof fetch !== "function") {
+      return Promise.resolve({ ok: true, status: "offline", results: [] });
+    }
+    return fetch(url, { method: "GET", headers: { Accept: "application/json" } })
+      .then(function (r) {
+        if (!r || !r.ok) return { ok: true, status: "offline", results: [] };
+        return r.json().then(function (data) {
+          const list = data && Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : [];
+          return { ok: true, status: "ok", results: list };
+        });
+      })
+      .catch(function () {
+        return { ok: true, status: "offline", results: [] };
+      });
+  }
+
   global.OasisCapsuleSDK = {
     version: "cp12-v1",
     channelPrefix: CHANNEL_PREFIX,
@@ -79,9 +100,54 @@
       complete: async function (prompt) {
         return { ok: true, tier: 0, text: String(prompt || "").slice(0, 240) };
       },
+      infer: async function (prompt, opts) {
+        const options = opts || {};
+        const fallback = {
+          ok: true,
+          tier: 0,
+          text: String(prompt || "").slice(0, 240),
+          provider: "tier0-deterministic"
+        };
+        if (options.offlineOnly === true || typeof fetch !== "function") {
+          return fallback;
+        }
+        const controller = typeof AbortController === "function" ? new AbortController() : null;
+        const timer = controller ? setTimeout(function () { controller.abort(); }, options.timeoutMs || 450) : null;
+        try {
+          const res = await fetch(options.endpoint || "http://127.0.0.1:19447/v1/neural/infer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({
+              prompt: String(prompt || ""),
+              task_domain: options.taskDomain || "block_studio",
+              capsule_id: "lfs-block-studio",
+              model: options.model || "gemma4:e4b-it-q4_K_M"
+            }),
+            signal: controller ? controller.signal : undefined
+          });
+          if (timer) clearTimeout(timer);
+          if (!res || !res.ok) return fallback;
+          const data = await res.json();
+          const text = String((data && (data.text || data.response || data.output)) || "").trim();
+          if (!text) return fallback;
+          return {
+            ok: true,
+            tier: typeof data.tier === "number" ? data.tier : 2,
+            text: text,
+            provider: String(data.provider || "sovereign-forge-19447")
+          };
+        } catch (_err) {
+          if (timer) clearTimeout(timer);
+          return fallback;
+        }
+      },
+      searchAssets: searchForgeAssets,
       tuneManifest: function (tunables) {
         return { ok: true, applied: tunables || {} };
       }
+    },
+    assets: {
+      search: searchForgeAssets
     }
   };
 })(typeof window !== "undefined" ? window : globalThis);

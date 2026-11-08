@@ -26,7 +26,8 @@ export type IssueDomainCategory =
   | 'COMMAND_BOUNDS'
   | 'PERSISTENCE'
   | 'BALANCE_PROGRESSION'
-  | 'IP_COMPLIANCE';
+  | 'IP_COMPLIANCE'
+  | 'WEBGL_TELEMETRY_GUARD';
 
 export interface NormalizedAnnotationRegion {
   id: string;
